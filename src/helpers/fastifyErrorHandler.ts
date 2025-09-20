@@ -1,9 +1,5 @@
 import i18next from "i18next";
-import { TypeORMError } from "typeorm";
-import { MongooseError } from "mongoose";
-import { di } from "@/config/DIContainer";
 import { APIError } from "@/utils/APIError";
-import { AnalyticalService } from "@/services/analytical";
 import { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 
 /**
@@ -48,37 +44,6 @@ export const fastifyErrorHandler = (
   if (error instanceof APIError) {
     reply.code(error.statusCode).send({
       message: i18n.t(error.message),
-    });
-
-    return;
-  }
-
-  const analyticalService = di.container.resolve<AnalyticalService>(
-    AnalyticalService.key
-  );
-
-  // Создать лог для необработанного исключения
-  analyticalService.createErrorLog({
-    name: error.name,
-    message: error.message,
-    stack: error.stack,
-    method: req.method,
-    url: req.url,
-  });
-
-  // Ошибка операционной базы данных (неправильный запрос или проблема с соединением)
-  if (error instanceof TypeORMError) {
-    reply.code(502).send({
-      message: i18n.t("swagger.errors.OPERATIONAL_DATABASE"),
-    });
-
-    return;
-  }
-
-  // Ошибка аналитической базы данных
-  if (error instanceof MongooseError) {
-    reply.code(502).send({
-      message: i18n.t("swagger.errors.ANALYTICAL_DATABASE"),
     });
 
     return;

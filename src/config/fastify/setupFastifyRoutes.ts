@@ -13,11 +13,11 @@ export const setupFastifyRoutes = (
 ): void => {
   switch (routes) {
     case "admin":
-      return registerControllers(fastify, adminControllers, [
-        authPreHandler({ extended: true }),
-      ]);
+      return registerControllers(fastify, adminControllers, [authPreHandler()]);
 
     case "client":
-      return registerControllers(fastify, clientControllers);
+      return registerControllers(fastify, clientControllers, [
+        authPreHandler(),
+      ]);
   }
 };

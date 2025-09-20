@@ -44,6 +44,7 @@ export interface IAppConfig {
   };
   ENABLED_TASK_TYPES: TaskType[];
   ENABLED_TASKS: string[];
+  API_KEY: string;
 }
 
 export interface IPagination {

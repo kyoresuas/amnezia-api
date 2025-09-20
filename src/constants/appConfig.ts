@@ -8,6 +8,7 @@ const {
   ENABLED_FASTIFY_ROUTES,
   ENABLED_TASK_TYPES,
   ENABLED_TASKS,
+  API_KEY,
 } = process.env;
 
 const enabledFastifyRoutes: IAppConfig["ENABLED_FASTIFY_ROUTES"] = {};
@@ -37,6 +38,7 @@ const appConfig: IAppConfig = {
     ? (ENABLED_TASK_TYPES.split(",") as TaskType[])
     : [],
   ENABLED_TASKS: ENABLED_TASKS ? ENABLED_TASKS.split(",") : [],
+  API_KEY: API_KEY!,
 };
 
 export default appConfig;
