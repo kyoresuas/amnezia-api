@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "strict": true,
+    "allowJs": true,
+    "baseUrl": "./",
+    "sourceMap": true,
+    "target": "ES2021",
+    "outDir": "./build",
+    "incremental": true,
+    "declaration": false,
+    "module": "commonjs",
+    "lib": ["es5", "es6"],
+    "removeComments": true,
+    "esModuleInterop": true,
+    "noErrorTruncation": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noStrictGenericChecks": false,
+    "noFallthroughCasesInSwitch": false,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": false
+  },
+  "exclude": ["node_modules", "build", "dist", "scripts", "eslint.config.mjs"]
+}

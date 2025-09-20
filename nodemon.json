@@ -1,0 +1,6 @@
+{
+  "ignore": [".git", "node_modules", "*.spec.ts", "dist/*"],
+  "watch": ["src"],
+  "ext": "ts,json",
+  "exec": "npx ts-node -r tsconfig-paths/register src/main.ts"
+}
