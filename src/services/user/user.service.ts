@@ -227,6 +227,7 @@ export class UserService {
 
   /**
    * Добавить клиента
+   * TODO: нужно сделать генерацию ключей, назначение IP, добавление peer и запись в clientsTablе
    */
   async appendClient(clientId: string, clientName: string): Promise<void> {
     const table = await this.readClientsTable();
