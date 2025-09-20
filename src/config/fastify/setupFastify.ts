@@ -11,7 +11,6 @@ import { plugin } from "i18next-http-middleware";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import { SwaggerContract } from "@/contracts/swagger";
 import { setupAjvValidator } from "./setupAjvValidator";
-import { setupFastifyHooks } from "./setupFastifyHooks";
 import { setupFastifyRoutes } from "./setupFastifyRoutes";
 import { getFastifyRoutes } from "@/helpers/getFastifyRoutes";
 import { AppFastifyInstance, FastifyRoutes } from "@/types/shared";
@@ -66,9 +65,6 @@ export const setupFastify = async (routes: FastifyRoutes): Promise<void> => {
 
   // Регистрация маршрутов
   setupFastifyRoutes(fastify, routes);
-
-  // Добавить хуки для запросов и ответов
-  setupFastifyHooks(fastify);
 
   await fastify.listen({ host, port });
   await fastify.ready();

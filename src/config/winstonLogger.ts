@@ -2,7 +2,7 @@ import chalk from "chalk";
 import i18next from "i18next";
 import { locale } from "moment";
 import { I18n } from "@/types/shared";
-import { IRequestLog } from "@/types/analytical";
+import { IRequestLog } from "@/types/shared";
 import { format, transports, createLogger, Logger } from "winston";
 
 locale("ru");
