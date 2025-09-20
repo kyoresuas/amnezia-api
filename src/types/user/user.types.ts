@@ -17,3 +17,9 @@ export interface AmneziaUser {
   username: string;
   devices: AmneziaDevice[];
 }
+
+export type ClientTableEntry = {
+  clientId?: string;
+  publicKey?: string;
+  userData?: { clientName?: string; creationDate?: string };
+};

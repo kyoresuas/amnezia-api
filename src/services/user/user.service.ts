@@ -1,6 +1,6 @@
 import { exec } from "child_process";
 import appConfig from "@/constants/appConfig";
-import { AmneziaUser, AmneziaDevice } from "@/types/user";
+import { AmneziaUser, AmneziaDevice, ClientTableEntry } from "@/types/user";
 
 /**
  * Сервис получения пользователей AmneziaVPN
@@ -8,22 +8,79 @@ import { AmneziaUser, AmneziaDevice } from "@/types/user";
 export class UserService {
   static key = "userService";
 
+  // Путь к файлу clientsTable внутри контейнера
+  private readonly clientsTablePath = "/opt/amnezia/awg/clientsTable";
+
+  // Путь к wg конфигу внутри контейнера
+  private readonly wgConfPath = "/opt/amnezia/awg/wg0.conf";
+
+  // Выполнить команду в целевой среде
+  private async execInTarget(cmd: string, timeout = 3000): Promise<string> {
+    const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
+    const escaped = cmd.replace(/'/g, "'\\''");
+    const finalCmd = container
+      ? `docker exec ${container} sh -lc '${escaped}'`
+      : cmd;
+
+    return new Promise<string>((resolve) => {
+      exec(finalCmd, { timeout }, (_err, stdout) => resolve(stdout || ""));
+    });
+  }
+
+  // Прочитать clientsTable
+  private async readClientsTable(): Promise<ClientTableEntry[]> {
+    const raw = await this.execInTarget(
+      `cat ${this.clientsTablePath} 2>/dev/null || echo []`,
+      3000
+    );
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as ClientTableEntry[]) : [];
+    } catch {
+      // Это что такое?
+      return [];
+    }
+  }
+
+  // Записать clientsTable
+  private async writeClientsTable(table: ClientTableEntry[]): Promise<void> {
+    const payload = JSON.stringify(table);
+
+    const cmd = `cat > ${this.clientsTablePath} <<"EOF"\n${payload}\nEOF`;
+
+    await this.execInTarget(cmd, 3000);
+  }
+
+  // Прочитать wg0.conf
+  private async readWgConf(): Promise<string> {
+    return this.execInTarget(
+      `cat ${this.wgConfPath} 2>/dev/null || true`,
+      3000
+    );
+  }
+
+  // Записать wg0.conf
+  private async writeWgConf(content: string): Promise<void> {
+    const cmd = `cat > ${this.wgConfPath} <<"EOF"\n${content}\nEOF`;
+    await this.execInTarget(cmd, 3000);
+  }
+
+  // Применить конфигурацию wg
+  private async syncWgConf(): Promise<void> {
+    const iface = appConfig.AMNEZIA_INTERFACE;
+    if (!iface) return;
+    const cmd = `wg syncconf ${iface} <(wg-quick strip ${this.wgConfPath})`;
+    await this.execInTarget(cmd, 5000);
+  }
+
   /**
    * Получить список пользователей из wg dump
    */
   async getUsers(): Promise<AmneziaUser[]> {
     const iface = appConfig.AMNEZIA_INTERFACE;
-    const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
-
-    // Команда для получения wg dump
-    const cmd = container
-      ? `docker exec ${container} sh -lc 'wg show ${iface} dump'`
-      : `wg show ${iface} dump`;
 
     // Выполняем команду
-    const raw = await new Promise<string>((resolve) => {
-      exec(cmd, { timeout: 5000 }, (_err, stdout) => resolve(stdout || ""));
-    });
+    const raw = await this.execInTarget(`wg show ${iface} dump`, 5000);
 
     if (!raw) return [];
 
@@ -172,32 +229,7 @@ export class UserService {
    * Добавить клиента
    */
   async appendClient(clientId: string, clientName: string): Promise<void> {
-    const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
-
-    // Считать текущий clientsTable
-    const readCmd = `docker exec ${container} sh -lc 'cat /opt/amnezia/awg/clientsTable 2>/dev/null || echo []'`;
-    const raw = await new Promise<string>((resolve) => {
-      exec(readCmd, { timeout: 3000 }, (_e, out) => resolve(out || "[]"));
-    });
-
-    // Разбираем JSON
-    let table: Array<{
-      clientId?: string;
-      publicKey?: string;
-      userData?: { clientName?: string; creationDate?: string };
-    }>; // minimal shape
-
-    // Если не JSON, то пропускаем
-    table = [];
-    try {
-      table = JSON.parse(raw);
-
-      // Если не массив, то пропускаем
-      if (!Array.isArray(table)) table = [];
-    } catch {
-      // Если не JSON, то пропускаем
-      table = [];
-    }
+    const table = await this.readClientsTable();
 
     // Найти клиента по clientId
     const idx = table.findIndex(
@@ -232,44 +264,15 @@ export class UserService {
       });
     }
 
-    // Записать обратно
-    const payload = JSON.stringify(table);
-    const writeCmd = `docker exec ${container} sh -lc 'cat > /opt/amnezia/awg/clientsTable <<"EOF"\n${payload}\nEOF'`;
-    await new Promise<void>((resolve) => {
-      exec(writeCmd, { timeout: 3000 }, () => resolve());
-    });
+    // Записываем обратно
+    await this.writeClientsTable(table);
   }
 
   /**
    * Удалить клиента
    */
   async revokeClient(clientId: string): Promise<void> {
-    const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
-    const iface = appConfig.AMNEZIA_INTERFACE;
-
-    // Удалить из clientsTable
-    const readCmd = `docker exec ${container} sh -lc 'cat /opt/amnezia/awg/clientsTable 2>/dev/null || echo []'`;
-    const raw = await new Promise<string>((resolve) => {
-      exec(readCmd, { timeout: 3000 }, (_e, out) => resolve(out || "[]"));
-    });
-
-    // Разбираем JSON
-    let table: Array<{
-      clientId?: string;
-      publicKey?: string;
-      userData?: { clientName?: string; creationDate?: string };
-    }>; // minimal shape
-
-    // Если не JSON, то пропускаем
-    table = [];
-    try {
-      table = JSON.parse(raw);
-
-      // Если не массив, то пропускаем
-      if (!Array.isArray(table)) table = [];
-    } catch {
-      table = [];
-    }
+    let table = await this.readClientsTable();
 
     // Удаляем клиента
     table = table.filter(
@@ -277,18 +280,10 @@ export class UserService {
     );
 
     // Записываем обратно
-    const payload = JSON.stringify(table);
-    const writeCmd = `docker exec ${container} sh -lc 'cat > /opt/amnezia/awg/clientsTable <<"EOF"\n${payload}\nEOF'`;
-    await new Promise<void>((resolve) => {
-      exec(writeCmd, { timeout: 3000 }, () => resolve());
-    });
+    await this.writeClientsTable(table);
 
-    // Для WG/AWG: удалить peer из wg0.conf и применить
-    const wgConfPath = `/opt/amnezia/awg/wg0.conf`;
-    const readWg = `docker exec ${container} sh -lc 'cat ${wgConfPath} 2>/dev/null || true'`;
-    const conf = await new Promise<string>((resolve) => {
-      exec(readWg, { timeout: 3000 }, (_e, out) => resolve(out || ""));
-    });
+    // Для WG/AWG надо удалить peer из wg0.conf и применить
+    const conf = await this.readWgConf();
     if (conf) {
       // Разбиваем на секции
       const sections = conf.split("[Peer]");
@@ -307,16 +302,10 @@ export class UserService {
 
       // Собираем секции обратно
       const rebuilt = kept.join("[Peer]");
-      const writeWg = `docker exec ${container} sh -lc 'cat > ${wgConfPath} <<"EOF"\n${rebuilt}\nEOF'`;
-      await new Promise<void>((resolve) =>
-        exec(writeWg, { timeout: 3000 }, () => resolve())
-      );
+      await this.writeWgConf(rebuilt);
 
       // Применяем syncconf
-      const syncCmd = `docker exec ${container} sh -lc 'wg syncconf ${iface} <(wg-quick strip ${wgConfPath})'`;
-      await new Promise<void>((resolve) =>
-        exec(syncCmd, { timeout: 5000 }, () => resolve())
-      );
+      await this.syncWgConf();
     }
   }
 
@@ -326,57 +315,38 @@ export class UserService {
   private async getAmneziaFriendlyNames(): Promise<{
     byKey: Record<string, { name: string; devices: string[] }>;
   }> {
-    const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
     const result = {
       byKey: {} as Record<string, { name: string; devices: string[] }>,
     };
 
-    if (!container) return result;
+    // Считываем clientsTable
+    const table = await this.readClientsTable();
 
-    const cmd = `docker exec ${container} sh -lc 'cat /opt/amnezia/awg/clientsTable 2>/dev/null || true'`;
-    const raw = await new Promise<string>((resolve) => {
-      exec(cmd, { timeout: 2000 }, (_err, stdout) => resolve(stdout || ""));
-    });
+    // Обрабатываем каждую запись
+    for (const item of table) {
+      const key: string = (item && (item.clientId || item.publicKey)) || "";
+      const clientName: string = item?.userData?.clientName || "";
 
-    if (!raw) return result;
+      if (!key || !clientName) continue;
 
-    // Ожидаемый формат Amnezia:
-    // [ { "clientId": "<publicKey>", "userData": { "clientName": "<name>", ... } }, ... ]
-    try {
-      const parsed = JSON.parse(raw);
+      // Разбираем всю фигню
+      const match = clientName.match(/^\s*(.*?)\s*(?:\[(.*)\])?\s*$/);
+      const name = (match?.[1] || clientName).trim();
+      const device = (match?.[2] || "").trim();
 
-      // Если массив, то парсим каждый элемент
-      if (Array.isArray(parsed)) {
-        for (const item of parsed) {
-          // clientId или publicKey
-          const key: string = item.clientId || item.publicKey || "";
+      // Добавляем в результат
+      const entry = result.byKey[key] || { name, devices: [] };
 
-          // userData.clientName
-          const rawName: string = item.userData?.clientName || "";
+      // Обновляем имя
+      entry.name = name;
 
-          // Если нет ключа или имени, то пропускаем
-          if (!key || !rawName) continue;
-
-          // "Admin [macOS 26.0]" -> name=Admin, device=macOS 26.0
-          const match = rawName.match(/^\s*(.*?)\s*(?:\[(.*)\])?\s*$/);
-
-          // name
-          const name = (match?.[1] || rawName).trim();
-
-          // device
-          const device = (match?.[2] || "").trim();
-          const entry = result.byKey[key] || { name, devices: [] as string[] };
-          entry.name = name;
-
-          // Если устройство не в списке, то добавляем
-          if (device && !entry.devices.includes(device))
-            entry.devices.push(device);
-          result.byKey[key] = entry;
-        }
-        return result;
+      // Добавляем устройство
+      if (device && !entry.devices.includes(device)) {
+        entry.devices.push(device);
       }
-    } catch {
-      // Хрень.
+
+      // Обновляем результат
+      result.byKey[key] = entry;
     }
 
     return result;
