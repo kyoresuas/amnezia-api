@@ -43,6 +43,9 @@ export class UserService {
         return endpoint.includes(":") || allowed.includes("/");
       });
 
+    // Попробуем получить дружественные имена и устройства (Amnezia clientsTable)
+    const friendly = await this.getAmneziaFriendlyNames();
+
     // Преобразование строк в объекты
     return lines.map((line, idx) => {
       const parts = line.split("\t");
@@ -121,12 +124,16 @@ export class UserService {
         keepaliveRaw === "off" ? null : Number(keepaliveRaw) || null;
 
       // username
-      const username = allowedIps[0] || publicKey;
+      const username = friendly.byKey[publicKey]?.name || publicKey;
+
+      // devices
+      const devices = friendly.byKey[publicKey]?.devices || [];
 
       // user
       const user: AmneziaUser = {
         id: publicKey,
         username,
+        devices,
         endpointHost,
         endpointPort,
         allowedIps,
@@ -141,5 +148,67 @@ export class UserService {
 
       return user;
     });
+  }
+
+  /**
+   * Получить имена и устройства пользователей из Amnezia clientsTable
+   */
+  private async getAmneziaFriendlyNames(): Promise<{
+    byKey: Record<string, { name: string; devices: string[] }>;
+  }> {
+    const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
+    const result = {
+      byKey: {} as Record<string, { name: string; devices: string[] }>,
+    };
+
+    if (!container) return result;
+
+    const cmd = `docker exec ${container} sh -lc 'cat /opt/amnezia/awg/clientsTable 2>/dev/null || true'`;
+    const raw = await new Promise<string>((resolve) => {
+      exec(cmd, { timeout: 2000 }, (_err, stdout) => resolve(stdout || ""));
+    });
+
+    if (!raw) return result;
+
+    // Ожидаемый формат Amnezia:
+    // [ { "clientId": "<publicKey>", "userData": { "clientName": "<name>", ... } }, ... ]
+    try {
+      const parsed = JSON.parse(raw);
+
+      // Если массив, то парсим каждый элемент
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          // clientId или publicKey
+          const key: string = item.clientId || item.publicKey || "";
+
+          // userData.clientName
+          const rawName: string = item.userData?.clientName || "";
+
+          // Если нет ключа или имени, то пропускаем
+          if (!key || !rawName) continue;
+
+          // "Admin [macOS 26.0]" -> name=Admin, device=macOS 26.0
+          const match = rawName.match(/^\s*(.*?)\s*(?:\[(.*)\])?\s*$/);
+
+          // name
+          const name = (match?.[1] || rawName).trim();
+
+          // device
+          const device = (match?.[2] || "").trim();
+          const entry = result.byKey[key] || { name, devices: [] as string[] };
+          entry.name = name;
+
+          // Если устройство не в списке, то добавляем
+          if (device && !entry.devices.includes(device))
+            entry.devices.push(device);
+          result.byKey[key] = entry;
+        }
+        return result;
+      }
+    } catch {
+      // Хрень.
+    }
+
+    return result;
   }
 }

@@ -1,7 +1,8 @@
 export interface AmneziaUser {
   // Базовые идентификаторы
   id: string; // publicKey
-  username: string; // метка (по умолчанию первый allowed IP)
+  username: string; // человекочитаемое имя пользователя
+  devices: string[]; // устройства пользователя
 
   // Сетевые параметры
   endpointHost?: string;
