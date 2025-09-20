@@ -22,6 +22,7 @@ export const getUsersSchema = {
             required: [
               "id",
               "username",
+              "devices",
               "allowedIps",
               "latestHandshakeUnix",
               "latestHandshakeSecondsAgo",
@@ -32,6 +33,11 @@ export const getUsersSchema = {
             properties: {
               id: { type: "string", description: "Идентификатор пользователя" },
               username: { type: "string", description: "Имя пользователя" },
+              devices: {
+                type: "array",
+                description: "Список устройств пользователя",
+                items: { type: "string" },
+              },
               endpointHost: {
                 type: "string",
                 nullable: true,
