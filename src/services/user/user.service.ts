@@ -169,6 +169,158 @@ export class UserService {
   }
 
   /**
+   * Добавить клиента
+   */
+  async appendClient(clientId: string, clientName: string): Promise<void> {
+    const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
+
+    // Считать текущий clientsTable
+    const readCmd = `docker exec ${container} sh -lc 'cat /opt/amnezia/awg/clientsTable 2>/dev/null || echo []'`;
+    const raw = await new Promise<string>((resolve) => {
+      exec(readCmd, { timeout: 3000 }, (_e, out) => resolve(out || "[]"));
+    });
+
+    // Разбираем JSON
+    let table: Array<{
+      clientId?: string;
+      publicKey?: string;
+      userData?: { clientName?: string; creationDate?: string };
+    }>; // minimal shape
+
+    // Если не JSON, то пропускаем
+    table = [];
+    try {
+      table = JSON.parse(raw);
+
+      // Если не массив, то пропускаем
+      if (!Array.isArray(table)) table = [];
+    } catch {
+      // Если не JSON, то пропускаем
+      table = [];
+    }
+
+    // Найти клиента по clientId
+    const idx = table.findIndex(
+      (x) => ((x && (x.clientId || x.publicKey)) || "") === clientId
+    );
+
+    // Дата создания
+    const nowStr = new Date().toString();
+
+    if (idx >= 0) {
+      // обновить имя
+      table[idx] = table[idx] || {};
+
+      // Обновить clientId
+      table[idx].clientId = clientId;
+
+      // Обновить userData
+      table[idx].userData = table[idx].userData || {};
+
+      // Обновить clientName
+      table[idx].userData.clientName = clientName;
+
+      // Обновить creationDate
+      if (!table[idx].userData.creationDate)
+        table[idx].userData.creationDate = nowStr;
+    } else {
+      // добавить новую запись
+      table.push({
+        // Обновить clientId
+        clientId,
+        userData: { clientName, creationDate: nowStr },
+      });
+    }
+
+    // Записать обратно
+    const payload = JSON.stringify(table);
+    const writeCmd = `docker exec ${container} sh -lc 'cat > /opt/amnezia/awg/clientsTable <<"EOF"\n${payload}\nEOF'`;
+    await new Promise<void>((resolve) => {
+      exec(writeCmd, { timeout: 3000 }, () => resolve());
+    });
+  }
+
+  /**
+   * Удалить клиента
+   */
+  async revokeClient(clientId: string): Promise<void> {
+    const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
+    const iface = appConfig.AMNEZIA_INTERFACE;
+
+    // Удалить из clientsTable
+    const readCmd = `docker exec ${container} sh -lc 'cat /opt/amnezia/awg/clientsTable 2>/dev/null || echo []'`;
+    const raw = await new Promise<string>((resolve) => {
+      exec(readCmd, { timeout: 3000 }, (_e, out) => resolve(out || "[]"));
+    });
+
+    // Разбираем JSON
+    let table: Array<{
+      clientId?: string;
+      publicKey?: string;
+      userData?: { clientName?: string; creationDate?: string };
+    }>; // minimal shape
+
+    // Если не JSON, то пропускаем
+    table = [];
+    try {
+      table = JSON.parse(raw);
+
+      // Если не массив, то пропускаем
+      if (!Array.isArray(table)) table = [];
+    } catch {
+      table = [];
+    }
+
+    // Удаляем клиента
+    table = table.filter(
+      (x) => ((x && (x.clientId || x.publicKey)) || "") !== clientId
+    );
+
+    // Записываем обратно
+    const payload = JSON.stringify(table);
+    const writeCmd = `docker exec ${container} sh -lc 'cat > /opt/amnezia/awg/clientsTable <<"EOF"\n${payload}\nEOF'`;
+    await new Promise<void>((resolve) => {
+      exec(writeCmd, { timeout: 3000 }, () => resolve());
+    });
+
+    // Для WG/AWG: удалить peer из wg0.conf и применить
+    const wgConfPath = `/opt/amnezia/awg/wg0.conf`;
+    const readWg = `docker exec ${container} sh -lc 'cat ${wgConfPath} 2>/dev/null || true'`;
+    const conf = await new Promise<string>((resolve) => {
+      exec(readWg, { timeout: 3000 }, (_e, out) => resolve(out || ""));
+    });
+    if (conf) {
+      // Разбиваем на секции
+      const sections = conf.split("[Peer]");
+      const kept: string[] = [];
+      for (const sec of sections) {
+        // Если секция пустая, то пропускаем
+        if (!sec.trim()) {
+          kept.push(sec);
+          continue;
+        }
+        // Если секция не содержит PublicKey или clientId, то пропускаем
+        if (!sec.includes("PublicKey") || !sec.includes(clientId)) {
+          kept.push(sec);
+        }
+      }
+
+      // Собираем секции обратно
+      const rebuilt = kept.join("[Peer]");
+      const writeWg = `docker exec ${container} sh -lc 'cat > ${wgConfPath} <<"EOF"\n${rebuilt}\nEOF'`;
+      await new Promise<void>((resolve) =>
+        exec(writeWg, { timeout: 3000 }, () => resolve())
+      );
+
+      // Применяем syncconf
+      const syncCmd = `docker exec ${container} sh -lc 'wg syncconf ${iface} <(wg-quick strip ${wgConfPath})'`;
+      await new Promise<void>((resolve) =>
+        exec(syncCmd, { timeout: 5000 }, () => resolve())
+      );
+    }
+  }
+
+  /**
    * Получить имена и устройства пользователей из Amnezia clientsTable
    */
   private async getAmneziaFriendlyNames(): Promise<{

@@ -1,7 +1,18 @@
+import {
+  GetUsersType,
+  CreateUserType,
+  DeleteUserType,
+  getUsersSchema,
+  deleteUserSchema,
+  createUserSchema,
+} from "@/schemas/admin";
+import {
+  getUsersHandler,
+  createUserHandler,
+  deleteUserHandler,
+} from "@/handlers/admin";
 import { AppFastifyRoute } from "@/types/shared";
-import { getUsersHandler } from "@/handlers/admin";
 import { authPreHandler } from "@/middleware/auth";
-import { getUsersSchema, GetUsersType } from "@/schemas/admin";
 
 /**
  * Получить всех пользователей
@@ -12,4 +23,26 @@ export const getUsersController: AppFastifyRoute<GetUsersType> = {
   schema: getUsersSchema,
   preHandler: authPreHandler(),
   handler: getUsersHandler,
+};
+
+/**
+ * Добавить или изменить имя клиента
+ */
+export const createUserController: AppFastifyRoute<CreateUserType> = {
+  url: "/users",
+  method: "POST",
+  schema: createUserSchema,
+  preHandler: authPreHandler(),
+  handler: createUserHandler,
+};
+
+/**
+ * Удалить клиента
+ */
+export const deleteUserController: AppFastifyRoute<DeleteUserType> = {
+  url: "/users",
+  method: "DELETE",
+  schema: deleteUserSchema,
+  preHandler: authPreHandler(),
+  handler: deleteUserHandler,
 };
