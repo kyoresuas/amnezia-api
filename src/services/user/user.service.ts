@@ -36,8 +36,12 @@ export class UserService {
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean)
-      // wg dump: первая строка - интерфейс (4 поля). Пиры - 9 полей
-      .filter((l) => l.split("\t").length >= 9);
+      .filter((l) => {
+        const p = l.split("\t");
+        const endpoint = p[2] || "";
+        const allowed = p[3] || "";
+        return endpoint.includes(":") || allowed.includes("/");
+      });
 
     // Преобразование строк в объекты
     return lines.map((line, idx) => {
@@ -62,7 +66,10 @@ export class UserService {
       const allowedIpsRaw = parts[3] || "";
 
       // latestHandshake
-      const latestHandshake = Number(parts[4]) || 0;
+      let latestHandshake = Number(parts[4]) || 0;
+      if (latestHandshake > 1_000_000_000_000) {
+        latestHandshake = Math.floor(latestHandshake / 1_000_000_000);
+      }
 
       // transferRx
       const transferRx = Number(parts[5]) || 0;
