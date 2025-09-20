@@ -47,7 +47,8 @@ fi
 SITE_AVAIL="/etc/nginx/sites-available/$APP_NAME"
 SITE_ENABLED="/etc/nginx/sites-enabled/$APP_NAME"
 
-NGINX_CONF="server {
+$SUDO tee "$SITE_AVAIL" >/dev/null <<'NGINX'
+server {
     listen 80;
     server_name _;
 
@@ -60,9 +61,8 @@ NGINX_CONF="server {
         proxy_set_header Connection "upgrade";
         proxy_set_header Upgrade $http_upgrade;
     }
-}"
-
-echo "$NGINX_CONF" | $SUDO tee "$SITE_AVAIL" >/dev/null
+}
+NGINX
 if [ ! -e "$SITE_ENABLED" ]; then
   $SUDO ln -sfn "$SITE_AVAIL" "$SITE_ENABLED"
 fi
