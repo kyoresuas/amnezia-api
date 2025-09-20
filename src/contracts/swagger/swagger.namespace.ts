@@ -18,9 +18,7 @@ export namespace SwaggerContract {
    * Тег для документации Client API
    */
   export enum ClientTag {
-    AUTH = "Auth",
     USER = "User",
-    TASKS = "Tasks",
   }
 
   /**
@@ -275,6 +273,11 @@ export namespace SwaggerContract {
             scheme: "bearer",
             bearerFormat: "JWT",
           },
+          ApiKey: {
+            type: "apiKey",
+            in: "header",
+            name: "x-api-key",
+          },
         },
       },
     };
@@ -297,21 +300,10 @@ export namespace SwaggerContract {
           title: "Client API",
           version: "1.0.0",
         };
-
-        openapi.tags!.push(
-          {
-            name: SwaggerContract.ClientTag.AUTH,
-            description: "Маршруты для авторизации",
-          },
-          {
-            name: SwaggerContract.ClientTag.USER,
-            description: "Маршруты для пользователя",
-          },
-          {
-            name: SwaggerContract.ClientTag.TASKS,
-            description: "Маршруты для работы с задачами",
-          }
-        );
+        openapi.tags!.push({
+          name: SwaggerContract.ClientTag.USER,
+          description: "Маршруты для пользователя",
+        });
         break;
     }
 
