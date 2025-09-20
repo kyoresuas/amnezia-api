@@ -9,6 +9,8 @@ const {
   ENABLED_TASK_TYPES,
   ENABLED_TASKS,
   API_KEY,
+  AMNEZIA_INTERFACE,
+  AMNEZIA_DOCKER_CONTAINER,
 } = process.env;
 
 const enabledFastifyRoutes: IAppConfig["ENABLED_FASTIFY_ROUTES"] = {};
@@ -39,6 +41,8 @@ const appConfig: IAppConfig = {
     : [],
   ENABLED_TASKS: ENABLED_TASKS ? ENABLED_TASKS.split(",") : [],
   API_KEY: API_KEY!,
+  AMNEZIA_INTERFACE,
+  AMNEZIA_DOCKER_CONTAINER,
 };
 
 export default appConfig;

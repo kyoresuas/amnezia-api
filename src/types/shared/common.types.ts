@@ -45,6 +45,8 @@ export interface IAppConfig {
   ENABLED_TASK_TYPES: TaskType[];
   ENABLED_TASKS: string[];
   API_KEY: string;
+  AMNEZIA_INTERFACE?: string;
+  AMNEZIA_DOCKER_CONTAINER?: string;
 }
 
 export interface IPagination {

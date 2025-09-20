@@ -11,7 +11,7 @@ export const authPreHandler =
     try {
       const apiKey = req.headers["x-api-key"];
 
-      if (!apiKey || apiKey !== appConfig.API_KEY) throw new APIError(401);
+      if (apiKey !== appConfig.API_KEY) throw new APIError(401);
     } catch {
       if (required) throw new APIError(401);
     }
