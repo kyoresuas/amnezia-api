@@ -19,69 +19,80 @@ export const getUsersSchema = {
           description: "Пользователи",
           items: {
             type: "object",
-            required: [
-              "id",
-              "username",
-              "devices",
-              "allowedIps",
-              "latestHandshakeUnix",
-              "latestHandshakeSecondsAgo",
-              "isActive",
-              "transferRx",
-              "transferTx",
-            ],
+            required: ["username", "devices"],
             properties: {
-              id: { type: "string", description: "Идентификатор пользователя" },
               username: { type: "string", description: "Имя пользователя" },
               devices: {
                 type: "array",
                 description: "Список устройств пользователя",
-                items: { type: "string" },
-              },
-              endpointHost: {
-                type: "string",
-                nullable: true,
-                description: "Хост удалённой точки",
-              },
-              endpointPort: {
-                type: "number",
-                nullable: true,
-                description: "Порт удалённой точки",
-              },
-              allowedIps: {
-                type: "array",
-                description: "Список разрешённых IP/подсетей",
-                items: { type: "string" },
-              },
-              latestHandshakeUnix: {
-                type: "number",
-                description: "UNIX-время последнего рукопожатия (сек)",
-              },
-              latestHandshakeISO: {
-                type: "string",
-                nullable: true,
-                description: "ISO-время последнего рукопожатия",
-              },
-              latestHandshakeSecondsAgo: {
-                type: "number",
-                description: "Сколько секунд назад было рукопожатие",
-              },
-              isActive: {
-                type: "boolean",
-                description: "Активен ли пир (<180 сек)",
-              },
-              transferRx: {
-                type: "number",
-                description: "Получено байт",
-              },
-              transferTx: {
-                type: "number",
-                description: "Отправлено байт",
-              },
-              persistentKeepalive: {
-                type: "number",
-                nullable: true,
-                description: "Интервал keepalive в секундах или null",
+                items: {
+                  type: "object",
+                  required: [
+                    "id",
+                    "allowedIps",
+                    "latestHandshakeUnix",
+                    "latestHandshakeSecondsAgo",
+                    "isActive",
+                    "transferRx",
+                    "transferTx",
+                  ],
+                  properties: {
+                    id: {
+                      type: "string",
+                      description: "Public key устройства",
+                    },
+                    deviceName: {
+                      type: "string",
+                      nullable: true,
+                      description: "Название устройства",
+                    },
+                    endpointHost: {
+                      type: "string",
+                      nullable: true,
+                      description: "Хост удалённой точки",
+                    },
+                    endpointPort: {
+                      type: "number",
+                      nullable: true,
+                      description: "Порт удалённой точки",
+                    },
+                    allowedIps: {
+                      type: "array",
+                      description: "Список разрешённых IP/подсетей",
+                      items: { type: "string" },
+                    },
+                    latestHandshakeUnix: {
+                      type: "number",
+                      description: "UNIX-время последнего рукопожатия (сек)",
+                    },
+                    latestHandshakeISO: {
+                      type: "string",
+                      nullable: true,
+                      description: "ISO-время последнего рукопожатия",
+                    },
+                    latestHandshakeSecondsAgo: {
+                      type: "number",
+                      description: "Сколько секунд назад было рукопожатие",
+                    },
+                    isActive: {
+                      type: "boolean",
+                      description: "Активно ли устройство (<180 сек)",
+                    },
+                    transferRx: {
+                      type: "number",
+                      description: "Получено байт",
+                    },
+                    transferTx: {
+                      type: "number",
+                      description: "Отправлено байт",
+                    },
+                    persistentKeepalive: {
+                      type: "number",
+                      nullable: true,
+                      description: "Интервал keepalive в секундах или null",
+                    },
+                  },
+                } as const satisfies AppJSONSchema,
               },
             },
           } as const satisfies AppJSONSchema,

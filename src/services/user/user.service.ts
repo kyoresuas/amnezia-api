@@ -1,6 +1,6 @@
 import { exec } from "child_process";
-import { AmneziaUser } from "@/types/user";
 import appConfig from "@/constants/appConfig";
+import { AmneziaUser, AmneziaDevice } from "@/types/user";
 
 /**
  * Сервис получения пользователей AmneziaVPN
@@ -46,108 +46,131 @@ export class UserService {
     // Попробуем получить дружественные имена и устройства (Amnezia clientsTable)
     const friendly = await this.getAmneziaFriendlyNames();
 
-    // Преобразование строк в объекты
-    return lines.map((line, idx) => {
-      const parts = line.split("\t");
-      // Формат peer строки wg dump:
-      // 0: publicKey
-      // 1: presharedKey
-      // 2: endpoint (host:port)
-      // 3: allowedIps (comma-separated)
-      // 4: latestHandshake (unix timestamp, seconds)
-      // 5: transferRx (bytes)
-      // 6: transferTx (bytes)
-      // 7: persistentKeepalive (seconds or off)
+    // Преобразуем строки в устройства
+    const devices: (AmneziaDevice & { username: string })[] = lines.map(
+      (line, idx) => {
+        const parts = line.split("\t");
+        // Формат peer строки wg dump:
+        // 0: publicKey
+        // 1: presharedKey
+        // 2: endpoint (host:port)
+        // 3: allowedIps (comma-separated)
+        // 4: latestHandshake (unix timestamp, seconds)
+        // 5: transferRx (bytes)
+        // 6: transferTx (bytes)
+        // 7: persistentKeepalive (seconds or off)
 
-      // publicKey
-      const publicKey = parts[0] || `peer-${idx}`;
+        // publicKey
+        const publicKey = parts[0] || `peer-${idx}`;
 
-      // endpoint
-      const endpoint = parts[2] || "";
+        // endpoint
+        const endpoint = parts[2] || "";
 
-      // allowedIps
-      const allowedIpsRaw = parts[3] || "";
+        // allowedIps
+        const allowedIpsRaw = parts[3] || "";
 
-      // latestHandshake
-      let latestHandshake = Number(parts[4]) || 0;
-      if (latestHandshake > 1_000_000_000_000) {
-        latestHandshake = Math.floor(latestHandshake / 1_000_000_000);
+        // latestHandshake
+        let latestHandshake = Number(parts[4]) || 0;
+        if (latestHandshake > 1_000_000_000_000) {
+          latestHandshake = Math.floor(latestHandshake / 1_000_000_000);
+        }
+
+        // transferRx
+        const transferRx = Number(parts[5]) || 0;
+
+        // transferTx
+        const transferTx = Number(parts[6]) || 0;
+
+        // persistentKeepalive
+        const keepaliveRaw = parts[7] || "off";
+
+        // endpointHost
+        let endpointHost: string | undefined;
+
+        // endpointPort
+        let endpointPort: number | undefined;
+
+        // Если endpoint содержит :, то разбиваем на host и port
+        if (endpoint && endpoint.includes(":")) {
+          const lastColon = endpoint.lastIndexOf(":");
+          endpointHost = endpoint.slice(0, lastColon);
+          const port = Number(endpoint.slice(lastColon + 1));
+          endpointPort = Number.isFinite(port) ? port : undefined;
+        }
+
+        // allowedIps
+        const allowedIps = allowedIpsRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        // latestHandshakeSecondsAgo
+        const latestHandshakeSecondsAgo =
+          latestHandshake > 0 ? now - latestHandshake : -1;
+
+        // latestHandshakeISO
+        const latestHandshakeISO =
+          latestHandshake > 0
+            ? new Date(latestHandshake * 1000).toISOString()
+            : undefined;
+
+        // isActive
+        const isActive =
+          latestHandshake > 0 &&
+          latestHandshakeSecondsAgo >= 0 &&
+          latestHandshakeSecondsAgo < 180;
+
+        // persistentKeepalive
+        const persistentKeepalive =
+          keepaliveRaw === "off" ? null : Number(keepaliveRaw) || null;
+
+        const username = friendly.byKey[publicKey]?.name || publicKey;
+
+        const device: AmneziaDevice & { username: string } = {
+          id: publicKey,
+          deviceName: friendly.byKey[publicKey]?.devices?.[0],
+          allowedIps,
+          endpointHost,
+          endpointPort,
+          latestHandshakeUnix: latestHandshake,
+          latestHandshakeISO,
+          latestHandshakeSecondsAgo,
+          isActive,
+          transferRx,
+          transferTx,
+          persistentKeepalive,
+          username,
+        };
+
+        return device;
       }
+    );
 
-      // transferRx
-      const transferRx = Number(parts[5]) || 0;
-
-      // transferTx
-      const transferTx = Number(parts[6]) || 0;
-
-      // persistentKeepalive
-      const keepaliveRaw = parts[7] || "off";
-
-      // endpointHost
-      let endpointHost: string | undefined;
-
-      // endpointPort
-      let endpointPort: number | undefined;
-
-      // Если endpoint содержит :, то разбиваем на host и port
-      if (endpoint && endpoint.includes(":")) {
-        const lastColon = endpoint.lastIndexOf(":");
-        endpointHost = endpoint.slice(0, lastColon);
-        const port = Number(endpoint.slice(lastColon + 1));
-        endpointPort = Number.isFinite(port) ? port : undefined;
-      }
-
-      // allowedIps
-      const allowedIps = allowedIpsRaw
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      // latestHandshakeSecondsAgo
-      const latestHandshakeSecondsAgo =
-        latestHandshake > 0 ? now - latestHandshake : -1;
-
-      // latestHandshakeISO
-      const latestHandshakeISO =
-        latestHandshake > 0
-          ? new Date(latestHandshake * 1000).toISOString()
-          : undefined;
-
-      // isActive
-      const isActive =
-        latestHandshake > 0 &&
-        latestHandshakeSecondsAgo >= 0 &&
-        latestHandshakeSecondsAgo < 180;
-
-      // persistentKeepalive
-      const persistentKeepalive =
-        keepaliveRaw === "off" ? null : Number(keepaliveRaw) || null;
-
-      // username
-      const username = friendly.byKey[publicKey]?.name || publicKey;
-
-      // devices
-      const devices = friendly.byKey[publicKey]?.devices || [];
-
-      // user
-      const user: AmneziaUser = {
-        id: publicKey,
-        username,
-        devices,
-        endpointHost,
-        endpointPort,
-        allowedIps,
-        latestHandshakeUnix: latestHandshake,
-        latestHandshakeISO,
-        latestHandshakeSecondsAgo,
-        isActive,
-        transferRx,
-        transferTx,
-        persistentKeepalive,
+    // Группируем по username
+    const byUser = new Map<string, AmneziaUser>();
+    for (const d of devices) {
+      const entry = byUser.get(d.username) || {
+        username: d.username,
+        devices: [],
       };
+      entry.devices.push({
+        id: d.id,
+        deviceName: d.deviceName,
+        allowedIps: d.allowedIps,
+        endpointHost: d.endpointHost,
+        endpointPort: d.endpointPort,
+        latestHandshakeUnix: d.latestHandshakeUnix,
+        latestHandshakeISO: d.latestHandshakeISO,
+        latestHandshakeSecondsAgo: d.latestHandshakeSecondsAgo,
+        isActive: d.isActive,
+        transferRx: d.transferRx,
+        transferTx: d.transferTx,
+        persistentKeepalive: d.persistentKeepalive,
+      });
+      byUser.set(d.username, entry);
+    }
 
-      return user;
-    });
+    return Array.from(byUser.values());
   }
 
   /**
