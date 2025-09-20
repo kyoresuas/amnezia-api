@@ -15,19 +15,15 @@ export class UserService {
     const iface = appConfig.AMNEZIA_INTERFACE;
     const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
 
-    // Базовая команда
-    const base = `wg show ${iface} dump`;
-
-    // Команда с контейнером
-    const cmd = container ? `docker exec ${container} sh -lc '${base}'` : base;
+    // Команда для получения wg dump
+    const cmd = container
+      ? `docker exec ${container} sh -lc 'wg show ${iface} dump'`
+      : `wg show ${iface} dump`;
 
     // Выполняем команду
-    const raw = await new Promise<string>((resolve, reject) => {
-      exec(cmd, { timeout: 5000 }, (err, stdout) => {
-        if (err) return reject(err);
-        resolve(stdout);
-      });
-    }).catch(() => "");
+    const raw = await new Promise<string>((resolve) => {
+      exec(cmd, { timeout: 5000 }, (_err, stdout) => resolve(stdout || ""));
+    });
 
     if (!raw) return [];
 
@@ -90,12 +86,11 @@ export class UserService {
         // endpointPort
         let endpointPort: number | undefined;
 
-        // Если endpoint содержит :, то разбиваем на host и port
-        if (endpoint && endpoint.includes(":")) {
+        // Разбиваем endpoint на host и port
+        if (endpoint?.includes(":")) {
           const lastColon = endpoint.lastIndexOf(":");
           endpointHost = endpoint.slice(0, lastColon);
-          const port = Number(endpoint.slice(lastColon + 1));
-          endpointPort = Number.isFinite(port) ? port : undefined;
+          endpointPort = Number(endpoint.slice(lastColon + 1));
         }
 
         // allowedIps
