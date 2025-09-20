@@ -10,9 +10,7 @@ export const getUsersHandler: AppFastifyHandler<GetUsersType> = async (
 ) => {
   const userService = di.container.resolve<UserService>(UserService.key);
 
-  const { totalSize, users } = await userService.getUsers({
-    pagination: req.query,
-  });
+  const users = await userService.getUsers();
 
-  reply.code(200).send({ totalSize, items: primitive(users) });
+  reply.code(200).send({ total: users.length, items: primitive(users) });
 };

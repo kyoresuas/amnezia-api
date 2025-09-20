@@ -204,10 +204,10 @@ export namespace SwaggerContract {
    */
   export const PaginatedResponseSchema = {
     type: "object",
-    required: ["totalSize", "items"],
+    required: ["total", "items"],
     description: "Ответ на запрос",
     properties: {
-      totalSize: {
+      total: {
         type: "integer",
         description: "Количество всех элементов",
         example: 128,
@@ -225,10 +225,10 @@ export namespace SwaggerContract {
    */
   export type PaginatedResponseType = {
     type: "object";
-    required: readonly ["totalSize", "items", ...string[]];
+    required: readonly ["total", "items", ...string[]];
     description: string;
     properties: {
-      totalSize: {
+      total: {
         type: "integer";
         description: string;
         example: number;

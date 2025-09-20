@@ -1,12 +1,21 @@
-import { RegularTask } from "../task";
-import { Session, User } from "@entities";
+export interface AmneziaUser {
+  // Базовые идентификаторы
+  id: string; // publicKey
+  username: string; // метка (по умолчанию первый allowed IP)
 
-export type RegularUser = Pick<
-  User,
-  "id" | "name" | "role" | "lastVisitAt" | "createdAt" | "updatedAt"
->;
+  // Сетевые параметры
+  endpointHost?: string;
+  endpointPort?: number;
+  allowedIps: string[];
 
-export type ExtendedUser = RegularUser & {
-  sessions: Pick<Session, "id" | "lastVisitAt" | "createdAt" | "updatedAt">[];
-  tasks: RegularTask[];
-};
+  // Сессия/состояние
+  latestHandshakeUnix: number;
+  latestHandshakeISO?: string;
+  latestHandshakeSecondsAgo: number;
+  persistentKeepalive: number | null;
+  isActive: boolean;
+
+  // Трафик
+  transferRx: number; // bytes
+  transferTx: number; // bytes
+}

@@ -1,23 +1,84 @@
-import { userSchema } from "@/schemas/client";
+import { AppJSONSchema } from "@/types/shared";
 import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
 export const getUsersSchema = {
   tags: [SwaggerContract.AdminTag.USERS],
   summary: "Получить всех пользователей",
-  security: [{ Bearer: [] }],
+  security: [{ ApiKey: [] }],
   querystring: SwaggerContract.EnablePaginationSchema,
   response: {
     200: {
       type: "object",
       description: "Ответ на запрос",
-      required: ["totalSize", "items"],
+      required: ["total", "items"],
       properties: {
-        totalSize: SwaggerContract.PaginatedResponseSchema.properties.totalSize,
+        total: SwaggerContract.PaginatedResponseSchema.properties.total,
         items: {
           type: "array",
           description: "Пользователи",
-          items: userSchema,
+          items: {
+            type: "object",
+            required: [
+              "id",
+              "username",
+              "allowedIps",
+              "latestHandshakeUnix",
+              "latestHandshakeSecondsAgo",
+              "isActive",
+              "transferRx",
+              "transferTx",
+            ],
+            properties: {
+              id: { type: "string", description: "Идентификатор пользователя" },
+              username: { type: "string", description: "Имя пользователя" },
+              endpointHost: {
+                type: "string",
+                nullable: true,
+                description: "Хост удалённой точки",
+              },
+              endpointPort: {
+                type: "number",
+                nullable: true,
+                description: "Порт удалённой точки",
+              },
+              allowedIps: {
+                type: "array",
+                description: "Список разрешённых IP/подсетей",
+                items: { type: "string" },
+              },
+              latestHandshakeUnix: {
+                type: "number",
+                description: "UNIX-время последнего рукопожатия (сек)",
+              },
+              latestHandshakeISO: {
+                type: "string",
+                nullable: true,
+                description: "ISO-время последнего рукопожатия",
+              },
+              latestHandshakeSecondsAgo: {
+                type: "number",
+                description: "Сколько секунд назад было рукопожатие",
+              },
+              isActive: {
+                type: "boolean",
+                description: "Активен ли пир (<180 сек)",
+              },
+              transferRx: {
+                type: "number",
+                description: "Получено байт",
+              },
+              transferTx: {
+                type: "number",
+                description: "Отправлено байт",
+              },
+              persistentKeepalive: {
+                type: "number",
+                nullable: true,
+                description: "Интервал keepalive в секундах или null",
+              },
+            },
+          } as const satisfies AppJSONSchema,
         },
       },
     } as const satisfies SwaggerContract.PaginatedResponseType,
