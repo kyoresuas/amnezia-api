@@ -1,3 +1,4 @@
+import { gzipSync } from "zlib";
 import { exec } from "child_process";
 import appConfig from "@/constants/appConfig";
 import { AmneziaUser, AmneziaDevice, ClientTableEntry } from "@/types/user";
@@ -343,7 +344,16 @@ export class UserService {
     ).trim();
     const cfgPskLine = psk2 ? `PresharedKey = ${psk2}\n` : "";
 
-    const clientConfig = `# WireGuard client config\n[Interface]\nPrivateKey = ${clientPrivateKey}\nAddress = ${assignedIp}/32\n\n[Peer]\nPublicKey = ${serverPublicKey}\n${cfgPskLine}${endpointLine}AllowedIPs = 0.0.0.0/0, ::/0\n`;
+    const confContent = `# WireGuard client config\n[Interface]\nPrivateKey = ${clientPrivateKey}\nAddress = ${assignedIp}/32\n\n[Peer]\nPublicKey = ${serverPublicKey}\n${cfgPskLine}${endpointLine}AllowedIPs = 0.0.0.0/0, ::/0\n`;
+
+    // Сформировать vpn:// URI (gzip + base64url от конфигурации)
+    const gz = gzipSync(Buffer.from(confContent, "utf-8"));
+    const b64 = gz.toString("base64");
+    const b64url = b64
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
+    const clientConfig = `vpn://${b64url}`;
 
     return { clientId, clientPrivateKey, assignedIp, clientConfig };
   }
