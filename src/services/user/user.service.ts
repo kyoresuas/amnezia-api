@@ -246,7 +246,7 @@ export class UserService {
     ).trim();
 
     // Текущий конфиг
-    const config = (await this.readWgConf()) || "";
+    const config = await this.readWgConf();
 
     // Выбор свободного IP
     const assignedIp = (() => {
@@ -326,16 +326,20 @@ export class UserService {
     const keepAlive = "25";
 
     // Параметры AWG
+    const getVal = (key: string) =>
+      config.match(new RegExp(`^\\s*${key}\\s*=\\s*([^\\s]+)`, "mi"))?.[1] ||
+      "";
+
     const awgParams = {
-      Jc: "3",
-      Jmin: "10",
-      Jmax: "50",
-      S1: "142",
-      S2: "43",
-      H1: "333174788",
-      H2: "863398565",
-      H3: "228274630",
-      H4: "2126008327",
+      Jc: getVal("Jc"),
+      Jmin: getVal("Jmin"),
+      Jmax: getVal("Jmax"),
+      S1: getVal("S1"),
+      S2: getVal("S2"),
+      H1: getVal("H1"),
+      H2: getVal("H2"),
+      H3: getVal("H3"),
+      H4: getVal("H4"),
     } as const;
 
     // Текстовый конфиг
