@@ -28,8 +28,16 @@ export class AmneziaService {
     // Разбиваем на строки
     const peers = dump
       .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .filter((line) => {
+        const parts = line.split("\t");
+        const endpoint = parts[2] || "";
+        const allowed = parts[3] || "";
+        return (
+          parts.length >= 8 && (endpoint.includes(":") || allowed.includes("/"))
+        );
+      });
 
     // Получаем данные пользователей
     const userData: Record<string, { name: string; devices: string[] }> = {};
@@ -59,9 +67,6 @@ export class AmneziaService {
         userData[clientKey].devices.push(deviceName);
       }
     }
-
-    console.log(userData);
-    console.log(peers);
 
     // Преобразуем peers в devices
     const devices: (AmneziaDevice & { username: string })[] = peers.map(
