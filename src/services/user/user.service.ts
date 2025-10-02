@@ -1,4 +1,5 @@
 import { AmneziaUser } from "@/types/user";
+import { appLogger } from "@/config/winstonLogger";
 import { AmneziaService } from "@/services/amnezia";
 
 /**
@@ -13,9 +14,14 @@ export class UserService {
    * Получить список пользователей из wg dump
    */
   async getUsers(): Promise<AmneziaUser[]> {
-    const users = await this.amneziaService.getUsers();
+    try {
+      const users = await this.amneziaService.getUsers();
 
-    return users;
+      return users;
+    } catch (error) {
+      appLogger.error(`Ошибка при получении пользователей: ${error}`);
+      throw error;
+    }
   }
 
   /**
