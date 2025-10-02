@@ -1,4 +1,4 @@
-import { gzipSync } from "zlib";
+import { deflateSync } from "zlib";
 import { exec } from "child_process";
 import appConfig from "@/constants/appConfig";
 import { AmneziaUser, AmneziaDevice, ClientTableEntry } from "@/types/user";
@@ -346,9 +346,13 @@ export class UserService {
 
     const confContent = `# WireGuard client config\n[Interface]\nPrivateKey = ${clientPrivateKey}\nAddress = ${assignedIp}/32\n\n[Peer]\nPublicKey = ${serverPublicKey}\n${cfgPskLine}${endpointLine}AllowedIPs = 0.0.0.0/0, ::/0\n`;
 
-    // Сформировать vpn:// URI (gzip + base64url от конфигурации)
-    const gz = gzipSync(Buffer.from(confContent, "utf-8"));
-    const b64 = gz.toString("base64");
+    // qCompress: 4-байтный BE размер + zlib deflate
+    const raw = Buffer.from(confContent, "utf-8");
+    const header = Buffer.alloc(4);
+    header.writeUInt32BE(raw.length, 0);
+    const deflated = deflateSync(raw, { level: 8 });
+    const qCompressed = Buffer.concat([header, deflated]);
+    const b64 = qCompressed.toString("base64");
     const b64url = b64
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
