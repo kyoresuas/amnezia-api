@@ -3,6 +3,7 @@ import i18next from "i18next";
 import fastifyCors from "@fastify/cors";
 import fastifyCookie from "@fastify/cookie";
 import { APIError } from "@/utils/APIError";
+import metricsPlugin from "fastify-metrics";
 import { appLogger } from "../winstonLogger";
 import appConfig from "@/constants/appConfig";
 import fastifySwagger from "@fastify/swagger";
@@ -61,6 +62,7 @@ export const setupFastify = async (routes: FastifyRoutes): Promise<void> => {
   // Прочие плагины
   await fastify.register(fastifyCookie);
   await fastify.register(fastifyFormbody);
+  await fastify.register(metricsPlugin, { clearRegisterOnInit: true });
   await fastify.register(fastifyCors, { origin: true, credentials: true });
 
   // Регистрация маршрутов
