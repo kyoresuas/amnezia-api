@@ -11,6 +11,7 @@ const {
   API_KEY,
   AMNEZIA_INTERFACE,
   AMNEZIA_DOCKER_CONTAINER,
+  AMNEZIA_PUBLIC_HOST,
 } = process.env;
 
 const enabledFastifyRoutes: IAppConfig["ENABLED_FASTIFY_ROUTES"] = {};
@@ -43,6 +44,7 @@ const appConfig: IAppConfig = {
   API_KEY: API_KEY!,
   AMNEZIA_INTERFACE,
   AMNEZIA_DOCKER_CONTAINER,
+  AMNEZIA_PUBLIC_HOST: AMNEZIA_PUBLIC_HOST!,
 };
 
 export default appConfig;

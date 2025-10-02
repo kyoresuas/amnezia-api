@@ -340,7 +340,7 @@ export class UserService {
     const cfgPskLine = psk2 ? `PresharedKey = ${psk2}\n` : "";
 
     const lastConfig: Record<string, unknown> = {
-      hostName: process.env.AMNEZIA_PUBLIC_HOST,
+      hostName: appConfig.AMNEZIA_PUBLIC_HOST,
       port: listenPort ? Number(listenPort) : undefined,
       client_priv_key: clientPrivateKey,
       client_ip: `${assignedIp}/32`,
@@ -368,7 +368,7 @@ export class UserService {
       ],
       defaultContainer: "amnezia-wireguard",
       description: "Kyoresua Server",
-      hostName: process.env.AMNEZIA_PUBLIC_HOST,
+      hostName: appConfig.AMNEZIA_PUBLIC_HOST,
       dns1: "1.1.1.1",
       dns2: "8.8.8.8",
     };

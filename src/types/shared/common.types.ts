@@ -47,6 +47,7 @@ export interface IAppConfig {
   API_KEY: string;
   AMNEZIA_INTERFACE?: string;
   AMNEZIA_DOCKER_CONTAINER?: string;
+  AMNEZIA_PUBLIC_HOST: string;
 }
 
 export interface IPagination {
