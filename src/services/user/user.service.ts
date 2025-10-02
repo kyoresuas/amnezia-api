@@ -255,6 +255,8 @@ export class UserService {
 
       let prefix: string | undefined;
 
+      console.log(config);
+
       // Поиск IP в allowedIps
       config.replace(
         /AllowedIPs\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)\s*\/32/gi,
