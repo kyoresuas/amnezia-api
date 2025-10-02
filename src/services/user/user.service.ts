@@ -235,61 +235,67 @@ export class UserService {
     assignedIp: string;
     clientConfig: string;
   }> {
-    // Генерация приватного ключа
+    // Получение приватного ключа
     const clientPrivateKey = (
       await this.execInTarget(`wg genkey`, 3000)
     ).trim();
+
     // Получение публичного ключа
     const clientId = (
       await this.execInTarget(`echo '${clientPrivateKey}' | wg pubkey`, 3000)
     ).trim();
 
-    // Текущий конфиг для определения свободного IP
-    const confRaw = await this.readWgConf();
-    const conf = confRaw || "";
+    // Текущий конфиг
+    const config = (await this.readWgConf()) || "";
 
-    const pickNextIp = (content: string): string => {
-      const allowedRegex =
-        /AllowedIPs\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)\s*\/32/gi;
-      const addressRegex =
-        /Address\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.\d+\s*\/\d+/i;
-      const usedHosts = new Set<number>();
+    // Выбор свободного IP инлайном
+    const assignedIp = (() => {
+      // Используемые хосты
+      const used = new Set<number>();
+
       let prefix: string | undefined;
 
-      let m: RegExpExecArray | null;
-      while ((m = allowedRegex.exec(content)) !== null) {
-        const pfx = m[1];
-        const host = Number(m[2]);
-        if (!prefix) prefix = pfx;
-        usedHosts.add(host);
-      }
+      // Поиск IP в allowedIps
+      config.replace(
+        /AllowedIPs\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)\s*\/32/gi,
+        (_s, pfx, host) => {
+          if (!prefix) prefix = String(pfx);
+          used.add(Number(host));
+          return _s;
+        }
+      );
 
+      // Поиск IP в Address
       if (!prefix) {
-        const a = addressRegex.exec(content);
-        if (a && a[1]) prefix = a[1];
+        const m = /Address\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.\d+\s*\/\d+/i.exec(
+          config
+        );
+        if (m && m[1]) prefix = m[1];
       }
 
+      // Если нет префикса, то используем 10.8.1
       if (!prefix) prefix = "10.8.1";
 
-      let host = 1;
-      if (usedHosts.size > 0) {
-        const max = Math.max(...Array.from(usedHosts.values()));
-        host = Math.min(254, max + 1);
-        if (usedHosts.has(host)) {
-          for (let i = 1; i <= 254; i++) {
-            if (!usedHosts.has(i)) {
-              host = i;
-              break;
-            }
+      // Выбор свободного хоста
+      let host = used.size
+        ? Math.min(254, Math.max(...Array.from(used)) + 1)
+        : 1;
+
+      // Если хост уже используется, то выбираем следующий
+      if (used.has(host)) {
+        for (let i = 1; i <= 254; i++) {
+          if (!used.has(i)) {
+            host = i;
+            break;
           }
         }
       }
 
+      // Возвращаем IP
       return `${prefix}.${host}`;
-    };
+    })();
 
-    const assignedIp = pickNextIp(conf);
-
+    // Получение PSK
     const psk = (
       await this.execInTarget(
         `cat /opt/amnezia/awg/wireguard_psk.key 2>/dev/null || true`,
@@ -297,18 +303,28 @@ export class UserService {
       )
     ).trim();
 
+    // Добавляем peer в конфиг
     const peerPskLine = psk ? `PresharedKey = ${psk}\n` : "";
     const peerSection = `\n[Peer]\nPublicKey = ${clientId}\n${peerPskLine}AllowedIPs = ${assignedIp}/32\n`;
-    const newConf = (conf.endsWith("\n") ? conf : conf + "\n") + peerSection;
-    await this.writeWgConf(newConf);
 
+    // Собираем новый конфиг
+    const newConfig =
+      (config.endsWith("\n") ? config : config + "\n") + peerSection;
+
+    await this.writeWgConf(newConfig);
     await this.syncWgConf();
 
+    // Добавляем клиента в clientsTable
     const table = await this.readClientsTable();
-    const nowStr = new Date().toString();
-    table.push({ clientId, userData: { clientName, creationDate: nowStr } });
+
+    // Добавляем дату создания
+    const creationDate = new Date().toString();
+
+    // Добавляем клиента в clientsTable
+    table.push({ clientId, userData: { clientName, creationDate } });
     await this.writeClientsTable(table);
 
+    // Получаем публичный ключ сервера
     const serverPublicKey = (
       await this.execInTarget(
         `cat /opt/amnezia/awg/wireguard_server_public_key.key 2>/dev/null || true`,
@@ -316,32 +332,18 @@ export class UserService {
       )
     ).trim();
 
-    const iface = appConfig.AMNEZIA_INTERFACE;
-    const showOut = iface
-      ? await this.execInTarget(`wg show ${iface} 2>/dev/null || true`, 2000)
-      : "";
-    let listenPort = "";
-    const m = showOut.match(/listening port:\s*(\d+)/i);
-    if (m && m[1]) listenPort = m[1];
-    if (!listenPort) {
-      const confInterfaceMatch = conf.match(
-        /\[Interface\][\s\S]*?ListenPort\s*=\s*(\d+)/i
-      );
-      if (confInterfaceMatch && confInterfaceMatch[1])
-        listenPort = confInterfaceMatch[1];
-    }
+    const listenPort = config.match(
+      /\[Interface\][\s\S]*?ListenPort\s*=\s*(\d+)/i
+    );
 
-    const psk2 = (
-      await this.execInTarget(
-        `cat /opt/amnezia/awg/wireguard_psk.key 2>/dev/null || true`,
-        2000
-      )
-    ).trim();
+    // Получаем хост
     const endpointHost = appConfig.AMNEZIA_PUBLIC_HOST || "";
+
+    // Получаем MTU
     const mtu = "1376";
     const keepAlive = "25";
 
-    // Текстовый конфиг (как в примере)
+    // Параметры AWG
     const awgParams = {
       Jc: "3",
       Jmin: "10",
@@ -354,6 +356,7 @@ export class UserService {
       H4: "2126008327",
     } as const;
 
+    // Текстовый конфиг
     const configText =
       `[Interface]\n` +
       `Address = ${assignedIp}/32\n` +
@@ -370,13 +373,14 @@ export class UserService {
       `H4 = ${awgParams.H4}\n\n` +
       `[Peer]\n` +
       `PublicKey = ${serverPublicKey}\n` +
-      (psk2 ? `PresharedKey = ${psk2}\n` : "") +
+      `PresharedKey = ${psk}\n` +
       `AllowedIPs = 0.0.0.0/0, ::/0\n` +
       (endpointHost && listenPort
         ? `Endpoint = ${endpointHost}:${listenPort}\n`
         : "") +
       `PersistentKeepalive = ${keepAlive}\n`;
 
+    // Последний конфиг
     const lastConfig = {
       ...awgParams,
       allowed_ips: ["0.0.0.0/0", "::/0"],
@@ -388,18 +392,20 @@ export class UserService {
       hostName: endpointHost,
       mtu,
       persistent_keep_alive: keepAlive,
-      port: listenPort ? Number(listenPort) : undefined,
-      psk_key: psk2 || undefined,
+      port: listenPort,
+      psk_key: psk,
       server_pub_key: serverPublicKey,
     } as Record<string, unknown>;
 
+    // AWG
     const awg = {
       ...awgParams,
       last_config: JSON.stringify(lastConfig, null, 2),
-      port: listenPort || "",
+      port: listenPort,
       transport_proto: "udp",
     };
 
+    // JSON для сервера
     const serverJson = {
       containers: [
         {
@@ -414,17 +420,27 @@ export class UserService {
       hostName: endpointHost,
     };
 
-    const raw = Buffer.from(JSON.stringify(serverJson), "utf-8");
+    // Генерируем clientConfig
+    const rawData = Buffer.from(JSON.stringify(serverJson), "utf-8");
+
+    // Создаем заголовок с размером данных
     const header = Buffer.alloc(4);
-    header.writeUInt32BE(raw.length, 0);
-    const deflated = deflateSync(raw, { level: 8 });
-    const qCompressed = Buffer.concat([header, deflated]);
-    const b64 = qCompressed.toString("base64");
-    const b64url = b64
+    header.writeUInt32BE(rawData.length, 0);
+
+    // Сжимаем данные
+    const compressedData = deflateSync(rawData, { level: 8 });
+
+    // Объединяем заголовок и сжатые данные
+    const finalBuffer = Buffer.concat([header, compressedData]);
+
+    // Конвертируем в base64 и делаем URL-safe
+    const base64String = finalBuffer
+      .toString("base64")
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=+$/g, "");
-    const clientConfig = `vpn://${b64url}`;
+
+    const clientConfig = `vpn://${base64String}`;
 
     return { clientId, clientPrivateKey, assignedIp, clientConfig };
   }
