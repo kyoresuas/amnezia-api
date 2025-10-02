@@ -44,10 +44,13 @@ export interface IAppConfig {
   };
   ENABLED_TASK_TYPES: TaskType[];
   ENABLED_TASKS: string[];
-  API_KEY: string;
+  API_KEY?: string;
   AMNEZIA_INTERFACE?: string;
   AMNEZIA_DOCKER_CONTAINER?: string;
   AMNEZIA_PUBLIC_HOST?: string;
+  AMNEZIA_CLIENTS_TABLE_PATH?: string;
+  AMNEZIA_WG_CONF_PATH?: string;
+  AMNEZIA_DESCRIPTION?: string;
 }
 
 export interface IPagination {

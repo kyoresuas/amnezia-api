@@ -9,12 +9,6 @@ import { AmneziaUser, AmneziaDevice, ClientTableEntry } from "@/types/user";
 export class UserService {
   static key = "userService";
 
-  // Путь к файлу clientsTable внутри контейнера
-  private readonly clientsTablePath = "/opt/amnezia/awg/clientsTable";
-
-  // Путь к wg конфигу внутри контейнера
-  private readonly wgConfPath = "/opt/amnezia/awg/wg0.conf";
-
   // Выполнить команду в целевой среде
   private async execInTarget(cmd: string, timeout = 3000): Promise<string> {
     const container = appConfig.AMNEZIA_DOCKER_CONTAINER;
@@ -31,7 +25,7 @@ export class UserService {
   // Прочитать clientsTable
   private async readClientsTable(): Promise<ClientTableEntry[]> {
     const raw = await this.execInTarget(
-      `cat ${this.clientsTablePath} 2>/dev/null || echo []`,
+      `cat ${appConfig.AMNEZIA_CLIENTS_TABLE_PATH} 2>/dev/null || echo []`,
       3000
     );
     try {
@@ -47,7 +41,7 @@ export class UserService {
   private async writeClientsTable(table: ClientTableEntry[]): Promise<void> {
     const payload = JSON.stringify(table);
 
-    const cmd = `cat > ${this.clientsTablePath} <<"EOF"\n${payload}\nEOF`;
+    const cmd = `cat > ${appConfig.AMNEZIA_CLIENTS_TABLE_PATH} <<"EOF"\n${payload}\nEOF`;
 
     await this.execInTarget(cmd, 3000);
   }
@@ -55,14 +49,14 @@ export class UserService {
   // Прочитать wg0.conf
   private async readWgConf(): Promise<string> {
     return this.execInTarget(
-      `cat ${this.wgConfPath} 2>/dev/null || true`,
+      `cat ${appConfig.AMNEZIA_WG_CONF_PATH} 2>/dev/null || true`,
       3000
     );
   }
 
   // Записать wg0.conf
   private async writeWgConf(content: string): Promise<void> {
-    const cmd = `cat > ${this.wgConfPath} <<"EOF"\n${content}\nEOF`;
+    const cmd = `cat > ${appConfig.AMNEZIA_WG_CONF_PATH} <<"EOF"\n${content}\nEOF`;
     await this.execInTarget(cmd, 3000);
   }
 
@@ -70,7 +64,7 @@ export class UserService {
   private async syncWgConf(): Promise<void> {
     const iface = appConfig.AMNEZIA_INTERFACE;
     if (!iface) return;
-    const cmd = `wg syncconf ${iface} <(wg-quick strip ${this.wgConfPath})`;
+    const cmd = `wg syncconf ${iface} <(wg-quick strip ${appConfig.AMNEZIA_WG_CONF_PATH})`;
     await this.execInTarget(cmd, 5000);
   }
 
@@ -400,7 +394,7 @@ export class UserService {
         },
       ],
       defaultContainer: "amnezia-awg",
-      description: "Kyoresuas Server",
+      description: `${appConfig.AMNEZIA_DESCRIPTION} | ${clientName}`,
       dns1: "1.1.1.1",
       dns2: "1.0.0.1",
       hostName: endpointHost,
