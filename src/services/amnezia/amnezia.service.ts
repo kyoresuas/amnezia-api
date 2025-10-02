@@ -60,6 +60,9 @@ export class AmneziaService {
       }
     }
 
+    console.log(userData);
+    console.log(peers);
+
     // Преобразуем peers в devices
     const devices: (AmneziaDevice & { username: string })[] = peers.map(
       (peer) => {
