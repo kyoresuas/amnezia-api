@@ -44,7 +44,7 @@ const appConfig: IAppConfig = {
   API_KEY: API_KEY!,
   AMNEZIA_INTERFACE,
   AMNEZIA_DOCKER_CONTAINER,
-  AMNEZIA_PUBLIC_HOST: AMNEZIA_PUBLIC_HOST!,
+  AMNEZIA_PUBLIC_HOST,
 };
 
 export default appConfig;
