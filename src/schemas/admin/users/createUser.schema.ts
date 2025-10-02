@@ -15,7 +15,13 @@ export const createUserSchema = {
   response: {
     200: {
       type: "object",
-      required: ["message", "clientId", "clientPrivateKey", "assignedIp"],
+      required: [
+        "message",
+        "clientId",
+        "clientPrivateKey",
+        "assignedIp",
+        "clientConfig",
+      ],
       properties: {
         message: { type: "string" },
         clientId: { type: "string", description: "PublicKey" },
@@ -24,6 +30,10 @@ export const createUserSchema = {
           description: "Приватный ключ клиента",
         },
         assignedIp: { type: "string", description: "Назначенный /32 IP" },
+        clientConfig: {
+          type: "string",
+          description: "Конфиг WireGuard для импорта в приложение",
+        },
       },
     },
     401: SwaggerContract.ClientErrorResponseFactory(401),

@@ -11,7 +11,7 @@ export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
 
   const userService = di.container.resolve<UserService>(UserService.key);
 
-  const { clientId, clientPrivateKey, assignedIp } =
+  const { clientId, clientPrivateKey, assignedIp, clientConfig } =
     await userService.createClient(clientName);
 
   reply.code(200).send({
@@ -19,5 +19,6 @@ export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
     clientId,
     clientPrivateKey,
     assignedIp,
+    clientConfig,
   });
 };

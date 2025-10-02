@@ -232,6 +232,7 @@ export class UserService {
     clientId: string;
     clientPrivateKey: string;
     assignedIp: string;
+    clientConfig: string;
   }> {
     // Генерация приватного ключа
     const clientPrivateKey = (
@@ -295,8 +296,8 @@ export class UserService {
       )
     ).trim();
 
-    const pskLine = psk ? `PresharedKey = ${psk}\n` : "";
-    const peerSection = `\n[Peer]\nPublicKey = ${clientId}\n${pskLine}AllowedIPs = ${assignedIp}/32\n`;
+    const peerPskLine = psk ? `PresharedKey = ${psk}\n` : "";
+    const peerSection = `\n[Peer]\nPublicKey = ${clientId}\n${peerPskLine}AllowedIPs = ${assignedIp}/32\n`;
     const newConf = (conf.endsWith("\n") ? conf : conf + "\n") + peerSection;
     await this.writeWgConf(newConf);
 
@@ -307,7 +308,44 @@ export class UserService {
     table.push({ clientId, userData: { clientName, creationDate: nowStr } });
     await this.writeClientsTable(table);
 
-    return { clientId, clientPrivateKey, assignedIp };
+    const serverPublicKey = (
+      await this.execInTarget(
+        `cat /opt/amnezia/awg/wireguard_server_public_key.key 2>/dev/null || true`,
+        2000
+      )
+    ).trim();
+
+    const iface = appConfig.AMNEZIA_INTERFACE;
+    const showOut = iface
+      ? await this.execInTarget(`wg show ${iface} 2>/dev/null || true`, 2000)
+      : "";
+    let listenPort = "";
+    const m = showOut.match(/listening port:\s*(\d+)/i);
+    if (m && m[1]) listenPort = m[1];
+    if (!listenPort) {
+      const confInterfaceMatch = conf.match(
+        /\[Interface\][\s\S]*?ListenPort\s*=\s*(\d+)/i
+      );
+      if (confInterfaceMatch && confInterfaceMatch[1])
+        listenPort = confInterfaceMatch[1];
+    }
+
+    const endpointHost = "<SERVER_PUBLIC_IP>";
+    const endpointLine = listenPort
+      ? `Endpoint = ${endpointHost}:${listenPort}\n`
+      : "";
+
+    const psk2 = (
+      await this.execInTarget(
+        `cat /opt/amnezia/awg/wireguard_psk.key 2>/dev/null || true`,
+        2000
+      )
+    ).trim();
+    const cfgPskLine = psk2 ? `PresharedKey = ${psk2}\n` : "";
+
+    const clientConfig = `# WireGuard client config\n[Interface]\nPrivateKey = ${clientPrivateKey}\nAddress = ${assignedIp}/32\n\n[Peer]\nPublicKey = ${serverPublicKey}\n${cfgPskLine}${endpointLine}AllowedIPs = 0.0.0.0/0, ::/0\n`;
+
+    return { clientId, clientPrivateKey, assignedIp, clientConfig };
   }
 
   /**
