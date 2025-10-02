@@ -303,7 +303,7 @@ export class UserService {
     // Получаем публичный ключ сервера
     const serverPublicKey = (
       await this.execInTarget(
-        `cat /opt/amnezia/awg/wireguard_server_public_key.key 2>/dev/null || true`,
+        `cat ${appConfig.AMNEZIA_SERVER_PUBLIC_KEY_PATH} 2>/dev/null || true`,
         2000
       )
     ).trim();
@@ -395,8 +395,18 @@ export class UserService {
       ],
       defaultContainer: "amnezia-awg",
       description: `${appConfig.AMNEZIA_DESCRIPTION} | ${clientName}`,
-      dns1: "1.1.1.1",
-      dns2: "1.0.0.1",
+      dns1:
+        (
+          await this.execInTarget(
+            `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`
+          )
+        ).trim() || "1.1.1.1",
+      dns2:
+        (
+          await this.execInTarget(
+            `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`
+          )
+        ).trim() || "1.0.0.1",
       hostName: endpointHost,
     };
 

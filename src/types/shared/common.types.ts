@@ -51,6 +51,7 @@ export interface IAppConfig {
   AMNEZIA_CLIENTS_TABLE_PATH?: string;
   AMNEZIA_WG_CONF_PATH?: string;
   AMNEZIA_DESCRIPTION?: string;
+  AMNEZIA_SERVER_PUBLIC_KEY_PATH?: string;
 }
 
 export interface IPagination {

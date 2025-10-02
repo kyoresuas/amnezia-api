@@ -15,6 +15,7 @@ const {
   AMNEZIA_CLIENTS_TABLE_PATH,
   AMNEZIA_WG_CONF_PATH,
   AMNEZIA_DESCRIPTION,
+  AMNEZIA_SERVER_PUBLIC_KEY_PATH,
 } = process.env;
 
 const enabledFastifyRoutes: IAppConfig["ENABLED_FASTIFY_ROUTES"] = {};
@@ -51,6 +52,7 @@ const appConfig: IAppConfig = {
   AMNEZIA_CLIENTS_TABLE_PATH,
   AMNEZIA_WG_CONF_PATH,
   AMNEZIA_DESCRIPTION,
+  AMNEZIA_SERVER_PUBLIC_KEY_PATH,
 };
 
 export default appConfig;
