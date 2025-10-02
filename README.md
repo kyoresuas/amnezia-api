@@ -15,3 +15,7 @@ git clone https://github.com/kyoresuas/amnezia-api.git
 ```bash
 bash ./scripts/setup.sh
 ```
+
+Лицензия
+
+MIT — см. файл `LICENSE`.
