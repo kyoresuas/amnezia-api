@@ -14,6 +14,7 @@ export class UserService {
    */
   async getUsers(): Promise<AmneziaUser[]> {
     const users = await this.amneziaService.getUsers();
+    console.log(users);
 
     return users;
   }
