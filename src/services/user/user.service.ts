@@ -20,7 +20,7 @@ export class UserService {
       return users;
     } catch (error) {
       appLogger.error(`Ошибка при получении пользователей: ${error}`);
-      throw error;
+      return [];
     }
   }
 
