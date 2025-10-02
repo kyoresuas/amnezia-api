@@ -331,11 +331,6 @@ export class UserService {
         listenPort = confInterfaceMatch[1];
     }
 
-    const endpointHost = "<SERVER_PUBLIC_IP>";
-    const endpointLine = listenPort
-      ? `Endpoint = ${endpointHost}:${listenPort}\n`
-      : "";
-
     const psk2 = (
       await this.execInTarget(
         `cat /opt/amnezia/awg/wireguard_psk.key 2>/dev/null || true`,
@@ -344,10 +339,41 @@ export class UserService {
     ).trim();
     const cfgPskLine = psk2 ? `PresharedKey = ${psk2}\n` : "";
 
-    const confContent = `# WireGuard client config\n[Interface]\nPrivateKey = ${clientPrivateKey}\nAddress = ${assignedIp}/32\n\n[Peer]\nPublicKey = ${serverPublicKey}\n${cfgPskLine}${endpointLine}AllowedIPs = 0.0.0.0/0, ::/0\n`;
+    const lastConfig: Record<string, unknown> = {
+      hostName: process.env.AMNEZIA_PUBLIC_HOST,
+      port: listenPort ? Number(listenPort) : undefined,
+      client_priv_key: clientPrivateKey,
+      client_ip: `${assignedIp}/32`,
+      server_pub_key: serverPublicKey,
+      allowed_ips: ["0.0.0.0/0", "::/0"],
+    };
+    if (cfgPskLine) {
+      const match = cfgPskLine.match(/PresharedKey\s*=\s*(.+)/);
+      if (match?.[1]) lastConfig["psk_key"] = match[1].trim();
+    }
 
-    // qCompress: 4-байтный BE размер + zlib deflate
-    const raw = Buffer.from(confContent, "utf-8");
+    const wireguard = {
+      last_config: JSON.stringify(lastConfig),
+      isThirdPartyConfig: true,
+      port: listenPort ? Number(listenPort) : undefined,
+      transport_proto: "udp",
+    };
+
+    const serverJson = {
+      containers: [
+        {
+          container: "amnezia-wireguard",
+          wireguard,
+        },
+      ],
+      defaultContainer: "amnezia-wireguard",
+      description: "Kyoresua Server",
+      hostName: process.env.AMNEZIA_PUBLIC_HOST,
+      dns1: "1.1.1.1",
+      dns2: "8.8.8.8",
+    };
+
+    const raw = Buffer.from(JSON.stringify(serverJson), "utf-8");
     const header = Buffer.alloc(4);
     header.writeUInt32BE(raw.length, 0);
     const deflated = deflateSync(raw, { level: 8 });
