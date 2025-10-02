@@ -337,40 +337,81 @@ export class UserService {
         2000
       )
     ).trim();
-    const cfgPskLine = psk2 ? `PresharedKey = ${psk2}\n` : "";
+    const endpointHost = appConfig.AMNEZIA_PUBLIC_HOST || "";
+    const mtu = "1376";
+    const keepAlive = "25";
 
-    const lastConfig: Record<string, unknown> = {
-      hostName: appConfig.AMNEZIA_PUBLIC_HOST,
-      port: listenPort ? Number(listenPort) : undefined,
-      client_priv_key: clientPrivateKey,
-      client_ip: `${assignedIp}/32`,
-      server_pub_key: serverPublicKey,
+    // Текстовый конфиг (как в примере)
+    const awgParams = {
+      Jc: "3",
+      Jmin: "10",
+      Jmax: "50",
+      S1: "142",
+      S2: "43",
+      H1: "333174788",
+      H2: "863398565",
+      H3: "228274630",
+      H4: "2126008327",
+    } as const;
+
+    const configText =
+      `[Interface]\n` +
+      `Address = ${assignedIp}/32\n` +
+      `DNS = $PRIMARY_DNS, $SECONDARY_DNS\n` +
+      `PrivateKey = ${clientPrivateKey}\n` +
+      `Jc = ${awgParams.Jc}\n` +
+      `Jmin = ${awgParams.Jmin}\n` +
+      `Jmax = ${awgParams.Jmax}\n` +
+      `S1 = ${awgParams.S1}\n` +
+      `S2 = ${awgParams.S2}\n` +
+      `H1 = ${awgParams.H1}\n` +
+      `H2 = ${awgParams.H2}\n` +
+      `H3 = ${awgParams.H3}\n` +
+      `H4 = ${awgParams.H4}\n\n` +
+      `[Peer]\n` +
+      `PublicKey = ${serverPublicKey}\n` +
+      (psk2 ? `PresharedKey = ${psk2}\n` : "") +
+      `AllowedIPs = 0.0.0.0/0, ::/0\n` +
+      (endpointHost && listenPort
+        ? `Endpoint = ${endpointHost}:${listenPort}\n`
+        : "") +
+      `PersistentKeepalive = ${keepAlive}\n`;
+
+    const lastConfig = {
+      ...awgParams,
       allowed_ips: ["0.0.0.0/0", "::/0"],
-    };
-    if (cfgPskLine) {
-      const match = cfgPskLine.match(/PresharedKey\s*=\s*(.+)/);
-      if (match?.[1]) lastConfig["psk_key"] = match[1].trim();
-    }
-
-    const wireguard = {
-      last_config: JSON.stringify(lastConfig),
-      isThirdPartyConfig: true,
+      clientId: clientId,
+      client_ip: `${assignedIp}`,
+      client_priv_key: clientPrivateKey,
+      client_pub_key: clientId,
+      config: configText,
+      hostName: endpointHost,
+      mtu,
+      persistent_keep_alive: keepAlive,
       port: listenPort ? Number(listenPort) : undefined,
+      psk_key: psk2 || undefined,
+      server_pub_key: serverPublicKey,
+    } as Record<string, unknown>;
+
+    const awg = {
+      ...awgParams,
+      last_config: JSON.stringify(lastConfig, null, 2),
+      port: listenPort || "",
       transport_proto: "udp",
     };
 
     const serverJson = {
       containers: [
         {
-          container: "amnezia-wireguard",
-          wireguard,
+          awg,
+          container: "amnezia-awg",
         },
       ],
-      defaultContainer: "amnezia-wireguard",
-      description: "Kyoresua Server",
-      hostName: appConfig.AMNEZIA_PUBLIC_HOST,
+      defaultContainer: "amnezia-awg",
+      description: "Kyoresuas Server",
       dns1: "1.1.1.1",
-      dns2: "8.8.8.8",
+      dns2: "1.0.0.1",
+      hostName: endpointHost,
     };
 
     const raw = Buffer.from(JSON.stringify(serverJson), "utf-8");
