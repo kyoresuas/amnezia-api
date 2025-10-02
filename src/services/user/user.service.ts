@@ -378,7 +378,7 @@ export class UserService {
       hostName: endpointHost,
       mtu,
       persistent_keep_alive: keepAlive,
-      port: listenPort,
+      port: listenPort ? Number(listenPort) : undefined,
       psk_key: psk,
       server_pub_key: serverPublicKey,
     } as Record<string, unknown>;
@@ -387,7 +387,7 @@ export class UserService {
     const awg = {
       ...awgParams,
       last_config: JSON.stringify(lastConfig, null, 2),
-      port: listenPort,
+      port: String(listenPort || ""),
       transport_proto: "udp",
     };
 
