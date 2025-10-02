@@ -26,6 +26,7 @@ export namespace SwaggerContract {
    */
   export enum AdminTag {
     USERS = "Users",
+    NODE = "Node",
   }
 
   /**
@@ -292,6 +293,11 @@ export namespace SwaggerContract {
         openapi.tags!.push({
           name: SwaggerContract.AdminTag.USERS,
           description: "Маршруты для управления пользователями",
+        });
+
+        openapi.tags!.push({
+          name: SwaggerContract.AdminTag.NODE,
+          description: "Маршруты для управления нодой",
         });
         break;
 

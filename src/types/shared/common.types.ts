@@ -45,6 +45,10 @@ export interface IAppConfig {
   ENABLED_TASK_TYPES: TaskType[];
   ENABLED_TASKS: string[];
   API_KEY?: string;
+  NODE_ID?: string;
+  NODE_REGION?: string;
+  NODE_WEIGHT?: number;
+  NODE_MAX_PEERS?: number;
   AMNEZIA_INTERFACE?: string;
   AMNEZIA_DOCKER_CONTAINER?: string;
   AMNEZIA_PUBLIC_HOST?: string;
