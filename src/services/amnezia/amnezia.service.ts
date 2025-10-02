@@ -21,8 +21,6 @@ export class AmneziaService {
   async getUsers(): Promise<AmneziaUser[]> {
     const dump = await this.connection.getWgDump();
 
-    console.log(dump);
-
     if (!dump) return [];
 
     const now = Math.floor(Date.now() / 1000);
@@ -182,8 +180,7 @@ export class AmneziaService {
       users.set(device.username, entry);
     }
 
-    console.log(users);
-    return Array.from(users.values());
+    return Array.from(users.values()) as AmneziaUser[];
   }
 
   /**
