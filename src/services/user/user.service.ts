@@ -227,46 +227,106 @@ export class UserService {
 
   /**
    * Добавить клиента
-   * TODO: нужно сделать генерацию ключей, назначение IP, добавление peer и запись в clientsTablе
    */
   async appendClient(clientId: string, clientName: string): Promise<void> {
-    const table = await this.readClientsTable();
+    if (!clientId) return;
 
-    // Найти клиента по clientId
-    const idx = table.findIndex(
-      (x) => ((x && (x.clientId || x.publicKey)) || "") === clientId
-    );
+    const [table, confRaw] = await Promise.all([
+      this.readClientsTable(),
+      this.readWgConf(),
+    ]);
 
-    // Дата создания
-    const nowStr = new Date().toString();
-
-    if (idx >= 0) {
-      // обновить имя
-      table[idx] = table[idx] || {};
-
-      // Обновить clientId
-      table[idx].clientId = clientId;
-
-      // Обновить userData
-      table[idx].userData = table[idx].userData || {};
-
-      // Обновить clientName
-      table[idx].userData.clientName = clientName;
-
-      // Обновить creationDate
-      if (!table[idx].userData.creationDate)
-        table[idx].userData.creationDate = nowStr;
-    } else {
-      // добавить новую запись
-      table.push({
-        // Обновить clientId
-        clientId,
-        userData: { clientName, creationDate: nowStr },
-      });
+    {
+      const idx = table.findIndex(
+        (x) => ((x && (x.clientId || x.publicKey)) || "") === clientId
+      );
+      const nowStr = new Date().toString();
+      if (idx >= 0) {
+        const entry: ClientTableEntry = table[idx] || {};
+        entry.clientId = clientId;
+        const userData: NonNullable<ClientTableEntry["userData"]> = {
+          ...(entry.userData || {}),
+          clientName,
+          creationDate: entry.userData?.creationDate || nowStr,
+        };
+        entry.userData = userData;
+        table[idx] = entry;
+      } else {
+        const entry: ClientTableEntry = {
+          clientId,
+          userData: { clientName, creationDate: nowStr },
+        };
+        table.push(entry);
+      }
+      await this.writeClientsTable(table);
     }
 
-    // Записываем обратно
-    await this.writeClientsTable(table);
+    const conf = confRaw || "";
+    const peerExists = new RegExp(
+      `\\[Peer\\][\\s\\S]*?PublicKey\\s*=\\s*${clientId}\\b`
+    ).test(conf);
+    if (peerExists) return;
+
+    const pickNextIp = (content: string): string => {
+      const allowedRegex =
+        /AllowedIPs\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)\s*\/32/gi;
+      const addressRegex =
+        /Address\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.\d+\s*\/\d+/i;
+      const usedHosts = new Set<number>();
+      let prefix: string | undefined;
+
+      let m: RegExpExecArray | null;
+      while ((m = allowedRegex.exec(content)) !== null) {
+        const pfx = m[1];
+        const host = Number(m[2]);
+        if (!prefix) prefix = pfx;
+        usedHosts.add(host);
+      }
+
+      if (!prefix) {
+        const a = addressRegex.exec(content);
+        if (a && a[1]) prefix = a[1];
+      }
+
+      if (!prefix) prefix = "10.8.1";
+
+      let host = 1;
+      // Если занято 1, берем (max+1) до 254 (1..254)
+      if (usedHosts.size > 0) {
+        const max = Math.max(...Array.from(usedHosts.values()));
+        host = Math.min(254, max + 1);
+        // Если max==254, ищем первую дыру
+        if (usedHosts.has(host)) {
+          for (let i = 1; i <= 254; i++) {
+            if (!usedHosts.has(i)) {
+              host = i;
+              break;
+            }
+          }
+        }
+      }
+
+      return `${prefix}.${host}`;
+    };
+
+    const assignedIp = pickNextIp(conf);
+
+    // Попробуем прочитать общий PSK (если используется)
+    const psk = (
+      await this.execInTarget(
+        `cat /opt/amnezia/awg/wireguard_psk.key 2>/dev/null || true`,
+        2000
+      )
+    ).trim();
+
+    // Добавляем peer в конфиг
+    const pskLine = psk ? `PresharedKey = ${psk}\n` : "";
+    const peerSection = `\n[Peer]\nPublicKey = ${clientId}\n${pskLine}AllowedIPs = ${assignedIp}/32\n`;
+    const newConf = (conf.endsWith("\n") ? conf : conf + "\n") + peerSection;
+    await this.writeWgConf(newConf);
+
+    // Применяем конфигурацию
+    await this.syncWgConf();
   }
 
   /**
