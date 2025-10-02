@@ -3,18 +3,29 @@ import { SwaggerContract } from "@/contracts/swagger";
 
 export const createUserSchema = {
   tags: [SwaggerContract.AdminTag.USERS],
-  summary: "Добавить или изменить имя клиента",
+  summary: "Создать нового клиента",
   security: [{ ApiKey: [] }],
   body: {
     type: "object",
-    required: ["clientId", "clientName"],
+    required: ["clientName"],
     properties: {
-      clientId: { type: "string", description: "Идентификатор (PublicKey)" },
       clientName: { type: "string", description: "Имя клиента" },
     },
   },
   response: {
-    200: SwaggerContract.ActionResponseSchema,
+    200: {
+      type: "object",
+      required: ["message", "clientId", "clientPrivateKey", "assignedIp"],
+      properties: {
+        message: { type: "string" },
+        clientId: { type: "string", description: "PublicKey" },
+        clientPrivateKey: {
+          type: "string",
+          description: "Приватный ключ клиента",
+        },
+        assignedIp: { type: "string", description: "Назначенный /32 IP" },
+      },
+    },
     401: SwaggerContract.ClientErrorResponseFactory(401),
     403: SwaggerContract.ClientErrorResponseFactory(403),
   },

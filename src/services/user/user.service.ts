@@ -226,46 +226,25 @@ export class UserService {
   }
 
   /**
-   * Добавить клиента
+   * Создать нового клиента
    */
-  async appendClient(clientId: string, clientName: string): Promise<void> {
-    if (!clientId) return;
+  async createClient(clientName: string): Promise<{
+    clientId: string;
+    clientPrivateKey: string;
+    assignedIp: string;
+  }> {
+    // Генерация приватного ключа
+    const clientPrivateKey = (
+      await this.execInTarget(`wg genkey`, 3000)
+    ).trim();
+    // Получение публичного ключа
+    const clientId = (
+      await this.execInTarget(`echo '${clientPrivateKey}' | wg pubkey`, 3000)
+    ).trim();
 
-    const [table, confRaw] = await Promise.all([
-      this.readClientsTable(),
-      this.readWgConf(),
-    ]);
-
-    {
-      const idx = table.findIndex(
-        (x) => ((x && (x.clientId || x.publicKey)) || "") === clientId
-      );
-      const nowStr = new Date().toString();
-      if (idx >= 0) {
-        const entry: ClientTableEntry = table[idx] || {};
-        entry.clientId = clientId;
-        const userData: NonNullable<ClientTableEntry["userData"]> = {
-          ...(entry.userData || {}),
-          clientName,
-          creationDate: entry.userData?.creationDate || nowStr,
-        };
-        entry.userData = userData;
-        table[idx] = entry;
-      } else {
-        const entry: ClientTableEntry = {
-          clientId,
-          userData: { clientName, creationDate: nowStr },
-        };
-        table.push(entry);
-      }
-      await this.writeClientsTable(table);
-    }
-
+    // Текущий конфиг для определения свободного IP
+    const confRaw = await this.readWgConf();
     const conf = confRaw || "";
-    const peerExists = new RegExp(
-      `\\[Peer\\][\\s\\S]*?PublicKey\\s*=\\s*${clientId}\\b`
-    ).test(conf);
-    if (peerExists) return;
 
     const pickNextIp = (content: string): string => {
       const allowedRegex =
@@ -291,11 +270,9 @@ export class UserService {
       if (!prefix) prefix = "10.8.1";
 
       let host = 1;
-      // Если занято 1, берем (max+1) до 254 (1..254)
       if (usedHosts.size > 0) {
         const max = Math.max(...Array.from(usedHosts.values()));
         host = Math.min(254, max + 1);
-        // Если max==254, ищем первую дыру
         if (usedHosts.has(host)) {
           for (let i = 1; i <= 254; i++) {
             if (!usedHosts.has(i)) {
@@ -311,7 +288,6 @@ export class UserService {
 
     const assignedIp = pickNextIp(conf);
 
-    // Попробуем прочитать общий PSK (если используется)
     const psk = (
       await this.execInTarget(
         `cat /opt/amnezia/awg/wireguard_psk.key 2>/dev/null || true`,
@@ -319,14 +295,19 @@ export class UserService {
       )
     ).trim();
 
-    // Добавляем peer в конфиг
     const pskLine = psk ? `PresharedKey = ${psk}\n` : "";
     const peerSection = `\n[Peer]\nPublicKey = ${clientId}\n${pskLine}AllowedIPs = ${assignedIp}/32\n`;
     const newConf = (conf.endsWith("\n") ? conf : conf + "\n") + peerSection;
     await this.writeWgConf(newConf);
 
-    // Применяем конфигурацию
     await this.syncWgConf();
+
+    const table = await this.readClientsTable();
+    const nowStr = new Date().toString();
+    table.push({ clientId, userData: { clientName, creationDate: nowStr } });
+    await this.writeClientsTable(table);
+
+    return { clientId, clientPrivateKey, assignedIp };
   }
 
   /**

@@ -7,11 +7,17 @@ export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
   req,
   reply
 ) => {
-  const { clientId, clientName } = req.body;
+  const { clientName } = req.body;
 
   const userService = di.container.resolve<UserService>(UserService.key);
 
-  await userService.appendClient(clientId, clientName);
+  const { clientId, clientPrivateKey, assignedIp } =
+    await userService.createClient(clientName);
 
-  reply.code(200).send({ message: "swagger.messages.SAVED" });
+  reply.code(200).send({
+    message: "swagger.messages.SAVED",
+    clientId,
+    clientPrivateKey,
+    assignedIp,
+  });
 };
