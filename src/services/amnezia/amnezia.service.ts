@@ -128,7 +128,7 @@ export class AmneziaService {
         const persistentKeepalive =
           keepaliveRaw === "off" ? null : Number(keepaliveRaw);
 
-        const username = userData[publicKey]?.name;
+        const username = userData[publicKey]?.name || publicKey;
         const deviceName = userData[publicKey]?.devices?.[0];
 
         const device: AmneziaDevice & { username: string } = {
