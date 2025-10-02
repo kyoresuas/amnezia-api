@@ -248,53 +248,33 @@ export class UserService {
     // Текущий конфиг
     const config = (await this.readWgConf()) || "";
 
-    // Выбор свободного IP инлайном
+    // Выбор свободного IP
     const assignedIp = (() => {
-      // Используемые хосты
+      // Используемые IP
       const used = new Set<number>();
 
-      let prefix: string | undefined;
+      // Префикс
+      const prefix =
+        /Address\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.\d+/i.exec(config)?.[1] ||
+        "10.8.1";
 
-      console.log(config);
-
-      // Поиск IP в allowedIps
-      config.replace(
-        /AllowedIPs\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)\s*\/32/gi,
-        (_s, pfx, host) => {
-          if (!prefix) prefix = String(pfx);
-          used.add(Number(host));
-          return _s;
-        }
+      // Получаем используемые IP
+      const matches = config.matchAll(
+        /AllowedIPs\s*=\s*[0-9]+\.[0-9]+\.[0-9]+\.([0-9]+)\s*\/32/gi
       );
 
-      // Поиск IP в Address
-      if (!prefix) {
-        const m = /Address\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)\.\d+\s*\/\d+/i.exec(
-          config
-        );
-        if (m && m[1]) prefix = m[1];
+      for (const match of matches) {
+        used.add(Number(match[1]));
       }
 
-      // Если нет префикса, то используем 10.8.1
-      if (!prefix) prefix = "10.8.1";
-
-      // Выбор свободного хоста
-      let host = used.size
-        ? Math.min(254, Math.max(...Array.from(used)) + 1)
-        : 1;
-
-      // Если хост уже используется, то выбираем следующий
-      if (used.has(host)) {
-        for (let i = 1; i <= 254; i++) {
-          if (!used.has(i)) {
-            host = i;
-            break;
-          }
+      // Находим первый свободный IP
+      for (let host = 1; host <= 254; host++) {
+        if (!used.has(host)) {
+          return `${prefix}.${host}`;
         }
       }
 
-      // Возвращаем IP
-      return `${prefix}.${host}`;
+      throw new Error("Нет свободных IP");
     })();
 
     // Получение PSK
@@ -334,9 +314,9 @@ export class UserService {
       )
     ).trim();
 
-    const listenPort = config.match(
-      /\[Interface\][\s\S]*?ListenPort\s*=\s*(\d+)/i
-    );
+    // Получаем порт
+    const listenPort =
+      config.match(/\[Interface\][\s\S]*?ListenPort\s*=\s*(\d+)/i)?.[1] || "";
 
     // Получаем хост
     const endpointHost = appConfig.AMNEZIA_PUBLIC_HOST || "";
