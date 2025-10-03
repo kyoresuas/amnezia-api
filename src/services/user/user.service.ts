@@ -36,7 +36,7 @@ export class UserService {
   /**
    * Удалить клиента
    */
-  async revokeClient(clientId: string): Promise<void> {
-    await this.amneziaService.revokeClient(clientId);
+  async revokeClient(clientId: string): Promise<boolean> {
+    return this.amneziaService.revokeClient(clientId);
   }
 }

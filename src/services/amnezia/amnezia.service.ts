@@ -406,13 +406,19 @@ export class AmneziaService {
   /**
    * Удалить клиента
    */
-  async revokeClient(clientId: string): Promise<void> {
+  async revokeClient(clientId: string): Promise<boolean> {
     let table = await this.connection.readClientsTable();
+
+    // Сохраняем длину таблицы
+    const before = table.length;
 
     // Удаляем клиента
     table = table.filter(
       (x) => ((x && (x.clientId || x.publicKey)) || "") !== clientId
     );
+
+    // Проверяем, что клиент был удален
+    if (!(table.length < before)) return false;
 
     // Записываем обратно
     await this.connection.writeClientsTable(table);
@@ -445,5 +451,7 @@ export class AmneziaService {
       // Применяем
       await this.connection.syncWgConfig();
     }
+
+    return true;
   }
 }

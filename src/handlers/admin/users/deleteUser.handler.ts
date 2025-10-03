@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { di } from "@/config/DIContainer";
 import { UserService } from "@/services/user";
 import { DeleteUserType } from "@/schemas/admin";
@@ -11,7 +12,12 @@ export const deleteUserHandler: AppFastifyHandler<DeleteUserType> = async (
 
   const userService = di.container.resolve<UserService>(UserService.key);
 
-  await userService.revokeClient(clientId);
+  const ok = await userService.revokeClient(clientId);
 
-  reply.code(200).send({ message: "swagger.messages.SAVED" });
+  if (!ok) {
+    reply.code(404).send({ message: i18next.t("swagger.codes.404") });
+    return;
+  }
+
+  reply.code(200).send({ message: i18next.t("swagger.messages.DELETED") });
 };
