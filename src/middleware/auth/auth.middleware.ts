@@ -10,7 +10,7 @@ export const authPreHandler =
   async (req: FastifyRequest): Promise<void> => {
     const apiKey = req.headers["x-api-key"];
 
-    if (apiKey !== appConfig.API_KEY) {
+    if (apiKey !== appConfig.FASTIFY_API_KEY) {
       throw new APIError(401);
     }
   };

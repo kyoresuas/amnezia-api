@@ -5,7 +5,7 @@ const {
   ENV,
   ENABLED_MODULES,
   FASTIFY_ROUTES,
-  API_KEY,
+  FASTIFY_API_KEY,
   NODE_ID,
   NODE_REGION,
   NODE_WEIGHT,
@@ -33,7 +33,7 @@ const appConfig: IAppConfig = {
         return { host, port: Number(port) };
       })()
     : undefined,
-  API_KEY,
+  FASTIFY_API_KEY,
   NODE_ID,
   NODE_REGION,
   NODE_WEIGHT: Number(NODE_WEIGHT),

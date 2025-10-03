@@ -38,7 +38,7 @@ export interface IAppConfig {
     host: string;
     port: number;
   };
-  API_KEY?: string;
+  FASTIFY_API_KEY?: string;
   NODE_ID?: string;
   NODE_REGION?: string;
   NODE_WEIGHT?: number;
