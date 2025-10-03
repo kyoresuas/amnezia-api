@@ -1,7 +1,7 @@
 import i18next from "i18next";
 import { di } from "@/config/DIContainer";
 import { DeleteUserType } from "@/schemas";
-import { UserService } from "@/services/user";
+import { AmneziaService } from "@/services/amnezia";
 import { AppFastifyHandler } from "@/types/shared";
 
 export const deleteUserHandler: AppFastifyHandler<DeleteUserType> = async (
@@ -10,9 +10,11 @@ export const deleteUserHandler: AppFastifyHandler<DeleteUserType> = async (
 ) => {
   const { clientId } = req.body;
 
-  const userService = di.container.resolve<UserService>(UserService.key);
+  const amneziaService = di.container.resolve<AmneziaService>(
+    AmneziaService.key
+  );
 
-  const ok = await userService.deleteUser(clientId);
+  const ok = await amneziaService.deleteClient(clientId);
 
   if (!ok) {
     reply.code(404).send({ message: i18next.t("swagger.codes.404") });

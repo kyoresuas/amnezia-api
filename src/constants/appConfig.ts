@@ -1,9 +1,8 @@
 import "dotenv/config";
-import { IAppConfig, Module } from "@/types/shared";
+import { IAppConfig } from "@/types/shared";
 
 const {
   ENV,
-  ENABLED_MODULES,
   FASTIFY_ROUTES,
   FASTIFY_API_KEY,
   NODE_ID,
@@ -24,9 +23,6 @@ const {
  */
 const appConfig: IAppConfig = {
   ENV: ENV as "development" | "preproduction" | "production",
-  ENABLED_MODULES: ENABLED_MODULES
-    ? (ENABLED_MODULES.split(",") as Module[])
-    : [],
   FASTIFY_ROUTES: FASTIFY_ROUTES
     ? (() => {
         const [host, port] = FASTIFY_ROUTES.split(":");

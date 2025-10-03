@@ -29,11 +29,8 @@ export enum CustomFormat {
   DATE_TIME = "dateTime",
 }
 
-export type Module = "fastify";
-
 export interface IAppConfig {
   ENV: "development" | "preproduction" | "production";
-  ENABLED_MODULES: Module[];
   FASTIFY_ROUTES?: {
     host: string;
     port: number;
