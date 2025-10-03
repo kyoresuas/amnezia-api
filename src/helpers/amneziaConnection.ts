@@ -7,20 +7,15 @@ import { ClientTableEntry } from "@/types/amnezia";
  * Создать соединение с AmneziaVPN
  */
 export class AmneziaConnection {
-  constructor(
-    private readonly container = appConfig.AMNEZIA_DOCKER_CONTAINER
-  ) {}
-
   /**
    * Построить команду
    */
   private buildCommand(cmd: string): string {
-    if (!this.container) return cmd;
+    if (!appConfig.AMNEZIA_DOCKER_CONTAINER) return cmd;
 
-    return `docker exec ${this.container} sh -lc '${cmd.replace(
-      /'/g,
-      "'\\''"
-    )}'`;
+    return `docker exec ${
+      appConfig.AMNEZIA_DOCKER_CONTAINER
+    } sh -lc '${cmd.replace(/'/g, "'\\''")}'`;
   }
 
   /**
