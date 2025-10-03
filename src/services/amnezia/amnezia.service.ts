@@ -73,119 +73,66 @@ export class AmneziaService {
       (peer) => {
         const parts = peer.split("\t");
 
-        // publicKey
-        const publicKey = parts[0];
+        // id
+        const id = parts[0];
 
         // endpoint
-        const endpoint = parts[2];
+        const endpoint = parts[2] || "";
 
         // allowedIps
-        const allowedIpsRaw = parts[3];
+        const allowedIps = parts[3].split(",").map((s) => s.trim());
 
-        // latestHandshake
-        const latestHandshakeUnix =
+        // lastHandshake
+        const lastHandshake =
           Number(parts[4]) > 1_000_000_000_000
             ? Math.floor(Number(parts[4]) / 1_000_000_000)
             : Number(parts[4]);
 
-        // transferRx
-        const transferRx = Number(parts[5]);
+        // received
+        const received = Number(parts[5]);
 
-        // transferTx
-        const transferTx = Number(parts[6]);
+        // sent
+        const sent = Number(parts[6]);
 
-        // persistentKeepalive
-        const keepaliveRaw = parts[7];
+        // lastHandshakeSecondsAgo
+        const lastHandshakeSecondsAgo = now - lastHandshake;
 
-        // endpointHost
-        let endpointHost: string | undefined;
+        // online
+        const online = lastHandshakeSecondsAgo < 180;
 
-        // endpointPort
-        let endpointPort: number | undefined;
+        const username = userData[id]?.name || id;
+        const name = userData[id]?.devices?.[0] ?? null;
 
-        // Разбиваем endpoint на host и port
-        if (endpoint?.includes(":")) {
-          const lastColon = endpoint.lastIndexOf(":");
-          endpointHost = endpoint.slice(0, lastColon);
-          endpointPort = Number(endpoint.slice(lastColon + 1));
-        }
-
-        // allowedIps
-        const allowedIps = allowedIpsRaw
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        // latestHandshakeSecondsAgo
-        const latestHandshakeSecondsAgo =
-          latestHandshakeUnix > 0 ? now - latestHandshakeUnix : -1;
-
-        // latestHandshakeISO
-        const latestHandshakeISO =
-          latestHandshakeUnix > 0
-            ? new Date(latestHandshakeUnix * 1000).toISOString()
-            : undefined;
-
-        // isActive
-        const isActive =
-          latestHandshakeUnix > 0 &&
-          latestHandshakeSecondsAgo >= 0 &&
-          latestHandshakeSecondsAgo < 180;
-
-        // persistentKeepalive
-        const persistentKeepalive =
-          keepaliveRaw === "off" ? null : Number(keepaliveRaw);
-
-        const username = userData[publicKey]?.name || publicKey;
-        const deviceName = userData[publicKey]?.devices?.[0];
-
-        const device: AmneziaDevice & { username: string } = {
-          clientId: publicKey,
-          deviceName,
-          allowedIps,
-          endpointHost,
-          endpointPort,
-          latestHandshakeUnix,
-          latestHandshakeISO,
-          latestHandshakeSecondsAgo,
-          isActive,
-          transferRx,
-          transferTx,
-          persistentKeepalive,
+        return {
           username,
+          id,
+          name,
+          allowedIps,
+          lastHandshake,
+          traffic: {
+            received,
+            sent,
+          },
+          endpoint,
+          online,
         };
-
-        return device;
       }
     );
 
     // Группируем по username
     const users = new Map<string, AmneziaUser>();
-    for (const device of devices) {
+    for (const { username, ...device } of devices) {
       // Получаем или создаем пользователя
-      const entry = users.get(device.username) || {
-        username: device.username,
+      const entry = users.get(username) || {
+        username,
         devices: [],
       };
 
       // Добавляем устройство
-      entry.devices.push({
-        clientId: device.clientId,
-        deviceName: device.deviceName,
-        allowedIps: device.allowedIps,
-        endpointHost: device.endpointHost,
-        endpointPort: device.endpointPort,
-        latestHandshakeUnix: device.latestHandshakeUnix,
-        latestHandshakeISO: device.latestHandshakeISO,
-        latestHandshakeSecondsAgo: device.latestHandshakeSecondsAgo,
-        isActive: device.isActive,
-        transferRx: device.transferRx,
-        transferTx: device.transferTx,
-        persistentKeepalive: device.persistentKeepalive,
-      });
+      entry.devices.push(device);
 
       // Обновляем пользователя
-      users.set(device.username, entry);
+      users.set(username, entry);
     }
 
     return Array.from(users.values()) as AmneziaUser[];
@@ -195,10 +142,8 @@ export class AmneziaService {
    * Создать нового клиента
    */
   async createClient(clientName: string): Promise<{
-    clientId: string;
-    clientPrivateKey: string;
-    assignedIp: string;
-    clientConfig: string;
+    id: string;
+    config: string;
   }> {
     // Сгенерировать приватный ключ
     const clientPrivateKey = (
@@ -400,7 +345,7 @@ export class AmneziaService {
 
     const clientConfig = `vpn://${base64String}`;
 
-    return { clientId, clientPrivateKey, assignedIp, clientConfig };
+    return { id: clientId, config: clientConfig };
   }
 
   /**

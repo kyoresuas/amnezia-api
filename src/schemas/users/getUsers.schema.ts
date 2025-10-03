@@ -32,75 +32,48 @@ export const getUsersSchema = {
                 items: {
                   type: "object",
                   required: [
-                    "clientId",
+                    "id",
+                    "name",
                     "allowedIps",
-                    "latestHandshakeUnix",
-                    "latestHandshakeSecondsAgo",
-                    "isActive",
-                    "transferRx",
-                    "transferTx",
+                    "lastHandshake",
+                    "traffic",
+                    "online",
+                    "endpoint",
                   ],
                   properties: {
-                    clientId: clientIdSchema,
-                    deviceName: {
+                    id: clientIdSchema,
+                    name: {
                       type: "string",
                       nullable: true,
                       description: "Название устройства",
                       example: "macOS 26.0",
-                    },
-                    endpointHost: {
-                      type: "string",
-                      nullable: true,
-                      description: "Хост удаленной точки",
-                      example: "192.168.1.1",
-                    },
-                    endpointPort: {
-                      type: "number",
-                      nullable: true,
-                      description: "Порт удаленной точки",
-                      example: 12345,
                     },
                     allowedIps: {
                       type: "array",
                       description: "Список разрешенных IP/подсетей",
                       items: { type: "string", example: "10.8.1.1/32" },
                     },
-                    latestHandshakeUnix: {
+                    lastHandshake: {
                       type: "number",
-                      description: "UNIX-время последнего рукопожатия",
+                      description: "Время последнего рукопожатия",
                       example: 1759477747,
                     },
-                    latestHandshakeISO: {
+                    traffic: {
+                      type: "object",
+                      required: ["received", "sent"],
+                      properties: {
+                        received: { type: "number", example: 4490348984 },
+                        sent: { type: "number", example: 66372801657 },
+                      },
+                    },
+                    endpoint: {
                       type: "string",
-                      nullable: true,
-                      description: "ISO-время последнего рукопожатия",
-                      example: SwaggerContract.DateTimeExample,
+                      description: "Адрес и порт подключения",
+                      example: "192.168.1.1:12345",
                     },
-                    latestHandshakeSecondsAgo: {
-                      type: "number",
-                      description: "Сколько секунд назад было рукопожатие",
-                      example: 180,
-                    },
-                    isActive: {
+                    online: {
                       type: "boolean",
-                      description: "Активно ли устройство",
                       example: true,
-                    },
-                    transferRx: {
-                      type: "number",
-                      description: "Получено байт",
-                      example: 4490348984,
-                    },
-                    transferTx: {
-                      type: "number",
-                      description: "Отправлено байт",
-                      example: 66372801657,
-                    },
-                    persistentKeepalive: {
-                      type: "number",
-                      nullable: true,
-                      description: "Интервал keepalive в секундах",
-                      example: 25,
                     },
                   },
                 },

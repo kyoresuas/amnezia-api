@@ -20,30 +20,20 @@ export const createUserSchema = {
   response: {
     200: {
       type: "object",
-      required: [
-        "message",
-        "clientId",
-        "clientPrivateKey",
-        "assignedIp",
-        "clientConfig",
-      ],
+      required: ["message", "client"],
       properties: {
         message: SwaggerContract.ActionResponseSchema.properties.message,
-        clientId: clientIdSchema,
-        clientPrivateKey: {
-          type: "string",
-          description: "Приватный ключ клиента",
-          example: SwaggerContract.Base64Example,
-        },
-        assignedIp: {
-          type: "string",
-          description: "Назначенный /32 IP",
-          example: "10.8.1.9/32",
-        },
-        clientConfig: {
-          type: "string",
-          description: "Конфиг WireGuard для импорта в приложение",
-          example: "vpn://3fa85f64-5717-4562-b3fc-2c963f66afa6...",
+        client: {
+          type: "object",
+          required: ["id", "config"],
+          properties: {
+            id: clientIdSchema,
+            config: {
+              type: "string",
+              description: "Конфиг для импорта в приложение",
+              example: "vpn://3fa85f64-5717-4562-b3fc-2c963f66afa6...",
+            },
+          },
         },
       },
     },

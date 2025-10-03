@@ -22,14 +22,13 @@ export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
     return;
   }
 
-  const { clientId, clientPrivateKey, assignedIp, clientConfig } =
-    await amneziaService.createClient(clientName);
+  const { id, config } = await amneziaService.createClient(clientName);
 
   reply.code(200).send({
     message: i18next.t("swagger.messages.SAVED"),
-    clientId,
-    clientPrivateKey,
-    assignedIp,
-    clientConfig,
+    client: {
+      id,
+      config,
+    },
   });
 };

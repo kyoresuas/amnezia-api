@@ -4,18 +4,16 @@ export type RunOptions = {
 };
 
 export interface AmneziaDevice {
-  clientId: string;
-  deviceName?: string;
+  id: string;
+  name: string | null;
   allowedIps: string[];
-  endpointHost?: string;
-  endpointPort?: number;
-  latestHandshakeUnix: number;
-  latestHandshakeISO?: string;
-  latestHandshakeSecondsAgo: number;
-  isActive: boolean;
-  transferRx: number;
-  transferTx: number;
-  persistentKeepalive: number | null;
+  lastHandshake: number;
+  traffic: {
+    received: number;
+    sent: number;
+  };
+  endpoint: string;
+  online: boolean;
 }
 
 export interface AmneziaUser {
