@@ -1,1 +1,1 @@
-export * from "./getNodeStatus.schema";
+export * from "./getNode.schema";

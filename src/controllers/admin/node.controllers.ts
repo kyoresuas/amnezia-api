@@ -1,16 +1,16 @@
 import { AppFastifyRoute } from "@/types/shared";
 import { authPreHandler } from "@/middleware/auth";
-import { GetNodeStatusType } from "@/schemas/admin/node";
-import { getNodeStatusSchema } from "@/schemas/admin/node";
-import { getNodeStatusHandler } from "@/handlers/admin/node";
+import { GetNodeType } from "@/schemas/admin/node";
+import { getNodeSchema } from "@/schemas/admin/node";
+import { getNodeHandler } from "@/handlers/admin/node";
 
 /**
- * Получить статус ноды
+ * Получить информацию о ноде
  */
-export const getNodeStatusController: AppFastifyRoute<GetNodeStatusType> = {
-  url: "/node/status",
+export const getNodeController: AppFastifyRoute<GetNodeType> = {
+  url: "/node",
   method: "GET",
-  schema: getNodeStatusSchema,
+  schema: getNodeSchema,
   preHandler: authPreHandler(),
-  handler: getNodeStatusHandler,
+  handler: getNodeHandler,
 };

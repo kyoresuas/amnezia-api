@@ -1,1 +1,1 @@
-export * from "./getNodeStatus.handler";
+export * from "./getNode.handler";

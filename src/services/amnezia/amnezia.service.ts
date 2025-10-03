@@ -1,6 +1,6 @@
 import { deflateSync } from "zlib";
 import appConfig from "@/constants/appConfig";
-import { AmneziaUser, AmneziaDevice } from "@/types/user";
+import { AmneziaUser, AmneziaDevice } from "@/types/amnezia";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
 
 /**
@@ -140,7 +140,7 @@ export class AmneziaService {
         const deviceName = userData[publicKey]?.devices?.[0];
 
         const device: AmneziaDevice & { username: string } = {
-          id: publicKey,
+          clientId: publicKey,
           deviceName,
           allowedIps,
           endpointHost,
@@ -170,7 +170,7 @@ export class AmneziaService {
 
       // Добавляем устройство
       entry.devices.push({
-        id: device.id,
+        clientId: device.clientId,
         deviceName: device.deviceName,
         allowedIps: device.allowedIps,
         endpointHost: device.endpointHost,

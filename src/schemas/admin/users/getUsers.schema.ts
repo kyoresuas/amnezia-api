@@ -1,4 +1,4 @@
-import { AppJSONSchema } from "@/types/shared";
+import { clientIdSchema } from "./common.schema";
 import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
@@ -19,16 +19,20 @@ export const getUsersSchema = {
           description: "Пользователи",
           items: {
             type: "object",
-            required: ["username", "devices"],
+            required: ["clientId", "username", "devices"],
             properties: {
-              username: { type: "string", description: "Имя пользователя" },
+              username: {
+                type: "string",
+                description: "Имя пользователя",
+                example: "Kyoresuas",
+              },
               devices: {
                 type: "array",
                 description: "Список устройств пользователя",
                 items: {
                   type: "object",
                   required: [
-                    "id",
+                    "clientId",
                     "allowedIps",
                     "latestHandshakeUnix",
                     "latestHandshakeSecondsAgo",
@@ -37,65 +41,72 @@ export const getUsersSchema = {
                     "transferTx",
                   ],
                   properties: {
-                    id: {
-                      type: "string",
-                      description: "Public key устройства",
-                    },
+                    clientId: clientIdSchema,
                     deviceName: {
                       type: "string",
                       nullable: true,
                       description: "Название устройства",
+                      example: "macOS 26.0",
                     },
                     endpointHost: {
                       type: "string",
                       nullable: true,
-                      description: "Хост удалённой точки",
+                      description: "Хост удаленной точки",
+                      example: "192.168.1.1",
                     },
                     endpointPort: {
                       type: "number",
                       nullable: true,
-                      description: "Порт удалённой точки",
+                      description: "Порт удаленной точки",
+                      example: 12345,
                     },
                     allowedIps: {
                       type: "array",
-                      description: "Список разрешённых IP/подсетей",
-                      items: { type: "string" },
+                      description: "Список разрешенных IP/подсетей",
+                      items: { type: "string", example: "10.8.1.1/32" },
                     },
                     latestHandshakeUnix: {
                       type: "number",
-                      description: "UNIX-время последнего рукопожатия (сек)",
+                      description: "UNIX-время последнего рукопожатия",
+                      example: 1759477747,
                     },
                     latestHandshakeISO: {
                       type: "string",
                       nullable: true,
                       description: "ISO-время последнего рукопожатия",
+                      example: SwaggerContract.DateTimeExample,
                     },
                     latestHandshakeSecondsAgo: {
                       type: "number",
                       description: "Сколько секунд назад было рукопожатие",
+                      example: 180,
                     },
                     isActive: {
                       type: "boolean",
-                      description: "Активно ли устройство (<180 сек)",
+                      description: "Активно ли устройство",
+                      example: true,
                     },
                     transferRx: {
                       type: "number",
                       description: "Получено байт",
+                      example: 4490348984,
                     },
                     transferTx: {
                       type: "number",
                       description: "Отправлено байт",
+                      example: 66372801657,
                     },
                     persistentKeepalive: {
                       type: "number",
                       nullable: true,
-                      description: "Интервал keepalive в секундах или null",
+                      description: "Интервал keepalive в секундах",
+                      example: 25,
                     },
                   },
-                } as const satisfies AppJSONSchema,
+                },
               },
             },
-          } as const satisfies AppJSONSchema,
+          },
         },
       },
     } as const satisfies SwaggerContract.PaginatedResponseType,

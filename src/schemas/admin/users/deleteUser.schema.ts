@@ -1,3 +1,4 @@
+import { clientIdSchema } from "./common.schema";
 import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
@@ -9,7 +10,7 @@ export const deleteUserSchema = {
     type: "object",
     required: ["clientId"],
     properties: {
-      clientId: { type: "string", description: "Идентификатор (PublicKey)" },
+      clientId: clientIdSchema,
     },
   },
   response: {

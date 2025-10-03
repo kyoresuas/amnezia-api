@@ -1,4 +1,4 @@
-import { AmneziaUser } from "@/types/user";
+import { AmneziaUser } from "@/types/amnezia";
 import { AmneziaService } from "@/services/amnezia";
 
 /**

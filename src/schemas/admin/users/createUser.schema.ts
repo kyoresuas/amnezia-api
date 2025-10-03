@@ -1,3 +1,4 @@
+import { clientIdSchema } from "./common.schema";
 import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
@@ -9,30 +10,34 @@ export const createUserSchema = {
     type: "object",
     required: ["clientName"],
     properties: {
-      clientName: { type: "string", description: "Имя клиента" },
+      clientName: {
+        type: "string",
+        description: "Имя клиента",
+        example: "Kyoresuas",
+      },
     },
   },
   response: {
     200: {
       type: "object",
-      required: [
-        "message",
-        "clientId",
-        "clientPrivateKey",
-        "assignedIp",
-        "clientConfig",
-      ],
+      required: ["clientId", "clientPrivateKey", "assignedIp", "clientConfig"],
       properties: {
-        message: { type: "string" },
-        clientId: { type: "string", description: "PublicKey" },
+        ...SwaggerContract.ActionResponseSchema,
+        clientId: clientIdSchema,
         clientPrivateKey: {
           type: "string",
           description: "Приватный ключ клиента",
+          example: SwaggerContract.Base64Example,
         },
-        assignedIp: { type: "string", description: "Назначенный /32 IP" },
+        assignedIp: {
+          type: "string",
+          description: "Назначенный /32 IP",
+          example: "10.8.1.9/32",
+        },
         clientConfig: {
           type: "string",
           description: "Конфиг WireGuard для импорта в приложение",
+          example: "vpn://3fa85f64-5717-4562-b3fc-2c963f66afa6...",
         },
       },
     },
