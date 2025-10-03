@@ -12,7 +12,7 @@ export const deleteUserHandler: AppFastifyHandler<DeleteUserType> = async (
 
   const userService = di.container.resolve<UserService>(UserService.key);
 
-  const ok = await userService.revokeClient(clientId);
+  const ok = await userService.deleteUser(clientId);
 
   if (!ok) {
     reply.code(404).send({ message: i18next.t("swagger.codes.404") });

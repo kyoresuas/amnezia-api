@@ -19,9 +19,9 @@ export class UserService {
   }
 
   /**
-   * Создать нового клиента
+   * Создать нового пользователя
    */
-  async createClient(clientName: string): Promise<{
+  async createUser(clientName: string): Promise<{
     clientId: string;
     clientPrivateKey: string;
     assignedIp: string;
@@ -34,9 +34,9 @@ export class UserService {
   }
 
   /**
-   * Удалить клиента
+   * Удалить пользователя
    */
-  async revokeClient(clientId: string): Promise<boolean> {
-    return this.amneziaService.revokeClient(clientId);
+  async deleteUser(clientId: string): Promise<boolean> {
+    return this.amneziaService.deleteClient(clientId);
   }
 }

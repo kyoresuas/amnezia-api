@@ -406,7 +406,7 @@ export class AmneziaService {
   /**
    * Удалить клиента
    */
-  async revokeClient(clientId: string): Promise<boolean> {
+  async deleteClient(clientId: string): Promise<boolean> {
     let table = await this.connection.readClientsTable();
 
     // Сохраняем длину таблицы

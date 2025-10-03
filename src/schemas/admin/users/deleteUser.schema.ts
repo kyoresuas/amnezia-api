@@ -15,9 +15,9 @@ export const deleteUserSchema = {
   },
   response: {
     200: SwaggerContract.ActionResponseSchema,
-    404: SwaggerContract.ClientErrorResponseFactory(404),
     401: SwaggerContract.ClientErrorResponseFactory(401),
     403: SwaggerContract.ClientErrorResponseFactory(403),
+    404: SwaggerContract.ClientErrorResponseFactory(404),
   },
 } as const satisfies AppFastifySchema;
 

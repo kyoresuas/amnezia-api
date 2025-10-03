@@ -49,6 +49,8 @@ export const createUserSchema = {
     },
     401: SwaggerContract.ClientErrorResponseFactory(401),
     403: SwaggerContract.ClientErrorResponseFactory(403),
+    404: SwaggerContract.ClientErrorResponseFactory(404),
+    409: SwaggerContract.ClientErrorResponseFactory(409),
   },
 } as const satisfies AppFastifySchema;
 
