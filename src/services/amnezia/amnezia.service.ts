@@ -78,7 +78,7 @@ export class AmneziaService {
         const id = parts[0];
 
         // endpoint
-        const endpoint = parts[2] || null;
+        const endpoint = parts[2] && parts[2] !== "(none)" ? parts[2] : null;
 
         // allowedIps
         const allowedIps = parts[3].split(",").map((s) => s.trim());
