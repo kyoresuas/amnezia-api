@@ -1,3 +1,5 @@
+import { Types } from "mongoose";
+
 export type ArgumentsType<F extends () => any> = F extends (
   ...args: infer A
 ) => any
@@ -8,10 +10,13 @@ export type Primitive<T> = {
   [k in keyof T]: T[k] extends
     | bigint
     | Date
+    | Types.ObjectId
     | (bigint | null)
     | (Date | null)
+    | (Types.ObjectId | null)
     | (bigint | undefined)
     | (Date | undefined)
+    | (Types.ObjectId | undefined)
     ? never
     : T[k] extends object | (object | null) | (object | undefined)
     ? Primitive<T[k]>
@@ -20,6 +25,7 @@ export type Primitive<T> = {
 
 export enum CustomFormat {
   UUID = "uuid",
+  MONGOOSE_ID = "objectId",
   DATE_TIME = "dateTime",
 }
 
