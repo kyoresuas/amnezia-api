@@ -32,10 +32,11 @@ export class AmneziaService {
       .filter(Boolean)
       .filter((line) => {
         const parts = line.split("\t");
-        const endpoint = parts[2] || "";
-        const allowed = parts[3] || "";
+        const endpoint = parts[2] || null;
+        const allowed = parts[3] || null;
         return (
-          parts.length >= 8 && (endpoint.includes(":") || allowed.includes("/"))
+          parts.length >= 8 &&
+          (endpoint?.includes(":") || allowed?.includes("/"))
         );
       });
 
@@ -77,7 +78,7 @@ export class AmneziaService {
         const id = parts[0];
 
         // endpoint
-        const endpoint = parts[2] || "";
+        const endpoint = parts[2] || null;
 
         // allowedIps
         const allowedIps = parts[3].split(",").map((s) => s.trim());

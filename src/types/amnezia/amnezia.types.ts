@@ -12,7 +12,7 @@ export interface AmneziaDevice {
     received: number;
     sent: number;
   };
-  endpoint: string;
+  endpoint: string | null;
   online: boolean;
 }
 

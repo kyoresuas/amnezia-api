@@ -68,6 +68,7 @@ export const getUsersSchema = {
                     },
                     endpoint: {
                       type: "string",
+                      nullable: true,
                       description: "Адрес и порт подключения",
                       example: "192.168.1.1:12345",
                     },
