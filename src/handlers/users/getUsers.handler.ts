@@ -1,7 +1,7 @@
+import { GetUsersType } from "@/schemas";
 import { di } from "@/config/DIContainer";
 import { primitive } from "@/utils/primitive";
 import { UserService } from "@/services/user";
-import { GetUsersType } from "@/schemas/admin";
 import { AppFastifyHandler } from "@/types/shared";
 
 export const getUsersHandler: AppFastifyHandler<GetUsersType> = async (

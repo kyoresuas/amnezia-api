@@ -1,8 +1,7 @@
+import { getNodeHandler } from "@/handlers/node";
 import { AppFastifyRoute } from "@/types/shared";
 import { authPreHandler } from "@/middleware/auth";
-import { GetNodeType } from "@/schemas/admin/node";
-import { getNodeSchema } from "@/schemas/admin/node";
-import { getNodeHandler } from "@/handlers/admin/node";
+import { getNodeSchema, GetNodeType } from "@/schemas";
 
 /**
  * Получить информацию о ноде

@@ -1,11 +1,11 @@
 import "dotenv/config";
 import { TaskType } from "@/types/cron";
-import { FastifyRoutes, IAppConfig, Module } from "@/types/shared";
+import { IAppConfig, Module } from "@/types/shared";
 
 const {
   ENV,
   ENABLED_MODULES,
-  ENABLED_FASTIFY_ROUTES,
+  FASTIFY_ROUTES,
   ENABLED_TASK_TYPES,
   ENABLED_TASKS,
   API_KEY,
@@ -22,20 +22,6 @@ const {
   AMNEZIA_SERVER_PUBLIC_KEY_PATH,
 } = process.env;
 
-const enabledFastifyRoutes: IAppConfig["ENABLED_FASTIFY_ROUTES"] = {};
-
-if (ENABLED_FASTIFY_ROUTES) {
-  ENABLED_FASTIFY_ROUTES.split(",").forEach((group) => {
-    const [name, value] = group.split("=");
-    const [host, port] = value.split(":");
-
-    enabledFastifyRoutes[name as FastifyRoutes] = {
-      host,
-      port: Number(port),
-    };
-  });
-}
-
 /**
  * Главная конфигурация проекта
  */
@@ -44,7 +30,12 @@ const appConfig: IAppConfig = {
   ENABLED_MODULES: ENABLED_MODULES
     ? (ENABLED_MODULES.split(",") as Module[])
     : [],
-  ENABLED_FASTIFY_ROUTES: enabledFastifyRoutes,
+  FASTIFY_ROUTES: FASTIFY_ROUTES
+    ? (() => {
+        const [host, port] = FASTIFY_ROUTES.split(":");
+        return { host, port: Number(port) };
+      })()
+    : undefined,
   ENABLED_TASK_TYPES: ENABLED_TASK_TYPES
     ? (ENABLED_TASK_TYPES.split(",") as TaskType[])
     : [],

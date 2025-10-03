@@ -3,7 +3,6 @@ import {
   StatusCodes,
   SuccessCode,
   AppJSONSchema,
-  FastifyRoutes,
   RedirectionCode,
   ClientErrorCode,
   ServerErrorCode,
@@ -14,13 +13,6 @@ import { FastifySwaggerUiOptions } from "@fastify/swagger-ui";
 import { FastifyDynamicSwaggerOptions } from "@fastify/swagger";
 
 export namespace SwaggerContract {
-  /**
-   * Тег для документации Client API
-   */
-  export enum ClientTag {
-    USER = "User",
-  }
-
   /**
    * Тег для документации Admin API
    */
@@ -262,9 +254,7 @@ export namespace SwaggerContract {
     } as const satisfies ActionResponseType;
   };
 
-  export const GetConfig = (
-    routes: FastifyRoutes
-  ): FastifyDynamicSwaggerOptions => {
+  export const GetConfig = (routes: "admin"): FastifyDynamicSwaggerOptions => {
     const openapi: FastifyDynamicSwaggerOptions["openapi"] = {
       openapi: "3.0.0",
       tags: [],
@@ -299,17 +289,6 @@ export namespace SwaggerContract {
         openapi.tags!.push({
           name: SwaggerContract.AdminTag.NODE,
           description: "Маршруты для управления нодой",
-        });
-        break;
-
-      case "client":
-        openapi.info = {
-          title: "Client API",
-          version: "1.0.0",
-        };
-        openapi.tags!.push({
-          name: SwaggerContract.ClientTag.USER,
-          description: "Маршруты для пользователя",
         });
         break;
     }

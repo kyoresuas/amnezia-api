@@ -1,6 +1,5 @@
 import { Types } from "mongoose";
 import { TaskType } from "../cron";
-import { FastifyRoutes } from "./fastify.types";
 
 export type ArgumentsType<F extends () => any> = F extends (
   ...args: infer A
@@ -36,11 +35,9 @@ export type Module = "fastify" | "analytics" | "redis" | "queue";
 export interface IAppConfig {
   ENV: "development" | "preproduction" | "production";
   ENABLED_MODULES: Module[];
-  ENABLED_FASTIFY_ROUTES: {
-    [x in FastifyRoutes]?: {
-      host: string;
-      port: number;
-    };
+  FASTIFY_ROUTES?: {
+    host: string;
+    port: number;
   };
   ENABLED_TASK_TYPES: TaskType[];
   ENABLED_TASKS: string[];

@@ -10,35 +10,33 @@ import fastifySwagger from "@fastify/swagger";
 import fastifyFormbody from "@fastify/formbody";
 import { plugin } from "i18next-http-middleware";
 import fastifySwaggerUi from "@fastify/swagger-ui";
+import { AppFastifyInstance } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 import { setupAjvValidator } from "./setupAjvValidator";
 import { setupFastifyRoutes } from "./setupFastifyRoutes";
 import { getFastifyRoutes } from "@/helpers/getFastifyRoutes";
-import { AppFastifyInstance, FastifyRoutes } from "@/types/shared";
 import { fastifyErrorHandler } from "@/helpers/fastifyErrorHandler";
 import { JsonSchemaToTsProvider } from "@fastify/type-provider-json-schema-to-ts";
 
 /**
  * Запуск систем Fastify
  */
-export const setupFastify = async (routes: FastifyRoutes): Promise<void> => {
-  const { host, port } = appConfig.ENABLED_FASTIFY_ROUTES[routes]!;
+export const setupFastify = async (): Promise<void> => {
+  const { host, port } = appConfig.FASTIFY_ROUTES!;
 
   if (!host) {
     throw new APIError(500, {
       msg: "system.NO_FASTIFY_HOST",
-      args: { routes },
     });
   }
 
   if (typeof port !== "number" || Number.isNaN(port)) {
     throw new APIError(500, {
       msg: "system.NO_FASTIFY_PORT",
-      args: { routes },
     });
   }
 
-  appLogger.info(`Запуск приложения Fastify (${routes})...`);
+  appLogger.info(`Запуск приложения Fastify...`);
 
   const fastify: AppFastifyInstance = Fastify({
     disableRequestLogging: true,
@@ -56,7 +54,7 @@ export const setupFastify = async (routes: FastifyRoutes): Promise<void> => {
   await fastify.register(plugin as never, { i18next });
 
   // Регистрация сваггера
-  await fastify.register(fastifySwagger, SwaggerContract.GetConfig(routes));
+  await fastify.register(fastifySwagger, SwaggerContract.GetConfig("admin"));
   await fastify.register(fastifySwaggerUi, SwaggerContract.ConfigUi);
 
   // Прочие плагины
@@ -66,14 +64,12 @@ export const setupFastify = async (routes: FastifyRoutes): Promise<void> => {
   await fastify.register(fastifyCors, { origin: true, credentials: true });
 
   // Регистрация маршрутов
-  setupFastifyRoutes(fastify, routes);
+  setupFastifyRoutes(fastify);
 
   await fastify.listen({ host, port });
   await fastify.ready();
 
-  appLogger.verbose(
-    `Приложение Fastify (${routes}) запущено на '${host}:${port}'`
-  );
+  appLogger.verbose(`Приложение Fastify запущено на '${host}:${port}'`);
 
   console.log(getFastifyRoutes(fastify));
 };

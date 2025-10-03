@@ -1,6 +1,6 @@
+import { GetNodeType } from "@/schemas";
 import { di } from "@/config/DIContainer";
 import appConfig from "@/constants/appConfig";
-import { GetNodeType } from "@/schemas/admin/node";
 import { AppFastifyHandler } from "@/types/shared";
 import { AmneziaService } from "@/services/amnezia";
 

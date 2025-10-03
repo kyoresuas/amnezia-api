@@ -45,7 +45,7 @@ export type AppJSONSchema = JSONSchema &
   }>;
 
 export interface AppFastifySchema extends FastifySchema {
-  tags?: SwaggerContract.AdminTag[] | SwaggerContract.ClientTag[];
+  tags?: SwaggerContract.AdminTag[];
   summary?: string;
   body?: AppJSONSchema;
   querystring?: AppJSONSchema;
@@ -90,5 +90,3 @@ export type AppFastifyHandler<SchemaType extends AppFastifySchema> =
     JsonSchemaToTsProvider<FromSchemaDefaultOptions>,
     FastifyBaseLogger
   >;
-
-export type FastifyRoutes = "admin" | "client";

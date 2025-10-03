@@ -1,7 +1,7 @@
 import i18next from "i18next";
 import { di } from "@/config/DIContainer";
+import { CreateUserType } from "@/schemas";
 import { UserService } from "@/services/user";
-import { CreateUserType } from "@/schemas/admin";
 import { AppFastifyHandler } from "@/types/shared";
 
 export const createUserHandler: AppFastifyHandler<CreateUserType> = async (

@@ -1,7 +1,6 @@
 import "@/config/setupMultilingualism";
 
 import appConfig from "@/constants/appConfig";
-import { FastifyRoutes } from "@/types/shared";
 import { setupFastify } from "@/config/fastify";
 import { appLogger } from "@/config/winstonLogger";
 import { setupDIContainer } from "@/config/DIContainer";
@@ -13,13 +12,7 @@ const bootstrapApp = async (): Promise<void> => {
 
   // Запустить Fastify API
   if (appConfig.ENABLED_MODULES.includes("fastify")) {
-    for (const routes in appConfig.ENABLED_FASTIFY_ROUTES) {
-      try {
-        await setupFastify(routes as FastifyRoutes);
-      } catch (err) {
-        appLogger.fatal((err as Error).message, true);
-      }
-    }
+    await setupFastify();
   }
 
   // Запустить очередь задач

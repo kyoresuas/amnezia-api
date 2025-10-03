@@ -5,12 +5,12 @@ import {
   getUsersSchema,
   deleteUserSchema,
   createUserSchema,
-} from "@/schemas/admin";
+} from "@/schemas";
 import {
   getUsersHandler,
   createUserHandler,
   deleteUserHandler,
-} from "@/handlers/admin";
+} from "@/handlers/users";
 import { AppFastifyRoute } from "@/types/shared";
 import { authPreHandler } from "@/middleware/auth";
 
