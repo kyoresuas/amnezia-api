@@ -1,7 +1,7 @@
 import { exec } from "child_process";
 import { RunOptions } from "@/types/amnezia";
 import appConfig from "@/constants/appConfig";
-import { ClientTableEntry } from "@/types/user";
+import { ClientTableEntry } from "@/types/amnezia";
 
 /**
  * Создать соединение с AmneziaVPN

@@ -446,8 +446,4 @@ export class AmneziaService {
       await this.connection.syncWgConfig();
     }
   }
-
-  /**
-   * Получить имена и устройства пользователей из Amnezia clientsTable
-   */
 }

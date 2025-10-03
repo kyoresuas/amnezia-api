@@ -19,7 +19,7 @@ export const getUsersSchema = {
           description: "Пользователи",
           items: {
             type: "object",
-            required: ["clientId", "username", "devices"],
+            required: ["username", "devices"],
             properties: {
               username: {
                 type: "string",
