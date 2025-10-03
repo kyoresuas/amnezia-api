@@ -1,13 +1,10 @@
 import "dotenv/config";
-import { TaskType } from "@/types/cron";
 import { IAppConfig, Module } from "@/types/shared";
 
 const {
   ENV,
   ENABLED_MODULES,
   FASTIFY_ROUTES,
-  ENABLED_TASK_TYPES,
-  ENABLED_TASKS,
   API_KEY,
   NODE_ID,
   NODE_REGION,
@@ -36,10 +33,6 @@ const appConfig: IAppConfig = {
         return { host, port: Number(port) };
       })()
     : undefined,
-  ENABLED_TASK_TYPES: ENABLED_TASK_TYPES
-    ? (ENABLED_TASK_TYPES.split(",") as TaskType[])
-    : [],
-  ENABLED_TASKS: ENABLED_TASKS ? ENABLED_TASKS.split(",") : [],
   API_KEY,
   NODE_ID,
   NODE_REGION,

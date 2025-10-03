@@ -1,5 +1,4 @@
 import { Types } from "mongoose";
-import { TaskType } from "../cron";
 
 export type ArgumentsType<F extends () => any> = F extends (
   ...args: infer A
@@ -30,7 +29,7 @@ export enum CustomFormat {
   DATE_TIME = "dateTime",
 }
 
-export type Module = "fastify" | "analytics" | "redis" | "queue";
+export type Module = "fastify";
 
 export interface IAppConfig {
   ENV: "development" | "preproduction" | "production";
@@ -39,8 +38,6 @@ export interface IAppConfig {
     host: string;
     port: number;
   };
-  ENABLED_TASK_TYPES: TaskType[];
-  ENABLED_TASKS: string[];
   API_KEY?: string;
   NODE_ID?: string;
   NODE_REGION?: string;
