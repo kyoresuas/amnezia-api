@@ -45,7 +45,7 @@ export type AppJSONSchema = JSONSchema &
   }>;
 
 export interface AppFastifySchema extends FastifySchema {
-  tags?: SwaggerContract.AdminTag[];
+  tags?: SwaggerContract.Tags[];
   summary?: string;
   body?: AppJSONSchema;
   querystring?: AppJSONSchema;

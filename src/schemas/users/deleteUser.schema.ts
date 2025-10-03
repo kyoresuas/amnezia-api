@@ -3,7 +3,7 @@ import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
 export const deleteUserSchema = {
-  tags: [SwaggerContract.AdminTag.USERS],
+  tags: [SwaggerContract.Tags.USERS],
   summary: "Удалить клиента",
   security: [{ ApiKey: [] }],
   body: {

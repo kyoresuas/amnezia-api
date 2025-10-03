@@ -3,7 +3,7 @@ import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
 export const createUserSchema = {
-  tags: [SwaggerContract.AdminTag.USERS],
+  tags: [SwaggerContract.Tags.USERS],
   summary: "Создать нового клиента",
   security: [{ ApiKey: [] }],
   body: {

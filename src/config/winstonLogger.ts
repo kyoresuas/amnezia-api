@@ -139,18 +139,6 @@ export class AppLogger {
 
     this.logger.info(chalk.cyan(`${prefix} -> ${coloredDuration}`));
   }
-
-  /**
-   * Информация о CRON-задаче
-   */
-  taskInfo(name: string, progress: number): void {
-    const coloredName: string = chalk.bold(chalk.greenBright(name));
-    const coloredProgress: string = chalk.bold(
-      chalk.greenBright(progress.toFixed(2) + "%")
-    );
-
-    this.logger.info(`Прогресс задачи ${coloredName}: ${coloredProgress}`);
-  }
 }
 
 /**

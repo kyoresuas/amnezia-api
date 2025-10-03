@@ -14,9 +14,9 @@ import { FastifyDynamicSwaggerOptions } from "@fastify/swagger";
 
 export namespace SwaggerContract {
   /**
-   * Тег для документации Admin API
+   * Теги для документации
    */
-  export enum AdminTag {
+  export enum Tags {
     USERS = "Users",
     NODE = "Node",
   }
@@ -254,7 +254,7 @@ export namespace SwaggerContract {
     } as const satisfies ActionResponseType;
   };
 
-  export const GetConfig = (routes: "admin"): FastifyDynamicSwaggerOptions => {
+  export const GetConfig = (): FastifyDynamicSwaggerOptions => {
     const openapi: FastifyDynamicSwaggerOptions["openapi"] = {
       openapi: "3.0.0",
       tags: [],
@@ -274,24 +274,20 @@ export namespace SwaggerContract {
       },
     };
 
-    switch (routes) {
-      case "admin":
-        openapi.info = {
-          title: "Admin API",
-          version: "1.0.0",
-        };
+    openapi.info = {
+      title: "Admin API",
+      version: "1.0.0",
+    };
 
-        openapi.tags!.push({
-          name: SwaggerContract.AdminTag.USERS,
-          description: "Маршруты для управления пользователями",
-        });
+    openapi.tags!.push({
+      name: SwaggerContract.Tags.USERS,
+      description: "Маршруты для управления пользователями",
+    });
 
-        openapi.tags!.push({
-          name: SwaggerContract.AdminTag.NODE,
-          description: "Маршруты для управления нодой",
-        });
-        break;
-    }
+    openapi.tags!.push({
+      name: SwaggerContract.Tags.NODE,
+      description: "Маршруты для управления нодой",
+    });
 
     return {
       swagger: {

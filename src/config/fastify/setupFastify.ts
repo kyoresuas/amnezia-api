@@ -54,7 +54,7 @@ export const setupFastify = async (): Promise<void> => {
   await fastify.register(plugin as never, { i18next });
 
   // Регистрация сваггера
-  await fastify.register(fastifySwagger, SwaggerContract.GetConfig("admin"));
+  await fastify.register(fastifySwagger, SwaggerContract.GetConfig());
   await fastify.register(fastifySwaggerUi, SwaggerContract.ConfigUi);
 
   // Прочие плагины

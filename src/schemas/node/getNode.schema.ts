@@ -2,7 +2,7 @@ import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
 export const getNodeSchema = {
-  tags: [SwaggerContract.AdminTag.NODE],
+  tags: [SwaggerContract.Tags.NODE],
   summary: "Статус текущей ноды",
   security: [{ ApiKey: [] }],
   response: {

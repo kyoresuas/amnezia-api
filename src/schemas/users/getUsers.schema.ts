@@ -3,7 +3,7 @@ import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
 export const getUsersSchema = {
-  tags: [SwaggerContract.AdminTag.USERS],
+  tags: [SwaggerContract.Tags.USERS],
   summary: "Получить всех пользователей",
   security: [{ ApiKey: [] }],
   querystring: SwaggerContract.EnablePaginationSchema,
