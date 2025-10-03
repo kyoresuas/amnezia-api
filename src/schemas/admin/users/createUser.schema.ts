@@ -20,9 +20,15 @@ export const createUserSchema = {
   response: {
     200: {
       type: "object",
-      required: ["clientId", "clientPrivateKey", "assignedIp", "clientConfig"],
+      required: [
+        "message",
+        "clientId",
+        "clientPrivateKey",
+        "assignedIp",
+        "clientConfig",
+      ],
       properties: {
-        ...SwaggerContract.ActionResponseSchema,
+        message: SwaggerContract.ActionResponseSchema.properties.message,
         clientId: clientIdSchema,
         clientPrivateKey: {
           type: "string",
