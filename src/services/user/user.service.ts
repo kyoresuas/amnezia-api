@@ -13,9 +13,7 @@ export class UserService {
    * Получить список пользователей из wg dump
    */
   async getUsers(): Promise<AmneziaUser[]> {
-    const users = await this.amneziaService.getUsers();
-
-    return users;
+    return await this.amneziaService.getUsers();
   }
 
   /**
@@ -27,10 +25,7 @@ export class UserService {
     assignedIp: string;
     clientConfig: string;
   }> {
-    const { clientId, clientPrivateKey, assignedIp, clientConfig } =
-      await this.amneziaService.createClient(clientName);
-
-    return { clientId, clientPrivateKey, assignedIp, clientConfig };
+    return await this.amneziaService.createClient(clientName);
   }
 
   /**
