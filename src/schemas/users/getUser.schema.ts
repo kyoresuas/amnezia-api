@@ -16,9 +16,9 @@ export const getUserSchema = {
   response: {
     200: {
       type: "object",
-      required: ["user", "config"],
+      required: ["client", "config"],
       properties: {
-        user: {
+        client: {
           type: "object",
           required: ["username", "devices"],
           properties: {

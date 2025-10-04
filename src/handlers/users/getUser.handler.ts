@@ -27,5 +27,5 @@ export const getUserHandler: AppFastifyHandler<GetUserType> = async (
   // Сгенерировать конфиг vpn://
   const config = await amneziaService.getClientConfig(clientId);
 
-  reply.code(200).send({ user: primitive(user), config });
+  reply.code(200).send({ client: primitive(user), config });
 };

@@ -54,7 +54,7 @@ export const deleteUserController: AppFastifyRoute<DeleteUserType> = {
  * Получить пользователя и его конфиг
  */
 export const getUserController: AppFastifyRoute<GetUserType> = {
-  url: "/users/:userId",
+  url: "/users/:clientId",
   method: "GET",
   schema: getUserSchema,
   preHandler: authPreHandler(),
