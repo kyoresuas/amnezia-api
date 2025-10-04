@@ -22,6 +22,11 @@ export class AmneziaService {
     // Текущий конфиг wg
     const config = await this.connection.readWgConfig();
 
+    // Сгенерировать приватный ключ
+    const clientPrivateKey = (
+      await this.connection.run(`wg genkey`)
+    ).stdout.trim();
+
     // Параметры сервера
     const serverPublicKey = (
       await this.connection.run(
@@ -76,13 +81,13 @@ export class AmneziaService {
       allowed_ips: ["0.0.0.0/0", "::/0"],
       clientId: clientId,
       client_ip: `${allowedIp}`,
-      client_priv_key: "", // приватный ключ недоступен
+      client_priv_key: clientPrivateKey,
       client_pub_key: clientId,
       config:
         `[Interface]\n` +
         `Address = ${allowedIp}/32\n` +
         `DNS = $PRIMARY_DNS, $SECONDARY_DNS\n` +
-        `PrivateKey = $PRIVATE_KEY\n` +
+        `PrivateKey = ${clientPrivateKey}\n` +
         `Jc = ${awgParams.Jc}\n` +
         `Jmin = ${awgParams.Jmin}\n` +
         `Jmax = ${awgParams.Jmax}\n` +
@@ -116,6 +121,17 @@ export class AmneziaService {
       transport_proto: "udp",
     };
 
+    // Получить username
+    const clientsTable = await this.connection.readClientsTable();
+    const clientName = (
+      clientsTable.find(
+        (x) => ((x && (x.clientId || x.publicKey)) || "") === clientId
+      )?.userData?.clientName || ""
+    ).trim();
+
+    const nameMatch = clientName.match(/^\s*(.*?)\s*(?:\[(.*)\])?\s*$/);
+    const username = (nameMatch?.[1] || clientName || clientId).trim();
+
     // JSON для сервера
     const serverJson = {
       containers: [
@@ -125,7 +141,7 @@ export class AmneziaService {
         },
       ],
       defaultContainer: "amnezia-awg",
-      description: `${appConfig.AMNEZIA_DESCRIPTION} | ${clientId}`,
+      description: `${appConfig.AMNEZIA_DESCRIPTION} | ${username}`,
       dns1:
         (
           await this.connection.run(
