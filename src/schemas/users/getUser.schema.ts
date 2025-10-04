@@ -8,9 +8,13 @@ export const getUserSchema = {
   security: [{ ApiKey: [] }],
   params: {
     type: "object",
-    required: ["clientId"],
+    required: ["username"],
     properties: {
-      clientId: clientIdSchema,
+      username: {
+        type: "string",
+        description: "Имя пользователя",
+        example: "Kyoresuas",
+      },
     },
   },
   response: {

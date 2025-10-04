@@ -32,7 +32,7 @@ export const getUsersController: AppFastifyRoute<GetUsersType> = {
  * Получить пользователя и его конфиг
  */
 export const getUserController: AppFastifyRoute<GetUserType> = {
-  url: "/users/:clientId",
+  url: "/users/:username",
   method: "GET",
   schema: getUserSchema,
   preHandler: authPreHandler(),
