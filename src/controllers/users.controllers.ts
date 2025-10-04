@@ -26,7 +26,7 @@ export const getUsersController: AppFastifyRoute<GetUsersType> = {
 };
 
 /**
- * Добавить или изменить имя клиента
+ * Добавить пользователя
  */
 export const createUserController: AppFastifyRoute<CreateUserType> = {
   url: "/users",
@@ -37,7 +37,7 @@ export const createUserController: AppFastifyRoute<CreateUserType> = {
 };
 
 /**
- * Удалить клиента
+ * Удалить пользователя
  */
 export const deleteUserController: AppFastifyRoute<DeleteUserType> = {
   url: "/users",
