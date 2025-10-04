@@ -1,5 +1,7 @@
 import {
+  GetUserType,
   GetUsersType,
+  getUserSchema,
   CreateUserType,
   DeleteUserType,
   getUsersSchema,
@@ -7,6 +9,7 @@ import {
   createUserSchema,
 } from "@/schemas";
 import {
+  getUserHandler,
   getUsersHandler,
   createUserHandler,
   deleteUserHandler,
@@ -45,4 +48,15 @@ export const deleteUserController: AppFastifyRoute<DeleteUserType> = {
   schema: deleteUserSchema,
   preHandler: authPreHandler(),
   handler: deleteUserHandler,
+};
+
+/**
+ * Получить пользователя и его конфиг
+ */
+export const getUserController: AppFastifyRoute<GetUserType> = {
+  url: "/users/:userId",
+  method: "GET",
+  schema: getUserSchema,
+  preHandler: authPreHandler(),
+  handler: getUserHandler,
 };
