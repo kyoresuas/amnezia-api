@@ -29,6 +29,17 @@ export const getUsersController: AppFastifyRoute<GetUsersType> = {
 };
 
 /**
+ * Получить пользователя и его конфиг
+ */
+export const getUserController: AppFastifyRoute<GetUserType> = {
+  url: "/users/user",
+  method: "GET",
+  schema: getUserSchema,
+  preHandler: authPreHandler(),
+  handler: getUserHandler,
+};
+
+/**
  * Добавить пользователя
  */
 export const createUserController: AppFastifyRoute<CreateUserType> = {
@@ -48,15 +59,4 @@ export const deleteUserController: AppFastifyRoute<DeleteUserType> = {
   schema: deleteUserSchema,
   preHandler: authPreHandler(),
   handler: deleteUserHandler,
-};
-
-/**
- * Получить пользователя и его конфиг
- */
-export const getUserController: AppFastifyRoute<GetUserType> = {
-  url: "/users/:clientId",
-  method: "GET",
-  schema: getUserSchema,
-  preHandler: authPreHandler(),
-  handler: getUserHandler,
 };
