@@ -1,8 +1,8 @@
 import i18next from "i18next";
 import { di } from "@/config/DIContainer";
 import { DeleteUserType } from "@/schemas";
-import { AmneziaService } from "@/services/amnezia";
 import { AppFastifyHandler } from "@/types/shared";
+import { AmneziaService } from "@/services/amnezia";
 
 export const deleteUserHandler: AppFastifyHandler<DeleteUserType> = async (
   req,

@@ -6,7 +6,7 @@ export const getUserSchema = {
   tags: [SwaggerContract.Tags.USERS],
   summary: "Получить пользователя и его конфиг",
   security: [{ ApiKey: [] }],
-  body: {
+  params: {
     type: "object",
     required: ["clientId"],
     properties: {
