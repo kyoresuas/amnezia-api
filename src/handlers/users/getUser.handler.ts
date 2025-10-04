@@ -9,7 +9,7 @@ export const getUserHandler: AppFastifyHandler<GetUserType> = async (
   req,
   reply
 ) => {
-  const { clientId } = req.params;
+  const { clientId } = req.body;
 
   const amneziaService = di.container.resolve<AmneziaService>(
     AmneziaService.key

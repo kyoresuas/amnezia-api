@@ -1,12 +1,12 @@
+import { clientIdSchema } from "./common.schema";
 import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
-import { clientIdSchema } from "./common.schema";
 
 export const getUserSchema = {
   tags: [SwaggerContract.Tags.USERS],
   summary: "Получить пользователя и его конфиг",
   security: [{ ApiKey: [] }],
-  params: {
+  body: {
     type: "object",
     required: ["clientId"],
     properties: {
