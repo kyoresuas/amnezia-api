@@ -18,7 +18,7 @@ export const getNodeHandler: AppFastifyHandler<GetNodeType> = async (
     weight: appConfig.NODE_WEIGHT || 0,
     maxPeers: appConfig.NODE_MAX_PEERS || 0,
     interface: appConfig.AMNEZIA_INTERFACE || "",
-    peers: users.reduce((acc, user) => acc + user.devices.length, 0),
+    totalPeers: users.reduce((acc, user) => acc + user.devices.length, 0),
   };
 
   reply.code(200).send(status);

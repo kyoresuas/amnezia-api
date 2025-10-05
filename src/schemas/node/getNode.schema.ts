@@ -9,7 +9,14 @@ export const getNodeSchema = {
     200: {
       type: "object",
       description: "Информация о текущей ноде",
-      required: ["id", "region", "weight", "maxPeers", "interface", "peers"],
+      required: [
+        "id",
+        "region",
+        "weight",
+        "maxPeers",
+        "interface",
+        "totalPeers",
+      ],
       properties: {
         id: {
           type: "string",
@@ -36,7 +43,7 @@ export const getNodeSchema = {
           description: "Имя интерфейса WireGuard/AmneziaWG",
           example: "wg0",
         },
-        peers: {
+        totalPeers: {
           type: "number",
           description: "Текущее число клиентов",
           example: 8,
