@@ -8,7 +8,7 @@ export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
   req,
   reply
 ) => {
-  const { clientName } = req.body;
+  const { clientName, expiresAt } = req.body;
 
   const amneziaService = di.container.resolve<AmneziaService>(
     AmneziaService.key
@@ -22,7 +22,9 @@ export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
     return;
   }
 
-  const { id, config } = await amneziaService.createClient(clientName);
+  const { id, config } = await amneziaService.createClient(clientName, {
+    expiresAt: expiresAt ?? null,
+  });
 
   reply.code(200).send({
     message: i18next.t("swagger.messages.SAVED"),

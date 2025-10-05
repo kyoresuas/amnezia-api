@@ -24,5 +24,5 @@ export interface AmneziaUser {
 export type ClientTableEntry = {
   clientId?: string;
   publicKey?: string;
-  userData?: { clientName?: string; creationDate?: string };
+  userData?: { clientName?: string; creationDate?: string; expiresAt?: number };
 };

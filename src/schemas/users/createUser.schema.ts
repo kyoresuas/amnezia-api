@@ -15,6 +15,12 @@ export const createUserSchema = {
         description: "Имя клиента",
         example: "Kyoresuas",
       },
+      expiresAt: {
+        type: "integer",
+        nullable: true,
+        description: "Дата удаления клиента",
+        example: 1735689600,
+      },
     },
   },
   response: {

@@ -1,8 +1,8 @@
 import { deflateSync } from "zlib";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
-import { AmneziaUser, AmneziaDevice } from "@/types/amnezia";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
+import { AmneziaUser, AmneziaDevice, ClientTableEntry } from "@/types/amnezia";
 
 /**
  * Сервис получения пользователей AmneziaVPN
@@ -143,7 +143,10 @@ export class AmneziaService {
   /**
    * Создать нового клиента
    */
-  async createClient(clientName: string): Promise<{
+  async createClient(
+    clientName: string,
+    options?: { expiresAt?: number | null }
+  ): Promise<{
     id: string;
     config: string;
   }> {
@@ -228,7 +231,16 @@ export class AmneziaService {
     const creationDate = new Date().toString();
 
     // Добавляем клиента в clientsTable
-    table.push({ clientId, userData: { clientName, creationDate } });
+    const userData: ClientTableEntry["userData"] = {
+      clientName,
+      creationDate,
+    };
+
+    if (options?.expiresAt) {
+      userData.expiresAt = options.expiresAt;
+    }
+
+    table.push({ clientId, userData });
     await this.connection.writeClientsTable(table);
 
     // Получаем публичный ключ сервера
