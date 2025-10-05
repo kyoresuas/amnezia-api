@@ -201,7 +201,7 @@ export class AmneziaService {
     config: string;
   }> {
     // Проверка лимита максимального числа устройств
-    const maxPeers = appConfig.NODE_MAX_PEERS;
+    const maxPeers = appConfig.SERVER_MAX_PEERS;
     if (maxPeers) {
       const users = await this.getUsers();
 

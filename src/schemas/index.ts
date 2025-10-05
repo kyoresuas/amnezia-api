@@ -1,2 +1,2 @@
 export * from "./users";
-export * from "./node";
+export * from "./server";

@@ -1,14 +1,14 @@
 import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
-export const getNodeSchema = {
+export const getServerSchema = {
   tags: [SwaggerContract.Tags.NODE],
   summary: "Статус текущей ноды",
   security: [{ ApiKey: [] }],
   response: {
     200: {
       type: "object",
-      description: "Информация о текущей ноде",
+      description: "Информация о текущем сервере",
       required: [
         "id",
         "region",
@@ -55,4 +55,4 @@ export const getNodeSchema = {
   },
 } as const satisfies AppFastifySchema;
 
-export type GetNodeType = typeof getNodeSchema;
+export type GetServerType = typeof getServerSchema;

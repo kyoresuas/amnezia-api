@@ -1,10 +1,10 @@
-import { GetNodeType } from "@/schemas";
 import { di } from "@/config/DIContainer";
+import { GetServerType } from "@/schemas";
 import appConfig from "@/constants/appConfig";
 import { AppFastifyHandler } from "@/types/shared";
 import { AmneziaService } from "@/services/amnezia";
 
-export const getNodeHandler: AppFastifyHandler<GetNodeType> = async (
+export const getServerHandler: AppFastifyHandler<GetServerType> = async (
   req,
   reply
 ) => {
@@ -13,10 +13,10 @@ export const getNodeHandler: AppFastifyHandler<GetNodeType> = async (
   const users = await amnezia.getUsers();
 
   const status = {
-    id: appConfig.NODE_ID || "",
-    region: appConfig.NODE_REGION || "",
-    weight: appConfig.NODE_WEIGHT || 0,
-    maxPeers: appConfig.NODE_MAX_PEERS || 0,
+    id: appConfig.SERVER_ID || "",
+    region: appConfig.SERVER_REGION || "",
+    weight: appConfig.SERVER_WEIGHT || 0,
+    maxPeers: appConfig.SERVER_MAX_PEERS || 0,
     interface: appConfig.AMNEZIA_INTERFACE || "",
     totalPeers: users.reduce((acc, user) => acc + user.devices.length, 0),
   };

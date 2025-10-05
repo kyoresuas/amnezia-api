@@ -36,10 +36,10 @@ export interface IAppConfig {
     port: number;
   };
   FASTIFY_API_KEY?: string;
-  NODE_ID?: string;
-  NODE_REGION?: string;
-  NODE_WEIGHT?: number;
-  NODE_MAX_PEERS?: number;
+  SERVER_ID?: string;
+  SERVER_REGION?: string;
+  SERVER_WEIGHT?: number;
+  SERVER_MAX_PEERS?: number;
   AMNEZIA_INTERFACE?: string;
   AMNEZIA_DOCKER_CONTAINER?: string;
   AMNEZIA_PUBLIC_HOST?: string;

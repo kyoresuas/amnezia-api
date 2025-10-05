@@ -1,2 +1,2 @@
 export * from "./users.controllers";
-export * from "./node.controllers";
+export * from "./server.controllers";
