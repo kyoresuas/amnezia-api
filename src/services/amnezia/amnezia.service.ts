@@ -75,7 +75,10 @@ export class AmneziaService {
       });
 
     // Получаем данные пользователей
-    const userData: Record<string, { name: string; devices: string[] }> = {};
+    const userData: Record<
+      string,
+      { name: string; devices: string[]; expiresAt?: number }
+    > = {};
 
     // Считываем clientsTable
     const clientsTable = await this.connection.readClientsTable();
@@ -84,6 +87,7 @@ export class AmneziaService {
     for (const client of clientsTable) {
       const clientKey = client?.clientId;
       const clientName = client?.userData?.clientName;
+      const expiresAt = client.userData?.expiresAt;
 
       if (!clientKey || !clientName) continue;
 
@@ -94,12 +98,21 @@ export class AmneziaService {
 
       // Инициализируем или обновляем запись пользователя
       if (!userData[clientKey]) {
-        userData[clientKey] = { name: userName, devices: [] };
+        userData[clientKey] = {
+          name: userName,
+          devices: [],
+          expiresAt,
+        };
       }
 
       // Добавляем устройство, если оно указано и еще не добавлено
       if (deviceName && !userData[clientKey].devices.includes(deviceName)) {
         userData[clientKey].devices.push(deviceName);
+      }
+
+      // Обновляем expiresAt, если он есть
+      if (expiresAt) {
+        userData[clientKey].expiresAt = expiresAt;
       }
     }
 
@@ -138,6 +151,9 @@ export class AmneziaService {
         const username = userData[id]?.name || id;
         const name = userData[id]?.devices?.[0] ?? null;
 
+        // expiresAt
+        const expiresAt = userData[id]?.expiresAt || null;
+
         return {
           username,
           id,
@@ -150,6 +166,7 @@ export class AmneziaService {
           },
           endpoint,
           online,
+          expiresAt,
         };
       }
     );

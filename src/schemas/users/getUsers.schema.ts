@@ -39,6 +39,7 @@ export const getUsersSchema = {
                     "traffic",
                     "online",
                     "endpoint",
+                    "expiresAt",
                   ],
                   properties: {
                     id: clientIdSchema,
@@ -75,6 +76,12 @@ export const getUsersSchema = {
                     online: {
                       type: "boolean",
                       example: true,
+                    },
+                    expiresAt: {
+                      type: "number",
+                      nullable: true,
+                      description: "Дата удаления клиента",
+                      example: 1735689600,
                     },
                   },
                 },

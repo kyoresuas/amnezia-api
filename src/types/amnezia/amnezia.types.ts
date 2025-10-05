@@ -14,6 +14,7 @@ export interface AmneziaDevice {
   };
   endpoint: string | null;
   online: boolean;
+  expiresAt: number | null;
 }
 
 export interface AmneziaUser {
