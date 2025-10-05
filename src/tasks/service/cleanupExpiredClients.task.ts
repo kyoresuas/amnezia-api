@@ -8,5 +8,9 @@ export const cleanupExpiredClientsTask: TaskHandler = async () => {
 
   const removed = await amnezia.cleanupExpiredClients();
 
-  appLogger.info(`Было удалено ${removed} просроченных клиентов`);
+  if (removed === 0) {
+    appLogger.info("Просроченных клиентов не найдено");
+  } else {
+    appLogger.info(`Было удалено ${removed} просроченных клиентов`);
+  }
 };
