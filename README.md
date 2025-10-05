@@ -16,6 +16,11 @@ git clone https://github.com/kyoresuas/amnezia-api.git
 bash ./scripts/setup.sh
 ```
 
+TODO-лист
+
+1. Добавить ограничение по трафику
+2. 
+
 Лицензия
 
 MIT — см. файл `LICENSE`.
