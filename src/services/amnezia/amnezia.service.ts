@@ -1,4 +1,5 @@
 import { deflateSync } from "zlib";
+import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AmneziaUser, AmneziaDevice } from "@/types/amnezia";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
@@ -146,6 +147,21 @@ export class AmneziaService {
     id: string;
     config: string;
   }> {
+    // Проверка лимита максимального числа устройств
+    const maxPeers = appConfig.NODE_MAX_PEERS;
+    if (maxPeers) {
+      const users = await this.getUsers();
+
+      const currentPeers = users.reduce(
+        (acc, user) => acc + user.devices.length,
+        0
+      );
+
+      if (currentPeers >= maxPeers) {
+        throw new APIError(409);
+      }
+    }
+
     // Сгенерировать приватный ключ
     const clientPrivateKey = (
       await this.connection.run(`wg genkey`)
