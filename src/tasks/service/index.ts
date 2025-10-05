@@ -1,1 +1,1 @@
-export * from "./test.task";
+export * from "./cleanupExpiredClients.task";

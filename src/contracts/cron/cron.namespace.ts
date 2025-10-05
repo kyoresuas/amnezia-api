@@ -1,13 +1,13 @@
-import { testTask } from "@/tasks";
 import { ITask } from "@/types/cron";
+import { cleanupExpiredClientsTask } from "@/tasks";
 
 export namespace CronContract {
   /**
-   * Тестовая задача (каждую 1 секунду)
+   * Очистка просроченных клиентов (каждые 10 секунд)
    */
-  export const TestTask: ITask = {
-    name: "TestTask",
-    interval: 1000,
-    handler: testTask,
+  export const CleanupExpiredClientsTask: ITask = {
+    name: "CleanupExpiredClientsTask",
+    interval: 10000,
+    handler: cleanupExpiredClientsTask,
   };
 }

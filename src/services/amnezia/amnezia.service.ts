@@ -17,6 +17,39 @@ export class AmneziaService {
   }
 
   /**
+   * Удалить всех клиентов с истекшим сроком действия
+   */
+  async cleanupExpiredClients(): Promise<number> {
+    // Текущее время
+    const now = Math.floor(Date.now() / 1000);
+
+    // Таблица клиентов
+    const table = await this.connection.readClientsTable();
+
+    // Идентификаторы клиентов для удаления
+    const idsToDelete = table
+      .map((entry) => {
+        const expiresAt = entry?.userData?.expiresAt;
+        const id = entry?.clientId?.trim();
+
+        if (expiresAt && expiresAt <= now) {
+          return id;
+        }
+
+        return null;
+      })
+      .filter((x): x is string => Boolean(x));
+
+    let removed = 0;
+    for (const id of idsToDelete) {
+      const ok = await this.deleteClient(id);
+      if (ok) removed++;
+    }
+
+    return removed;
+  }
+
+  /**
    * Получить список пользователей из wg dump
    */
   async getUsers(): Promise<AmneziaUser[]> {

@@ -11,8 +11,8 @@ export const setupTaskQueue = (): void => {
 
   appLogger.info(`Установка задач...`);
 
-  // Тестовая задача
-  cronService.addTask(CronContract.TestTask);
+  // Очистка просроченных клиентов
+  cronService.addTask(CronContract.CleanupExpiredClientsTask);
 
   appLogger.verbose("Очередь задач успешно настроена");
 };
