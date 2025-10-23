@@ -1,26 +1,141 @@
 # Amnezia API
 
-Первый удобный API для управления Amnezia VPN в ваших проектах.
+Удобный API для управления Amnezia VPN в ваших проектах.
 
-Запуск
-
-1. Клонируйте репозиторий
+## Быстрый старт
 
 ```bash
-git clone https://github.com/kyoresuas/amnezia-api.git
+# Установка зависимостей
+npm install
+
+# Запуск в dev-режиме
+npm run dev
+
+# Сборка
+npm run build
+
+# Запуск pre-prod сборки (из ./build)
+npm run pre-start
+
+# Запуск prod сборки (из ./dist)
+npm run start
 ```
 
-2. Запустите автоматическую установку и деплой:
+## Переменные окружения
+
+- **ENV**: `development` | `preproduction` | `production`
+- **FASTIFY_ROUTES**: хост и порт для API, пример: `0.0.0.0:4000`
+- **FASTIFY_API_KEY**: ключ для заголовка `x-api-key`
+- **SERVER_ID**: UUID сервера
+- **SERVER_REGION**: регион/лейбл сервера
+- **SERVER_WEIGHT**: числовой вес сервера (для балансировки)
+- **SERVER_MAX_PEERS**: максимальное число клиентов
+- **AMNEZIA_INTERFACE**: интерфейс AmneziaWG/WireGuard (например, `wg0`)
+- **AMNEZIA_DESCRIPTION**: отображаемое имя в клиенте AWG
+- **AMNEZIA_PUBLIC_HOST**: публичный IP или домен сервера для подключения клиентов
+- **AMNEZIA_DOCKER_CONTAINER**: имя Docker контейнера с AmneziaWG
+- **AMNEZIA_CLIENTS_TABLE_PATH**: путь к файлу с таблицей клиентов
+- **AMNEZIA_WG_CONF_PATH**: путь к конфигурационному файлу WireGuard
+- **AMNEZIA_SERVER_PUBLIC_KEY_PATH**: путь к файлу с публичным ключом сервера
+
+## Аутентификация
+
+Все маршруты защищены прехендлером и требуют заголовок:
+
+- `x-api-key: <FASTIFY_API_KEY>`
+
+## Документация API
+
+Поднимается Swagger UI на маршруте `/docs`.
+
+## Маршруты
+
+Все ответы и тела запросов валидируются через JSON Schema и документируются в Swagger. Ниже краткая выжимка.
+
+### Server
+
+- GET `/server`
+  - Описание: статус текущей ноды
+  - Заголовки: `x-api-key`
+  - 200: `{ id, region, weight, maxPeers, interface, totalPeers }`
+
+### Users
+
+- GET `/users`
+
+  - Описание: получить всех пользователей
+  - Заголовки: `x-api-key`
+  - 200: `{ total, items: [...] }`
+
+- POST `/users`
+
+  - Описание: создать нового клиента
+  - Заголовки: `x-api-key`
+  - Body: `{ clientName: string, expiresAt?: number|null }`
+  - 200: `{ message, client: { id, config } }`
+  - 409: `{ message }` если имя занято
+
+- DELETE `/users`
+  - Описание: удалить клиента
+  - Заголовки: `x-api-key`
+  - Body: `{ clientId: base64 }`
+  - 200: `{ message }`
+  - 404: `{ message }` если клиент не найден
+
+## Примеры запросов
 
 ```bash
-bash ./scripts/setup.sh
+# Получить статус ноды
+curl -s \
+  -H "x-api-key: $FASTIFY_API_KEY" \
+  http://localhost:8080/server
+
+# Получить пользователей
+curl -s \
+  -H "x-api-key: $FASTIFY_API_KEY" \
+  "http://localhost:8080/users?skip=0&limit=100"
+
+# Создать пользователя
+curl -s \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $FASTIFY_API_KEY" \
+  -d '{"clientName":"Kyoresuas","expiresAt":1735689600}' \
+  http://localhost:8080/users
+
+# Удалить пользователя
+curl -s \
+  -X DELETE \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $FASTIFY_API_KEY" \
+  -d '{"clientId":"PF77ZXRl1yAkFzhBq/zQNlDPD73XXTq+Zs2PgtjLKVA="}' \
+  http://localhost:8080/users
 ```
 
-TODO-лист
+## Структура проекта
 
-1. Добавить ограничение по трафику
-2. 
+Для работы над проектом необходимо понимать его структуру.
 
-Лицензия
+```
+├─ /scripts [скрипты]
+├─ /src [корень]
+│  ├─ /config [инициализация проекта]
+│  ├─ /constants [константы]
+│  ├─ /contracts [настройки сервисов]
+│  ├─ /controllers [контроллеры для маршрутов API]
+│  ├─ /handlers [обработчики запросов API]
+│  ├─ /helpers [специализированные помощники]
+│  ├─ /locales [файлы перевода]
+│  ├─ /middleware [промежуточное ПО для маршрутов API]
+│  ├─ /schemas [схемы маршрутов API для сваггера и валидации]
+│  ├─ /services [сервисы]
+│  ├─ /tasks [отложенные задачи]
+│  ├─ /types [типизация]
+│  ├─ /utils [вспомогательные функции]
+│  └─ main.ts [файл запуска]
+├─ .env.example [пример конфигурации]
+└─ .env [конфигурация разработчика]
+```
+
+## Лицензия
 
 MIT — см. файл `LICENSE`.
