@@ -5,17 +5,11 @@
 ## Быстрый старт
 
 ```bash
-# Установка зависимостей
-npm install
+# Клонировать репозиторий
+git clone https://github.com/kyoresuas/amnezia-api.git
 
-# Запуск в dev-режиме
-npm run dev
-
-# Сборка
-npm run build
-
-# Запуск prod сборки
-npm run start
+# Запустить API
+node scripts/setup.sh
 ```
 
 ## Аутентификация
