@@ -14,29 +14,9 @@ npm run dev
 # Сборка
 npm run build
 
-# Запуск pre-prod сборки (из ./build)
-npm run pre-start
-
-# Запуск prod сборки (из ./dist)
+# Запуск prod сборки
 npm run start
 ```
-
-## Переменные окружения
-
-- **ENV**: `development` | `preproduction` | `production`
-- **FASTIFY_ROUTES**: хост и порт для API, пример: `0.0.0.0:4000`
-- **FASTIFY_API_KEY**: ключ для заголовка `x-api-key`
-- **SERVER_ID**: UUID сервера
-- **SERVER_REGION**: регион/лейбл сервера
-- **SERVER_WEIGHT**: числовой вес сервера (для балансировки)
-- **SERVER_MAX_PEERS**: максимальное число клиентов
-- **AMNEZIA_INTERFACE**: интерфейс AmneziaWG/WireGuard (например, `wg0`)
-- **AMNEZIA_DESCRIPTION**: отображаемое имя в клиенте AWG
-- **AMNEZIA_PUBLIC_HOST**: публичный IP или домен сервера для подключения клиентов
-- **AMNEZIA_DOCKER_CONTAINER**: имя Docker контейнера с AmneziaWG
-- **AMNEZIA_CLIENTS_TABLE_PATH**: путь к файлу с таблицей клиентов
-- **AMNEZIA_WG_CONF_PATH**: путь к конфигурационному файлу WireGuard
-- **AMNEZIA_SERVER_PUBLIC_KEY_PATH**: путь к файлу с публичным ключом сервера
 
 ## Аутентификация
 
