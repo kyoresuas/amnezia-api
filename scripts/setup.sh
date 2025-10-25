@@ -163,7 +163,7 @@ deploy_app() {
 
 # Настраивает Nginx
 setup_nginx() {
-  echo "[4/5] Установка и настройка Nginx (reverse proxy на 4000)..."
+  echo "[4/5] Установка и настройка Nginx..."
   
   if ! command -v nginx >/dev/null 2>&1; then
     $SUDO apt-get update -y
