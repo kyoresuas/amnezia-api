@@ -2,8 +2,8 @@ import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
 export const getServerSchema = {
-  tags: [SwaggerContract.Tags.NODE],
-  summary: "Статус текущей ноды",
+  tags: [SwaggerContract.Tags.SERVER],
+  summary: "Статус текущего сервера",
   security: [{ ApiKey: [] }],
   response: {
     200: {
@@ -20,17 +20,17 @@ export const getServerSchema = {
       properties: {
         id: {
           type: "string",
-          description: "Уникальный идентификатор ноды",
+          description: "Уникальный идентификатор сервера",
           example: SwaggerContract.UUIDExample,
         },
         region: {
           type: "string",
-          description: "Регион/зона/лейбл ноды",
+          description: "Регион/зона/лейбл сервера",
           example: "NLs-1",
         },
         weight: {
           type: "number",
-          description: "Вес ноды для балансировки",
+          description: "Вес сервера для балансировки",
           example: 100,
         },
         maxPeers: {
