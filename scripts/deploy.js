@@ -90,6 +90,8 @@ async function deploy() {
           );
         }
 
+        child_process.execSync("pm2 save", { stdio: "inherit" });
+
         removeBuildDirectory();
         console.log("Проект успешно запущен!");
         resolve();
