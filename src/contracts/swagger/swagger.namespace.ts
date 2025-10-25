@@ -18,7 +18,7 @@ export namespace SwaggerContract {
    */
   export enum Tags {
     USERS = "Users",
-    NODE = "Node",
+    SERVER = "Server",
   }
 
   /**
@@ -285,8 +285,8 @@ export namespace SwaggerContract {
     });
 
     openapi.tags!.push({
-      name: SwaggerContract.Tags.NODE,
-      description: "Маршруты для управления нодой",
+      name: SwaggerContract.Tags.SERVER,
+      description: "Маршруты для управления сервером",
     });
 
     return {
