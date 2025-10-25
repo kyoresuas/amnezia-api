@@ -16,8 +16,9 @@ export class ServerService {
   /**
    * Перезагрузить сервер
    */
-  async restartServer(): Promise<void> {
+  async rebootServer(): Promise<void> {
     try {
+      appLogger.info("Перезагрузка сервера...");
       await this.server.run("sudo reboot", { timeout: 1500 });
     } catch (err) {
       appLogger.warn(`При перезагрузке сервера произошла ошибка: ${err}`);

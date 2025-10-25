@@ -1,2 +1,2 @@
 export * from "./getServer.schema";
-export * from "./restartServer.schema";
+export * from "./rebootServer.schema";

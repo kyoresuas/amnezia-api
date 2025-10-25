@@ -1,2 +1,2 @@
 export * from "./getServer.handler";
-export * from "./restartServer.hadnler";
+export * from "./rebootServer.hadnler";

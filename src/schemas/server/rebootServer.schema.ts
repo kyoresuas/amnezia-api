@@ -2,7 +2,7 @@ import i18next from "i18next";
 import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 
-export const restartServerSchema = {
+export const rebootServerSchema = {
   tags: [SwaggerContract.Tags.SERVER],
   summary: "Перезагрузить сервер",
   security: [{ ApiKey: [] }],
@@ -13,7 +13,7 @@ export const restartServerSchema = {
       properties: {
         message: {
           type: "string",
-          example: i18next.t("services.server.RESTARTING"),
+          example: i18next.t("services.server.REBOOTING"),
         },
       },
     },
@@ -22,4 +22,4 @@ export const restartServerSchema = {
   },
 } as const satisfies AppFastifySchema;
 
-export type RestartServerType = typeof restartServerSchema;
+export type RebootServerType = typeof rebootServerSchema;

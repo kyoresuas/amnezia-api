@@ -97,6 +97,9 @@
       "INCOMPATIBLE": "Cannot specify both schedule and interval",
       "INVALID_SCHEDULE": "Invalid schedule specified for the task",
       "INVALID_INTERVAL": "Invalid interval specified for the task"
+    },
+    "server": {
+      "REBOOTING": "Server is rebooting..."
     }
   },
   "system": {
