@@ -5,11 +5,17 @@
 ## Быстрый старт
 
 ```bash
+# Установить GIT
+apt install git
+
 # Клонировать репозиторий
 git clone https://github.com/kyoresuas/amnezia-api.git
 
+# Перейти в репозиторий 
+cd ./amnezia-api
+
 # Запустить API
-node scripts/setup.sh
+bash ./scripts/setup.sh
 ```
 
 ## Аутентификация
