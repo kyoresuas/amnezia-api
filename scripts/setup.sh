@@ -201,7 +201,7 @@ NGINX
   
   local public_ip
   public_ip=$(get_public_ip)
-  echo "Nginx настроен. Откройте: http://$public_ip/"
+  echo "Nginx настроен успешно"
 }
 
 # Показывает финальную информацию
