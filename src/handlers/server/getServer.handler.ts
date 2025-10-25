@@ -17,7 +17,6 @@ export const getServerHandler: AppFastifyHandler<GetServerType> = async (
     region: appConfig.SERVER_REGION || "",
     weight: appConfig.SERVER_WEIGHT || 0,
     maxPeers: appConfig.SERVER_MAX_PEERS || 0,
-    interface: appConfig.AMNEZIA_INTERFACE || "",
     totalPeers: users.reduce((acc, user) => acc + user.devices.length, 0),
   };
 

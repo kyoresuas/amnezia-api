@@ -3,6 +3,7 @@
     "messages": {
       "SAVED": "Successfully saved",
       "DELETED": "Successfully deleted",
+      "RESTARTED": "Successfully restarted",
       "LOGGED": "Successfully logged in",
       "LOGGED_OUT": "Successfully logged out",
       "REGISTERED": "Successfully registered"

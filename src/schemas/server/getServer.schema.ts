@@ -9,14 +9,7 @@ export const getServerSchema = {
     200: {
       type: "object",
       description: "Информация о текущем сервере",
-      required: [
-        "id",
-        "region",
-        "weight",
-        "maxPeers",
-        "interface",
-        "totalPeers",
-      ],
+      required: ["id", "region", "weight", "maxPeers", "totalPeers"],
       properties: {
         id: {
           type: "string",
@@ -37,11 +30,6 @@ export const getServerSchema = {
           type: "number",
           description: "Максимально допустимое число клиентов",
           example: 200,
-        },
-        interface: {
-          type: "string",
-          description: "Имя интерфейса WireGuard/AmneziaWG",
-          example: "wg0",
         },
         totalPeers: {
           type: "number",
