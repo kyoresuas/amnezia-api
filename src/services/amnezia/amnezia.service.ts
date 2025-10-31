@@ -1,6 +1,7 @@
 import { deflateSync } from "zlib";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
+import { AppContract } from "@/contracts/app";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
 import { AmneziaUser, AmneziaDevice, ClientTableEntry } from "@/types/amnezia";
 
@@ -296,7 +297,7 @@ export class AmneziaService {
     // Получаем публичный ключ сервера
     const serverPublicKey = (
       await this.amnezia.run(
-        `cat ${appConfig.AMNEZIA_SERVER_PUBLIC_KEY_PATH} 2>/dev/null || true`
+        `cat ${AppContract.AMNEZIA_SERVER_PUBLIC_KEY_PATH} 2>/dev/null || true`
       )
     ).stdout.trim();
 
@@ -305,7 +306,7 @@ export class AmneziaService {
       config.match(/\[Interface\][\s\S]*?ListenPort\s*=\s*(\d+)/i)?.[1] || "";
 
     // Получаем хост
-    const endpointHost = appConfig.AMNEZIA_PUBLIC_HOST || "";
+    const endpointHost = appConfig.SERVER_PUBLIC_HOST || "";
 
     // Получаем MTU
     const mtu = "1376";
@@ -382,11 +383,11 @@ export class AmneziaService {
       containers: [
         {
           awg,
-          container: "amnezia-awg",
+          container: AppContract.AMNEZIA_DOCKER_CONTAINER,
         },
       ],
-      defaultContainer: "amnezia-awg",
-      description: `${appConfig.AMNEZIA_DESCRIPTION} | ${clientName}`,
+      defaultContainer: AppContract.AMNEZIA_DOCKER_CONTAINER,
+      description: `${appConfig.SERVER_NAME} | ${clientName}`,
       dns1:
         (
           await this.amnezia.run(

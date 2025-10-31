@@ -37,16 +37,11 @@ export interface IAppConfig {
   };
   FASTIFY_API_KEY?: string;
   SERVER_ID?: string;
+  SERVER_NAME?: string;
   SERVER_REGION?: string;
   SERVER_WEIGHT?: number;
   SERVER_MAX_PEERS?: number;
-  AMNEZIA_INTERFACE?: string;
-  AMNEZIA_DOCKER_CONTAINER?: string;
-  AMNEZIA_PUBLIC_HOST?: string;
-  AMNEZIA_CLIENTS_TABLE_PATH?: string;
-  AMNEZIA_WG_CONF_PATH?: string;
-  AMNEZIA_DESCRIPTION?: string;
-  AMNEZIA_SERVER_PUBLIC_KEY_PATH?: string;
+  SERVER_PUBLIC_HOST?: string;
 }
 
 export interface IPagination {

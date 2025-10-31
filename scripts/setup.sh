@@ -139,19 +139,19 @@ setup_env() {
   local auto_public_ip
   auto_public_ip=$(get_public_ip)
   if [ -n "$auto_public_ip" ]; then
-    upsert_env_var AMNEZIA_PUBLIC_HOST "$auto_public_ip"
-    echo "AMNEZIA_PUBLIC_HOST установлен в $auto_public_ip"
+    upsert_env_var SERVER_PUBLIC_HOST "$auto_public_ip"
+    echo "SERVER_PUBLIC_HOST установлен в $auto_public_ip"
   else
-    echo "Не удалось автоматически определить внешний IP для AMNEZIA_PUBLIC_HOST"
+    echo "Не удалось автоматически определить внешний IP для SERVER_PUBLIC_HOST"
   fi
   
   # Описание
   local current_desc input_desc
-  current_desc="$(get_env_var AMNEZIA_DESCRIPTION)"
-  read -r -p "Введите AMNEZIA_DESCRIPTION [${current_desc:-пропустить}]: " input_desc || true
+  current_desc="$(get_env_var SERVER_NAME)"
+  read -r -p "Введите SERVER_NAME [${current_desc:-пропустить}]: " input_desc || true
   if [ -n "$input_desc" ]; then
     local esc_desc="${input_desc//\"/\\\"}"
-    upsert_env_var AMNEZIA_DESCRIPTION "\"$esc_desc\""
+    upsert_env_var SERVER_NAME "\"$esc_desc\""
   fi
 }
 
