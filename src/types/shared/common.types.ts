@@ -29,6 +29,11 @@ export enum CustomFormat {
   DATE_TIME = "dateTime",
 }
 
+export enum Protocol {
+  AMNEZIAWG = "amneziawg",
+  XRAY = "xray",
+}
+
 export interface IAppConfig {
   ENV: "development" | "preproduction" | "production";
   FASTIFY_ROUTES?: {
@@ -42,6 +47,7 @@ export interface IAppConfig {
   SERVER_WEIGHT?: number;
   SERVER_MAX_PEERS?: number;
   SERVER_PUBLIC_HOST?: string;
+  PROTOCOLS_ENABLED?: Protocol[];
 }
 
 export interface IPagination {

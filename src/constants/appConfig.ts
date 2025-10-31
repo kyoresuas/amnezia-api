@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { IAppConfig } from "@/types/shared";
+import { IAppConfig, Protocol } from "@/types/shared";
 
 const {
   ENV,
@@ -11,6 +11,7 @@ const {
   SERVER_WEIGHT,
   SERVER_MAX_PEERS,
   SERVER_PUBLIC_HOST,
+  PROTOCOLS_ENABLED,
 } = process.env;
 
 /**
@@ -31,6 +32,13 @@ const appConfig: IAppConfig = {
   SERVER_WEIGHT: Number(SERVER_WEIGHT),
   SERVER_MAX_PEERS: Number(SERVER_MAX_PEERS),
   SERVER_PUBLIC_HOST,
+  PROTOCOLS_ENABLED: PROTOCOLS_ENABLED
+    ? PROTOCOLS_ENABLED.split(",")
+        .map((protocol) => protocol.trim().toLowerCase())
+        .filter((protocol): protocol is Protocol =>
+          Object.values(Protocol).includes(protocol as Protocol)
+        )
+    : undefined,
 };
 
 export default appConfig;
