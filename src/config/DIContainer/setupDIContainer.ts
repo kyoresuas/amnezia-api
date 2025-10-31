@@ -2,6 +2,7 @@ import { asClass } from "awilix";
 import { di } from "./awilixManager";
 import { appLogger } from "../winstonLogger";
 import { CronService } from "@/services/cron";
+import { XrayService } from "@/services/xray";
 import { ServerService } from "@/services/server";
 import { AmneziaService } from "@/services/amnezia";
 
@@ -13,6 +14,7 @@ export const setupDIContainer = (): void => {
 
   di.container.register({
     [CronService.key]: asClass(CronService).singleton(),
+    [XrayService.key]: asClass(XrayService).singleton(),
     [ServerService.key]: asClass(ServerService).singleton(),
     [AmneziaService.key]: asClass(AmneziaService).singleton(),
   });

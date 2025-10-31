@@ -6,7 +6,7 @@ import { AmneziaConnection } from "@/helpers/amneziaConnection";
 import { AmneziaUser, AmneziaDevice, ClientTableEntry } from "@/types/amnezia";
 
 /**
- * Сервис получения пользователей AmneziaVPN
+ * Сервис для работы с AmneziaWG
  */
 export class AmneziaService {
   static key = "amneziaService";
