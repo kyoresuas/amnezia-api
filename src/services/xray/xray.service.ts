@@ -213,19 +213,19 @@ export class XrayService {
     const xrayPort =
       typeof inbound?.port === "number"
         ? inbound.port
-        : Number(AppContract.XRAY_DEFAULT_PORT);
+        : Number(AppContract.Xray.DEFAULTS.PORT);
 
     // Название сайта
-    const siteName = AppContract.XRAY_DEFAULT_SITE;
+    const siteName = AppContract.Xray.DEFAULTS.SITE;
 
     // Публичный ключ
     const publicKey = (
-      await this.xray.readFile(AppContract.XRAY_PUBLIC_KEY_PATH)
+      await this.xray.readFile(AppContract.Xray.PATHS.PUBLIC_KEY)
     ).trim();
 
     // ID
     const shortId = (
-      await this.xray.readFile(AppContract.XRAY_SHORT_ID_PATH)
+      await this.xray.readFile(AppContract.Xray.PATHS.SHORT_ID)
     ).trim();
 
     // Если нет публичного ключа или ID, то ошибка
@@ -236,7 +236,7 @@ export class XrayService {
     // Шаблон клиентского конфига
     const template = XrayService.XRAY_CLIENT_TEMPLATE.replace(
       /\$SERVER_IP_ADDRESS/g,
-      serverHost || AppContract.XRAY_DEFAULT_SITE
+      serverHost || AppContract.Xray.DEFAULTS.SITE
     )
       .replace(/\$XRAY_SERVER_PORT/g, String(xrayPort))
       .replace(/\$XRAY_CLIENT_ID/g, clientId)
@@ -272,7 +272,7 @@ export class XrayService {
 
     // Конфиг контейнера Xray
     const xrayContainerConfig = {
-      container: AppContract.XRAY_DOCKER_CONTAINER,
+      container: AppContract.Xray.DOCKER_CONTAINER,
       xray: {
         last_config: xrayConfigString,
         port: xrayPort,
@@ -286,7 +286,7 @@ export class XrayService {
     // JSON для сервера
     const serverJson = {
       containers: [xrayContainerConfig],
-      defaultContainer: AppContract.XRAY_DOCKER_CONTAINER,
+      defaultContainer: AppContract.Xray.DOCKER_CONTAINER,
       description: `${appConfig.SERVER_NAME} | ${clientName} | Xray`,
       dns1,
       dns2,

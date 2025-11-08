@@ -258,7 +258,7 @@ export class AmneziaService {
     // Считать PSK
     const psk = (
       await this.amnezia.run(
-        `cat ${AppContract.AMNEZIA_WG_PSK_PATH} 2>/dev/null || true`
+        `cat ${AppContract.Amnezia.PATHS.WG_PSK} 2>/dev/null || true`
       )
     ).stdout.trim();
 
@@ -295,7 +295,7 @@ export class AmneziaService {
     // Получаем публичный ключ сервера
     const serverPublicKey = (
       await this.amnezia.run(
-        `cat ${AppContract.AMNEZIA_SERVER_PUBLIC_KEY_PATH} 2>/dev/null || true`
+        `cat ${AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`
       )
     ).stdout.trim();
 
@@ -307,8 +307,8 @@ export class AmneziaService {
     const endpointHost = appConfig.SERVER_PUBLIC_HOST || "";
 
     // Получаем MTU
-    const mtu = AppContract.AMNEZIA_WG_DEFAULT_MTU;
-    const keepAlive = AppContract.AMNEZIA_WG_DEFAULT_KEEPALIVE;
+    const mtu = AppContract.Amnezia.DEFAULTS.MTU;
+    const keepAlive = AppContract.Amnezia.DEFAULTS.KEEPALIVE;
 
     // Параметры AWG
     const getVal = (key: string) =>
@@ -373,7 +373,7 @@ export class AmneziaService {
       ...awgParams,
       last_config: JSON.stringify(lastConfig, null, 2),
       port: String(listenPort || ""),
-      transport_proto: AppContract.AMNEZIA_WG_DEFAULT_TRANSPORT,
+      transport_proto: AppContract.Amnezia.DEFAULTS.TRANSPORT,
     };
 
     // JSON для сервера
@@ -381,10 +381,10 @@ export class AmneziaService {
       containers: [
         {
           awg,
-          container: AppContract.AMNEZIA_DOCKER_CONTAINER,
+          container: AppContract.Amnezia.DOCKER_CONTAINER,
         },
       ],
-      defaultContainer: AppContract.AMNEZIA_DOCKER_CONTAINER,
+      defaultContainer: AppContract.Amnezia.DOCKER_CONTAINER,
       description: `${appConfig.SERVER_NAME} | ${clientName} | AmneziaWG`,
       dns1:
         (

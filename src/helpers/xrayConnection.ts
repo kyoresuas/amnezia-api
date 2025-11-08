@@ -12,10 +12,10 @@ export class XrayConnection {
    * Построить команду
    */
   private buildCommand(cmd: string): string {
-    if (!AppContract.XRAY_DOCKER_CONTAINER) return cmd;
+    if (!AppContract.Xray.DOCKER_CONTAINER) return cmd;
 
     return `docker exec ${
-      AppContract.XRAY_DOCKER_CONTAINER
+      AppContract.Xray.DOCKER_CONTAINER
     } sh -lc '${cmd.replace(/'/g, "'\\''")}'`;
   }
 
@@ -88,22 +88,22 @@ export class XrayConnection {
    * Прочитать конфигурацию сервера
    */
   async readServerConfig(): Promise<string> {
-    return this.readFile(AppContract.XRAY_SERVER_CONFIG_PATH);
+    return this.readFile(AppContract.Xray.PATHS.SERVER_CONFIG);
   }
 
   /**
    * Записать конфигурацию сервера
    */
   async writeServerConfig(content: string): Promise<void> {
-    await this.writeFile(AppContract.XRAY_SERVER_CONFIG_PATH, content);
+    await this.writeFile(AppContract.Xray.PATHS.SERVER_CONFIG, content);
   }
 
   /**
    * Перезапустить контейнер Xray
    */
   async restartContainer(): Promise<void> {
-    if (!AppContract.XRAY_DOCKER_CONTAINER) return;
+    if (!AppContract.Xray.DOCKER_CONTAINER) return;
 
-    await this.runOnHost(`docker restart ${AppContract.XRAY_DOCKER_CONTAINER}`);
+    await this.runOnHost(`docker restart ${AppContract.Xray.DOCKER_CONTAINER}`);
   }
 }
