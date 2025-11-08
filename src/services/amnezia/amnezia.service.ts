@@ -262,7 +262,7 @@ export class AmneziaService {
     // Считать PSK
     const psk = (
       await this.amnezia.run(
-        `cat /opt/amnezia/awg/wireguard_psk.key 2>/dev/null || true`
+        `cat ${AppContract.AMNEZIA_WG_PSK_PATH} 2>/dev/null || true`
       )
     ).stdout.trim();
 
@@ -311,8 +311,8 @@ export class AmneziaService {
     const endpointHost = appConfig.SERVER_PUBLIC_HOST || "";
 
     // Получаем MTU
-    const mtu = "1376";
-    const keepAlive = "25";
+    const mtu = AppContract.AMNEZIA_WG_DEFAULT_MTU;
+    const keepAlive = AppContract.AMNEZIA_WG_DEFAULT_KEEPALIVE;
 
     // Параметры AWG
     const getVal = (key: string) =>
@@ -377,7 +377,7 @@ export class AmneziaService {
       ...awgParams,
       last_config: JSON.stringify(lastConfig, null, 2),
       port: String(listenPort || ""),
-      transport_proto: "udp",
+      transport_proto: AppContract.AMNEZIA_WG_DEFAULT_TRANSPORT,
     };
 
     // JSON для сервера
