@@ -6,6 +6,8 @@ import { XrayService } from "@/services/xray";
 import { UsersService } from "@/services/users";
 import { ServerService } from "@/services/server";
 import { AmneziaService } from "@/services/amnezia";
+import { XrayConnection } from "@/helpers/xrayConnection";
+import { AmneziaConnection } from "@/helpers/amneziaConnection";
 
 /**
  * Внедрить зависимости в DI-контейнер
@@ -14,6 +16,11 @@ export const setupDIContainer = (): void => {
   appLogger.info("Внедрение зависимостей...");
 
   di.container.register({
+    // Подключения
+    xray: asClass(XrayConnection).singleton(),
+    amnezia: asClass(AmneziaConnection).singleton(),
+
+    // Сервисы
     [CronService.key]: asClass(CronService).singleton(),
     [XrayService.key]: asClass(XrayService).singleton(),
     [UsersService.key]: asClass(UsersService).singleton(),
