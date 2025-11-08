@@ -287,7 +287,7 @@ export class XrayService {
     const serverJson = {
       containers: [xrayContainerConfig],
       defaultContainer: AppContract.XRAY_DOCKER_CONTAINER,
-      description: `${appConfig.SERVER_NAME} | ${clientName}`,
+      description: `${appConfig.SERVER_NAME} | ${clientName} | Xray`,
       dns1,
       dns2,
       hostName: serverHost,

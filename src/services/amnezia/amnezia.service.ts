@@ -385,7 +385,7 @@ export class AmneziaService {
         },
       ],
       defaultContainer: AppContract.AMNEZIA_DOCKER_CONTAINER,
-      description: `${appConfig.SERVER_NAME} | ${clientName}`,
+      description: `${appConfig.SERVER_NAME} | ${clientName} | AmneziaWG`,
       dns1:
         (
           await this.amnezia.run(
