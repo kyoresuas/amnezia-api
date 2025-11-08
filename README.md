@@ -2,6 +2,10 @@
 
 Удобный API для управления Amnezia VPN в ваших проектах.
 
+## Поддерживаемые протоколы
+
+API реализует поддержку двух протоколов — AmneziaWG и Xray.
+
 ## Быстрый старт
 
 ```bash
@@ -11,7 +15,7 @@ apt install git
 # Клонировать репозиторий
 git clone https://github.com/kyoresuas/amnezia-api.git
 
-# Перейти в репозиторий 
+# Перейти в репозиторий
 cd ./amnezia-api
 
 # Запустить API
