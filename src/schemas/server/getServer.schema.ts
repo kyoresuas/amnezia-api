@@ -1,15 +1,22 @@
-import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
+import { AppFastifySchema, Protocol } from "@/types/shared";
 
 export const getServerSchema = {
   tags: [SwaggerContract.Tags.SERVER],
-  summary: "Статус текущего сервера",
+  summary: "Информация о текущем сервере",
   security: [{ ApiKey: [] }],
   response: {
     200: {
       type: "object",
       description: "Информация о текущем сервере",
-      required: ["id", "region", "weight", "maxPeers", "totalPeers"],
+      required: [
+        "id",
+        "region",
+        "weight",
+        "maxPeers",
+        "totalPeers",
+        "protocols",
+      ],
       properties: {
         id: {
           type: "string",
@@ -35,6 +42,15 @@ export const getServerSchema = {
           type: "number",
           description: "Текущее число клиентов",
           example: 8,
+        },
+        protocols: {
+          type: "array",
+          description: "Список поддерживаемых протоколов",
+          items: {
+            type: "string",
+            enum: Object.values(Protocol),
+          },
+          example: [Protocol.AMNEZIAWG, Protocol.XRAY],
         },
       },
     },

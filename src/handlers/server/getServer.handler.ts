@@ -18,6 +18,7 @@ export const getServerHandler: AppFastifyHandler<GetServerType> = async (
     weight: appConfig.SERVER_WEIGHT || 0,
     maxPeers: appConfig.SERVER_MAX_PEERS || 0,
     totalPeers: users.reduce((acc, user) => acc + user.devices.length, 0),
+    protocols: appConfig.PROTOCOLS_ENABLED ?? [],
   };
 
   reply.code(200).send(status);
