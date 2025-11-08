@@ -7,6 +7,8 @@ import { ClientTableEntry } from "@/types/amnezia";
  * Создать соединение с AmneziaVPN
  */
 export class AmneziaConnection {
+  static key = "amnezia";
+
   /**
    * Построить команду
    */

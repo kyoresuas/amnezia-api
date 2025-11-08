@@ -6,6 +6,8 @@ import { AppContract } from "@/contracts/app";
  * Создать соединение с Xray
  */
 export class XrayConnection {
+  static key = "xray";
+
   /**
    * Построить команду
    */

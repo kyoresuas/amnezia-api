@@ -17,8 +17,8 @@ export const setupDIContainer = (): void => {
 
   di.container.register({
     // Подключения
-    xray: asClass(XrayConnection).singleton(),
-    amnezia: asClass(AmneziaConnection).singleton(),
+    [XrayConnection.key]: asClass(XrayConnection).singleton(),
+    [AmneziaConnection.key]: asClass(AmneziaConnection).singleton(),
 
     // Сервисы
     [CronService.key]: asClass(CronService).singleton(),
