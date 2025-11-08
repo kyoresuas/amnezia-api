@@ -58,5 +58,6 @@ export namespace AppContract {
   export const XRAY_DEFAULT_LOCAL_ADDR = "10.33.0.2";
 
   // Домен по умолчанию для REALITY
-  export const XRAY_DEFAULT_SITE = "www.googletagmanager.com";
+  // XD
+  export const XRAY_DEFAULT_SITE = "max.ru";
 }

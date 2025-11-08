@@ -13,11 +13,7 @@ import { AmneziaConnection } from "@/helpers/amneziaConnection";
 export class AmneziaService {
   static key = "amneziaService";
 
-  private readonly amnezia: AmneziaConnection;
-
-  constructor() {
-    this.amnezia = new AmneziaConnection();
-  }
+  constructor(private amnezia: AmneziaConnection) {}
 
   /**
    * Удалить всех клиентов с истекшим сроком действия
