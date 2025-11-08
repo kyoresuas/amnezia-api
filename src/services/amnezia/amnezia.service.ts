@@ -3,8 +3,9 @@ import { Protocol } from "@/types/shared";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
+import { ClientTableEntry } from "@/types/amnezia";
+import { UserRecord, UserDevice } from "@/types/users";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
-import { AmneziaUser, AmneziaDevice, ClientTableEntry } from "@/types/amnezia";
 
 /**
  * Сервис для работы с AmneziaWG
@@ -54,7 +55,7 @@ export class AmneziaService {
   /**
    * Получить список пользователей из wg dump
    */
-  async getUsers(): Promise<AmneziaUser[]> {
+  async getUsers(): Promise<UserRecord[]> {
     const dump = await this.amnezia.getWgDump();
 
     if (!dump) return [];
@@ -119,63 +120,61 @@ export class AmneziaService {
     }
 
     // Преобразуем peers в devices
-    const devices: (AmneziaDevice & { username: string })[] = peers.map(
-      (peer) => {
-        const parts = peer.split("\t");
+    const devices: (UserDevice & { username: string })[] = peers.map((peer) => {
+      const parts = peer.split("\t");
 
-        // id
-        const id = parts[0];
+      // id
+      const id = parts[0];
 
-        // endpoint
-        const endpoint = parts[2] && parts[2] !== "(none)" ? parts[2] : null;
+      // endpoint
+      const endpoint = parts[2] && parts[2] !== "(none)" ? parts[2] : null;
 
-        // allowedIps
-        const allowedIps = parts[3].split(",").map((s) => s.trim());
+      // allowedIps
+      const allowedIps = parts[3].split(",").map((s) => s.trim());
 
-        // lastHandshake
-        const lastHandshake =
-          Number(parts[4]) > 1_000_000_000_000
-            ? Math.floor(Number(parts[4]) / 1_000_000_000)
-            : Number(parts[4]);
+      // lastHandshake
+      const lastHandshake =
+        Number(parts[4]) > 1_000_000_000_000
+          ? Math.floor(Number(parts[4]) / 1_000_000_000)
+          : Number(parts[4]);
 
-        // received
-        const received = Number(parts[5]);
+      // received
+      const received = Number(parts[5]);
 
-        // sent
-        const sent = Number(parts[6]);
+      // sent
+      const sent = Number(parts[6]);
 
-        // lastHandshakeSecondsAgo
-        const lastHandshakeSecondsAgo = now - lastHandshake;
+      // lastHandshakeSecondsAgo
+      const lastHandshakeSecondsAgo = now - lastHandshake;
 
-        // online
-        const online = lastHandshakeSecondsAgo < 180;
+      // online
+      const online = lastHandshakeSecondsAgo < 180;
 
-        const username = userData[id]?.name || id;
-        const name = userData[id]?.devices?.[0] ?? null;
+      const username = userData[id]?.name || id;
+      const name = userData[id]?.devices?.[0] ?? null;
 
-        // expiresAt
-        const expiresAt = userData[id]?.expiresAt || null;
+      // expiresAt
+      const expiresAt = userData[id]?.expiresAt || null;
 
-        return {
-          username,
-          id,
-          name,
-          allowedIps,
-          lastHandshake,
-          traffic: {
-            received,
-            sent,
-          },
-          endpoint,
-          online,
-          expiresAt,
-          protocol: Protocol.AMNEZIAWG,
-        };
-      }
-    );
+      return {
+        username,
+        id,
+        name,
+        allowedIps,
+        lastHandshake,
+        traffic: {
+          received,
+          sent,
+        },
+        endpoint,
+        online,
+        expiresAt,
+        protocol: Protocol.AMNEZIAWG,
+      };
+    });
 
     // Группируем по username
-    const users = new Map<string, AmneziaUser>();
+    const users = new Map<string, UserRecord>();
     for (const { username, ...device } of devices) {
       // Получаем или создаем пользователя
       const entry = users.get(username) || {
@@ -190,7 +189,7 @@ export class AmneziaService {
       users.set(username, entry);
     }
 
-    return Array.from(users.values()) as AmneziaUser[];
+    return Array.from(users.values());
   }
 
   /**

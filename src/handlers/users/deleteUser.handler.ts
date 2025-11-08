@@ -1,8 +1,7 @@
 import i18next from "i18next";
 import { di } from "@/config/DIContainer";
 import { DeleteUserType } from "@/schemas";
-import appConfig from "@/constants/appConfig";
-import { AmneziaService } from "@/services/amnezia";
+import { UsersService } from "@/services/users";
 import { AppFastifyHandler, Protocol } from "@/types/shared";
 
 export const deleteUserHandler: AppFastifyHandler<DeleteUserType> = async (
@@ -11,23 +10,9 @@ export const deleteUserHandler: AppFastifyHandler<DeleteUserType> = async (
 ) => {
   const { clientId, protocol = Protocol.AMNEZIAWG } = req.body;
 
-  const enabledProtocols = appConfig.PROTOCOLS_ENABLED ?? [Protocol.AMNEZIAWG];
+  const usersService = di.container.resolve<UsersService>(UsersService.key);
 
-  if (!enabledProtocols.includes(protocol) || protocol !== Protocol.AMNEZIAWG) {
-    reply.code(400).send({ message: i18next.t("swagger.codes.400") });
-    return;
-  }
-
-  const amneziaService = di.container.resolve<AmneziaService>(
-    AmneziaService.key
-  );
-
-  const ok = await amneziaService.deleteClient(clientId);
-
-  if (!ok) {
-    reply.code(404).send({ message: i18next.t("swagger.codes.404") });
-    return;
-  }
+  await usersService.deleteUser({ clientId, protocol });
 
   reply.code(200).send({ message: i18next.t("swagger.messages.DELETED") });
 };
