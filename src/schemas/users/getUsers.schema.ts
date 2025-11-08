@@ -1,6 +1,6 @@
-import { clientIdSchema } from "./common.schema";
 import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
+import { clientIdSchema, protocolSchema } from "./common.schema";
 
 export const getUsersSchema = {
   tags: [SwaggerContract.Tags.USERS],
@@ -40,6 +40,7 @@ export const getUsersSchema = {
                     "online",
                     "endpoint",
                     "expiresAt",
+                    "protocol",
                   ],
                   properties: {
                     id: clientIdSchema,
@@ -83,6 +84,7 @@ export const getUsersSchema = {
                       description: "Дата удаления клиента",
                       example: 1735689600,
                     },
+                    protocol: protocolSchema,
                   },
                 },
               },

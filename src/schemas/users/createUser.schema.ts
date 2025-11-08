@@ -1,6 +1,6 @@
-import { clientIdSchema } from "./common.schema";
-import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
+import { AppFastifySchema, Protocol } from "@/types/shared";
+import { clientIdSchema, protocolSchema } from "./common.schema";
 
 export const createUserSchema = {
   tags: [SwaggerContract.Tags.USERS],
@@ -14,6 +14,10 @@ export const createUserSchema = {
         type: "string",
         description: "Имя клиента",
         example: "Kyoresuas",
+      },
+      protocol: {
+        ...protocolSchema,
+        default: Protocol.AMNEZIAWG,
       },
       expiresAt: {
         type: "integer",
@@ -31,7 +35,7 @@ export const createUserSchema = {
         message: SwaggerContract.ActionResponseSchema.properties.message,
         client: {
           type: "object",
-          required: ["id", "config"],
+          required: ["id", "config", "protocol"],
           properties: {
             id: clientIdSchema,
             config: {
@@ -39,10 +43,12 @@ export const createUserSchema = {
               description: "Конфиг для импорта в приложение",
               example: "vpn://3fa85f64-5717-4562-b3fc-2c963f66afa6...",
             },
+            protocol: protocolSchema,
           },
         },
       },
     },
+    400: SwaggerContract.ClientErrorResponseFactory(400),
     401: SwaggerContract.ClientErrorResponseFactory(401),
     403: SwaggerContract.ClientErrorResponseFactory(403),
     404: SwaggerContract.ClientErrorResponseFactory(404),

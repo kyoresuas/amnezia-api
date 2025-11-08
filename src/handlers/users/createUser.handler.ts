@@ -1,14 +1,27 @@
 import i18next from "i18next";
 import { di } from "@/config/DIContainer";
 import { CreateUserType } from "@/schemas";
-import { AppFastifyHandler } from "@/types/shared";
+import appConfig from "@/constants/appConfig";
 import { AmneziaService } from "@/services/amnezia";
+import { AppFastifyHandler, Protocol } from "@/types/shared";
 
 export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
   req,
   reply
 ) => {
-  const { clientName, expiresAt } = req.body;
+  const { clientName, expiresAt, protocol = Protocol.AMNEZIAWG } = req.body;
+
+  const enabledProtocols = appConfig.PROTOCOLS_ENABLED ?? [Protocol.AMNEZIAWG];
+
+  if (!enabledProtocols.includes(protocol)) {
+    reply.code(400).send({ message: i18next.t("swagger.codes.400") });
+    return;
+  }
+
+  if (protocol !== Protocol.AMNEZIAWG) {
+    reply.code(400).send({ message: i18next.t("swagger.codes.400") });
+    return;
+  }
 
   const amneziaService = di.container.resolve<AmneziaService>(
     AmneziaService.key
@@ -22,7 +35,11 @@ export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
     return;
   }
 
-  const { id, config } = await amneziaService.createClient(clientName, {
+  const {
+    id,
+    config,
+    protocol: createdProtocol,
+  } = await amneziaService.createClient(clientName, {
     expiresAt: expiresAt ?? null,
   });
 
@@ -31,6 +48,7 @@ export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
     client: {
       id,
       config,
+      protocol: createdProtocol,
     },
   });
 };

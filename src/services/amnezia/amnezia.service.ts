@@ -1,4 +1,5 @@
 import { deflateSync } from "zlib";
+import { Protocol } from "@/types/shared";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
@@ -168,6 +169,7 @@ export class AmneziaService {
           endpoint,
           online,
           expiresAt,
+          protocol: Protocol.AMNEZIAWG,
         };
       }
     );
@@ -200,6 +202,7 @@ export class AmneziaService {
   ): Promise<{
     id: string;
     config: string;
+    protocol: Protocol;
   }> {
     // Проверка лимита максимального числа устройств
     const maxPeers = appConfig.SERVER_MAX_PEERS;
@@ -425,7 +428,7 @@ export class AmneziaService {
 
     const clientConfig = `vpn://${base64String}`;
 
-    return { id: clientId, config: clientConfig };
+    return { id: clientId, config: clientConfig, protocol: Protocol.AMNEZIAWG };
   }
 
   /**

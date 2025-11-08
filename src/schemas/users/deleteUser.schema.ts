@@ -1,6 +1,6 @@
-import { clientIdSchema } from "./common.schema";
-import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
+import { AppFastifySchema, Protocol } from "@/types/shared";
+import { clientIdSchema, protocolSchema } from "./common.schema";
 
 export const deleteUserSchema = {
   tags: [SwaggerContract.Tags.USERS],
@@ -11,6 +11,10 @@ export const deleteUserSchema = {
     required: ["clientId"],
     properties: {
       clientId: clientIdSchema,
+      protocol: {
+        ...protocolSchema,
+        default: Protocol.AMNEZIAWG,
+      },
     },
   },
   response: {

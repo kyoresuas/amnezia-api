@@ -1,3 +1,5 @@
+import { Protocol } from "@/types/shared";
+
 export type RunOptions = {
   timeout?: number;
   maxBufferBytes?: number;
@@ -15,6 +17,7 @@ export interface AmneziaDevice {
   endpoint: string | null;
   online: boolean;
   expiresAt: number | null;
+  protocol: Protocol;
 }
 
 export interface AmneziaUser {
