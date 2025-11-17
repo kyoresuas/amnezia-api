@@ -32,69 +32,6 @@ bash ./scripts/setup.sh
 
 Поднимается Swagger UI на маршруте `/docs`.
 
-## Маршруты
-
-Все ответы и тела запросов валидируются через JSON Schema и документируются в Swagger. Ниже краткая выжимка.
-
-### Server
-
-- GET `/server`
-  - Описание: статус текущей ноды
-  - Заголовки: `x-api-key`
-  - 200: `{ id, region, weight, maxPeers, interface, totalPeers }`
-
-### Users
-
-- GET `/users`
-
-  - Описание: получить всех пользователей
-  - Заголовки: `x-api-key`
-  - 200: `{ total, items: [...] }`
-
-- POST `/users`
-
-  - Описание: создать нового клиента
-  - Заголовки: `x-api-key`
-  - Body: `{ clientName: string, expiresAt?: number|null }`
-  - 200: `{ message, client: { id, config } }`
-  - 409: `{ message }` если имя занято
-
-- DELETE `/users`
-  - Описание: удалить клиента
-  - Заголовки: `x-api-key`
-  - Body: `{ clientId: base64 }`
-  - 200: `{ message }`
-  - 404: `{ message }` если клиент не найден
-
-## Примеры запросов
-
-```bash
-# Получить статус ноды
-curl -s \
-  -H "x-api-key: $FASTIFY_API_KEY" \
-  http://localhost:8080/server
-
-# Получить пользователей
-curl -s \
-  -H "x-api-key: $FASTIFY_API_KEY" \
-  "http://localhost:8080/users?skip=0&limit=100"
-
-# Создать пользователя
-curl -s \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $FASTIFY_API_KEY" \
-  -d '{"clientName":"Kyoresuas","expiresAt":1735689600}' \
-  http://localhost:8080/users
-
-# Удалить пользователя
-curl -s \
-  -X DELETE \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $FASTIFY_API_KEY" \
-  -d '{"clientId":"PF77ZXRl1yAkFzhBq/zQNlDPD73XXTq+Zs2PgtjLKVA="}' \
-  http://localhost:8080/users
-```
-
 ## Структура проекта
 
 Для работы над проектом необходимо понимать его структуру.
