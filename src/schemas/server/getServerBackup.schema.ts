@@ -1,5 +1,5 @@
 import { SwaggerContract } from "@/contracts/swagger";
-import { AppFastifySchema, Protocol } from "@/types/shared";
+import { AppFastifySchema, Protocol, CustomFormat } from "@/types/shared";
 
 export const getServerBackupSchema = {
   tags: [SwaggerContract.Tags.SERVER],
@@ -14,7 +14,7 @@ export const getServerBackupSchema = {
       properties: {
         generatedAt: {
           type: "string",
-          format: "date-time",
+          format: CustomFormat.DATE_TIME,
           description: "Время формирования выгрузки",
           example: "2025-01-15T12:34:56.789Z",
         },
