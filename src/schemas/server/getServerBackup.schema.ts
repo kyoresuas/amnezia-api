@@ -27,6 +27,7 @@ export const getServerBackupSchema = {
         protocols: {
           type: "array",
           description: "Список экспортированных протоколов",
+          minItems: 1,
           items: {
             type: "string",
             enum: Object.values(Protocol),

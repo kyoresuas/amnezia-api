@@ -129,6 +129,7 @@ export const importServerBackupSchema = {
       protocols: {
         type: "array",
         description: "Список протоколов, которые необходимо восстановить",
+        minItems: 1,
         items: {
           type: "string",
           enum: Object.values(Protocol),
