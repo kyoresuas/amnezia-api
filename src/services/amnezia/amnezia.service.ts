@@ -1,10 +1,11 @@
 import { deflateSync } from "zlib";
-import { Protocol } from "@/types/shared";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { ClientTableEntry } from "@/types/amnezia";
+import { AmneziaBackupData } from "@/types/server";
 import { UserRecord, UserDevice } from "@/types/users";
+import { ClientErrorCode, Protocol } from "@/types/shared";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
 
 /**
@@ -14,6 +15,26 @@ export class AmneziaService {
   static key = "amneziaService";
 
   constructor(private amnezia: AmneziaConnection) {}
+
+  /**
+   * Экспортировать данные AmneziaWG для резервной копии
+   */
+  async exportBackup(): Promise<AmneziaBackupData> {
+    const [wgConfig, clients, serverPublicKeyRaw, presharedKeyRaw] =
+      await Promise.all([
+        this.amnezia.readWgConfig(),
+        this.amnezia.readClientsTable(),
+        this.amnezia.readFile(AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY),
+        this.amnezia.readFile(AppContract.Amnezia.PATHS.WG_PSK),
+      ]);
+
+    return {
+      wgConfig,
+      clients,
+      serverPublicKey: serverPublicKeyRaw.trim(),
+      presharedKey: presharedKeyRaw.trim(),
+    };
+  }
 
   /**
    * Удалить всех клиентов с истекшим сроком действия
@@ -210,7 +231,7 @@ export class AmneziaService {
       );
 
       if (currentPeers >= maxPeers) {
-        throw new APIError(409);
+        throw new APIError(ClientErrorCode.CONFLICT);
       }
     }
 

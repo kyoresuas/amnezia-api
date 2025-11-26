@@ -4,6 +4,7 @@ import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { XrayServerConfig } from "@/types/xray";
+import { XrayBackupData } from "@/types/server";
 import { UserRecord, UserDevice } from "@/types/users";
 import { XrayConnection } from "@/helpers/xrayConnection";
 import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
@@ -16,53 +17,75 @@ export class XrayService {
 
   // Шаблон клиентского конфига Xray
   private static readonly XRAY_CLIENT_TEMPLATE = `{
-  "log": {
-    "loglevel": "error"
-  },
-  "inbounds": [
-    {
-      "listen": "127.0.0.1",
-      "port": 10808,
-      "protocol": "socks",
-      "settings": {
-        "udp": true
-      }
-    }
-  ],
-  "outbounds": [
-    {
-      "protocol": "vless",
-      "settings": {
-        "vnext": [
-          {
-            "address": "$SERVER_IP_ADDRESS",
-            "port": $XRAY_SERVER_PORT,
-            "users": [
-              {
-                "id": "$XRAY_CLIENT_ID",
-                "flow": "xtls-rprx-vision",
-                "encryption": "none"
-              }
-            ]
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "reality",
-        "realitySettings": {
-          "fingerprint": "chrome",
-          "serverName": "$XRAY_SITE_NAME",
-          "publicKey": "$XRAY_PUBLIC_KEY",
-          "shortId": "$XRAY_SHORT_ID",
-          "spiderX": ""
+    "log": {
+      "loglevel": "error"
+    },
+    "inbounds": [
+      {
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "udp": true
         }
       }
-    }
-  ]
-}`;
+    ],
+    "outbounds": [
+      {
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "$SERVER_IP_ADDRESS",
+              "port": $XRAY_SERVER_PORT,
+              "users": [
+                {
+                  "id": "$XRAY_CLIENT_ID",
+                  "flow": "xtls-rprx-vision",
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "fingerprint": "chrome",
+            "serverName": "$XRAY_SITE_NAME",
+            "publicKey": "$XRAY_PUBLIC_KEY",
+            "shortId": "$XRAY_SHORT_ID",
+            "spiderX": ""
+          }
+        }
+      }
+    ]
+  }`;
 
   constructor(private xray: XrayConnection) {}
+
+  /**
+   * Экспортировать данные Xray для резервной копии
+   */
+  async exportBackup(): Promise<XrayBackupData> {
+    const [serverConfig, uuidRaw, publicKeyRaw, privateKeyRaw, shortIdRaw] =
+      await Promise.all([
+        this.xray.readServerConfig(),
+        this.xray.readFile(AppContract.Xray.PATHS.UUID),
+        this.xray.readFile(AppContract.Xray.PATHS.PUBLIC_KEY),
+        this.xray.readFile(AppContract.Xray.PATHS.PRIVATE_KEY),
+        this.xray.readFile(AppContract.Xray.PATHS.SHORT_ID),
+      ]);
+
+    return {
+      serverConfig,
+      uuid: uuidRaw.trim(),
+      publicKey: publicKeyRaw.trim(),
+      privateKey: privateKeyRaw.trim(),
+      shortId: shortIdRaw.trim(),
+    };
+  }
 
   /**
    * Преобразовать json-конфигурацию
