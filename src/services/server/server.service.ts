@@ -1,10 +1,11 @@
-import { Protocol } from "@/types/shared";
+import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { XrayService } from "@/services/xray";
 import { UsersService } from "@/services/users";
 import { appLogger } from "@/config/winstonLogger";
 import { AmneziaService } from "@/services/amnezia";
 import { ServerBackupPayload } from "@/types/server";
+import { ClientErrorCode, Protocol } from "@/types/shared";
 import { ServerConnection } from "@/helpers/serverConnection";
 
 /**
@@ -35,6 +36,9 @@ export class ServerService {
     protocols: Protocol[];
   }> {
     const users = await this.usersService.getUsers();
+    const protocols = appConfig.PROTOCOLS_ENABLED?.length
+      ? (appConfig.PROTOCOLS_ENABLED as Protocol[])
+      : [Protocol.AMNEZIAWG];
 
     return {
       id: appConfig.SERVER_ID || "",
@@ -42,7 +46,7 @@ export class ServerService {
       weight: appConfig.SERVER_WEIGHT || 0,
       maxPeers: appConfig.SERVER_MAX_PEERS || 0,
       totalPeers: users.reduce((acc, user) => acc + user.devices.length, 0),
-      protocols: appConfig.PROTOCOLS_ENABLED as Protocol[],
+      protocols,
     };
   }
 
@@ -50,7 +54,9 @@ export class ServerService {
    * Сформировать резервную копию конфигурации сервера
    */
   async exportBackup(): Promise<ServerBackupPayload> {
-    const protocols = appConfig.PROTOCOLS_ENABLED as Protocol[];
+    const protocols = appConfig.PROTOCOLS_ENABLED?.length
+      ? (appConfig.PROTOCOLS_ENABLED as Protocol[])
+      : [Protocol.AMNEZIAWG];
 
     const payload: ServerBackupPayload = {
       generatedAt: new Date().toISOString(),
@@ -67,6 +73,33 @@ export class ServerService {
     }
 
     return payload;
+  }
+
+  /**
+   * Импортировать данные резервной копии сервера
+   */
+  async importBackup(payload: ServerBackupPayload): Promise<void> {
+    const protocols = payload.protocols ?? [];
+
+    if (!protocols.length) {
+      throw new APIError(ClientErrorCode.BAD_REQUEST);
+    }
+
+    if (protocols.includes(Protocol.AMNEZIAWG)) {
+      if (!payload.amnezia) {
+        throw new APIError(ClientErrorCode.BAD_REQUEST);
+      }
+
+      await this.amneziaService.importBackup(payload.amnezia);
+    }
+
+    if (protocols.includes(Protocol.XRAY)) {
+      if (!payload.xray) {
+        throw new APIError(ClientErrorCode.BAD_REQUEST);
+      }
+
+      await this.xrayService.importBackup(payload.xray);
+    }
   }
 
   /**

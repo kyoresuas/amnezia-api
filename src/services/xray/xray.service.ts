@@ -88,6 +88,30 @@ export class XrayService {
   }
 
   /**
+   * Импортировать данные Xray из резервной копии
+   */
+  async importBackup(data: XrayBackupData): Promise<void> {
+    await Promise.all([
+      this.xray.writeServerConfig(data.serverConfig),
+      this.xray.writeFile(AppContract.Xray.PATHS.UUID, `${data.uuid.trim()}\n`),
+      this.xray.writeFile(
+        AppContract.Xray.PATHS.PUBLIC_KEY,
+        `${data.publicKey.trim()}\n`
+      ),
+      this.xray.writeFile(
+        AppContract.Xray.PATHS.PRIVATE_KEY,
+        `${data.privateKey.trim()}\n`
+      ),
+      this.xray.writeFile(
+        AppContract.Xray.PATHS.SHORT_ID,
+        `${data.shortId.trim()}\n`
+      ),
+    ]);
+
+    await this.xray.restartContainer();
+  }
+
+  /**
    * Преобразовать json-конфигурацию
    */
   private parseServerConfig(raw: string): XrayServerConfig {

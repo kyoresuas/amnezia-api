@@ -5,11 +5,14 @@ import {
   rebootServerSchema,
   GetServerBackupType,
   getServerBackupSchema,
+  ImportServerBackupType,
+  importServerBackupSchema,
 } from "@/schemas";
 import {
   getServerHandler,
   rebootServerHandler,
   getServerBackupHandler,
+  importServerBackupHandler,
 } from "@/handlers/server";
 import { AppFastifyRoute } from "@/types/shared";
 import { authPreHandler } from "@/middleware/auth";
@@ -35,6 +38,18 @@ export const getServerBackupController: AppFastifyRoute<GetServerBackupType> = {
   preHandler: authPreHandler(),
   handler: getServerBackupHandler,
 };
+
+/**
+ * Импорт резервной копии конфигурации сервера
+ */
+export const importServerBackupController: AppFastifyRoute<ImportServerBackupType> =
+  {
+    url: "/server/backup",
+    method: "POST",
+    schema: importServerBackupSchema,
+    preHandler: authPreHandler(),
+    handler: importServerBackupHandler,
+  };
 
 /**
  * Перезагрузить сервер

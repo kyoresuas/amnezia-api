@@ -35,7 +35,6 @@ export const getServerBackupSchema = {
         },
         amnezia: {
           type: "object",
-          nullable: true,
           required: ["wgConfig", "presharedKey", "serverPublicKey", "clients"],
           properties: {
             wgConfig: {
@@ -59,30 +58,24 @@ export const getServerBackupSchema = {
                 properties: {
                   clientId: {
                     type: "string",
-                    nullable: true,
                     description: "Публичный ключ клиента",
                   },
                   publicKey: {
                     type: "string",
-                    nullable: true,
                     description: "Дополнительный публичный ключ",
                   },
                   userData: {
                     type: "object",
-                    nullable: true,
                     additionalProperties: false,
                     properties: {
                       clientName: {
                         type: "string",
-                        nullable: true,
                       },
                       creationDate: {
                         type: "string",
-                        nullable: true,
                       },
                       expiresAt: {
                         type: "number",
-                        nullable: true,
                       },
                     },
                   },
@@ -98,7 +91,7 @@ export const getServerBackupSchema = {
             clients: [
               {
                 clientId: "YjYxMzNhZjY2YzE4MjJmN2M0OTViYzQwYmVhZTM0NjY=",
-                publicKey: null,
+                publicKey: "YjYxMzNhZjY2YzE4MjJmN2M0OTViYzQwYmVhZTM0NjY=",
                 userData: {
                   clientName: "john.doe [iphone]",
                   creationDate: "Mon, 06 Nov 2023 10:12:45 GMT",
@@ -110,7 +103,6 @@ export const getServerBackupSchema = {
         },
         xray: {
           type: "object",
-          nullable: true,
           required: [
             "serverConfig",
             "uuid",

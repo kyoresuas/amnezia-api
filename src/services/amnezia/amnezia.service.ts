@@ -37,6 +37,23 @@ export class AmneziaService {
   }
 
   /**
+   * Импортировать данные AmneziaWG из резервной копии
+   */
+  async importBackup(data: AmneziaBackupData): Promise<void> {
+    await this.amnezia.writeWgConfig(data.wgConfig);
+    await this.amnezia.writeClientsTable(data.clients);
+    await this.amnezia.writeFile(
+      AppContract.Amnezia.PATHS.WG_PSK,
+      `${data.presharedKey.trim()}\n`
+    );
+    await this.amnezia.writeFile(
+      AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY,
+      `${data.serverPublicKey.trim()}\n`
+    );
+    await this.amnezia.syncWgConfig();
+  }
+
+  /**
    * Удалить всех клиентов с истекшим сроком действия
    */
   async cleanupExpiredClients(): Promise<number> {
