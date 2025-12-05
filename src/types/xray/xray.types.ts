@@ -1,4 +1,8 @@
-export type XrayClientEntry = { id?: string; flow?: string };
+export type XrayClientEntry = {
+  id?: string;
+  flow?: string;
+  username?: string;
+};
 
 export type XrayInbound = {
   port?: number;

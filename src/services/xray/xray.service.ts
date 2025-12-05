@@ -3,10 +3,10 @@ import { randomUUID } from "crypto";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
-import { XrayServerConfig } from "@/types/xray";
 import { XrayBackupData } from "@/types/server";
 import { UserRecord, UserDevice } from "@/types/users";
 import { XrayConnection } from "@/helpers/xrayConnection";
+import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
 import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
 
 /**
@@ -150,15 +150,13 @@ export class XrayService {
       : [];
 
     // Устройства пользователей
-    const devices: UserDevice[] = clients.map(
-      (client: { id?: string }, index: number) => {
-        const id =
-          typeof client?.id === "string" && client.id.trim().length > 0
-            ? client.id
-            : `xray-client-${index + 1}`;
+    const devices: (UserDevice & { username: string })[] = clients.map(
+      (client: XrayClientEntry) => {
+        const id = (client.id ?? "").trim();
+        const username = (client?.username ?? "").trim() || id;
 
-        // Устройство пользователя
         return {
+          username,
           id,
           name: null,
           allowedIps: [],
@@ -175,10 +173,15 @@ export class XrayService {
       }
     );
 
-    return devices.map((device) => ({
-      username: device.id,
-      devices: [device],
-    }));
+    const users = new Map<string, UserRecord>();
+
+    for (const { username, ...device } of devices) {
+      const entry = users.get(username) || { username, devices: [] };
+      entry.devices.push(device);
+      users.set(username, entry);
+    }
+
+    return Array.from(users.values());
   }
 
   /**
@@ -236,6 +239,7 @@ export class XrayService {
     clients.push({
       id: clientId,
       flow: "xtls-rprx-vision",
+      username: clientName,
     });
 
     // Обновляем конфиг
