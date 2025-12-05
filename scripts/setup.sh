@@ -155,6 +155,39 @@ setup_env() {
   fi
 }
 
+# Настройка Xray Stats API
+setup_xray_stats() {
+  echo "[3/5] Настройка Xray Stats API..."
+
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker не установлен, пропускаю настройку Xray Stats API."
+    return 0
+  fi
+
+  if ! $SUDO docker ps --format '{{.Names}}' | grep -qx "amnezia-xray"; then
+    echo "Контейнер amnezia-xray не найден, пропускаю настройку Xray Stats API."
+    return 0
+  fi
+
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "Установка python3 для настройки Xray Stats API..."
+    $SUDO apt-get update -y
+    $SUDO apt-get install -y python3
+  fi
+
+  tmp_json="$(mktemp)"
+
+  $SUDO docker exec amnezia-xray sh -lc 'cat /opt/amnezia/xray/server.json 2>/dev/null || echo "{}"' > "$tmp_json"
+
+  python3 "$ROOT_DIR/scripts/setup_xray_stats.py" "$tmp_json"
+
+  $SUDO docker cp "$tmp_json" amnezia-xray:/opt/amnezia/xray/server.json
+  rm -f "$tmp_json"
+
+  echo "Перезапуск контейнера amnezia-xray для применения настроек Stats API..."
+  $SUDO docker restart amnezia-xray >/dev/null 2>&1 || true
+}
+
 # Деплоит приложение
 deploy_app() {
   echo "[3/5] Деплой..."
@@ -241,6 +274,7 @@ main() {
   install_nodejs
   setup_env
   deploy_app
+  setup_xray_stats
   setup_nginx
   show_completion
 }
