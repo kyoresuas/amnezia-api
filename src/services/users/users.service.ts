@@ -61,25 +61,33 @@ export class UsersService {
    */
   async getUsers(): Promise<UserRecord[]> {
     const enabled = this.getEnabledProtocols();
-    const users: UserRecord[] = [];
+    const users = new Map<string, UserRecord>();
 
     for (const protocol of enabled) {
       const service = this.getServiceByProtocol(protocol);
 
       const serviceUsers = await service.getUsers();
 
-      users.push(
-        ...serviceUsers.map((user) => ({
-          ...user,
-          devices: user.devices.map((device) => ({
-            ...device,
-            protocol: device.protocol ?? protocol,
-          })),
-        }))
-      );
+      for (const user of serviceUsers) {
+        const normalizedDevices = user.devices.map((device) => ({
+          ...device,
+          protocol: device.protocol ?? protocol,
+        }));
+
+        const existing = users.get(user.username);
+
+        if (existing) {
+          existing.devices.push(...normalizedDevices);
+        } else {
+          users.set(user.username, {
+            username: user.username,
+            devices: normalizedDevices,
+          });
+        }
+      }
     }
 
-    return users;
+    return Array.from(users.values());
   }
 
   /**
