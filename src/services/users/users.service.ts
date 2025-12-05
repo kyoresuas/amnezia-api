@@ -92,12 +92,6 @@ export class UsersService {
   }: CreateUserPayload): Promise<CreateUserResult> {
     this.ensureProtocolEnabled(protocol);
 
-    const existingUsers = await this.getUsers();
-
-    if (existingUsers.some((user) => user.username === clientName)) {
-      throw new APIError(ClientErrorCode.CONFLICT);
-    }
-
     const service = this.getServiceByProtocol(protocol);
 
     return service.createClient(clientName, { expiresAt });
