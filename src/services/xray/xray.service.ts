@@ -112,6 +112,39 @@ export class XrayService {
   }
 
   /**
+   * Получить статистику трафика пользователя из Xray Stats API
+   */
+  private async getUserTrafficStats(
+    id: string
+  ): Promise<{ received: number; sent: number } | null> {
+    const serverAddr = `127.0.0.1:${AppContract.Xray.DEFAULTS.API_PORT}`;
+
+    const parseValue = (output: string): number => {
+      const match = output.match(/"value"\s*:\s*"?(\d+)"?/);
+      return match ? Number(match[1]) : 0;
+    };
+
+    const escapedId = id.replace(/"/g, '\\"');
+
+    const uplinkCmd = `xray api stats -server=${serverAddr} -name "user>>>${escapedId}>>>traffic>>>uplink" -reset=false || true`;
+    const downlinkCmd = `xray api stats -server=${serverAddr} -name "user>>>${escapedId}>>>traffic>>>downlink" -reset=false || true`;
+
+    try {
+      const [up, down] = await Promise.all([
+        this.xray.run(uplinkCmd, { timeout: 2000 }),
+        this.xray.run(downlinkCmd, { timeout: 2000 }),
+      ]);
+
+      return {
+        sent: parseValue(up.stdout),
+        received: parseValue(down.stdout),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Преобразовать json-конфигурацию
    */
   private parseServerConfig(raw: string): XrayServerConfig {
@@ -150,11 +183,18 @@ export class XrayService {
       : [];
 
     // Устройства пользователей
-    const devices: (UserDevice & { username: string })[] = clients.map(
-      (client: XrayClientEntry) => {
-        const id = (client.id ?? "").trim();
-        const username = (client?.username ?? "").trim() || id;
+    const devices: (UserDevice & { username: string })[] = await Promise.all(
+      clients.map(async (client: XrayClientEntry, index: number) => {
+        // id
+        const id = (client.id ?? "").trim() || `xray-client-${index + 1}`;
 
+        // username
+        const username = (client.username ?? "").trim() || id;
+
+        // Получить статистику трафика
+        const traffic = await this.getUserTrafficStats(id);
+
+        // Устройство пользователя
         return {
           username,
           id,
@@ -162,15 +202,15 @@ export class XrayService {
           allowedIps: [],
           lastHandshake: 0,
           traffic: {
-            received: 0,
-            sent: 0,
+            received: traffic?.received ?? 0,
+            sent: traffic?.sent ?? 0,
           },
           endpoint: null,
           online: false,
           expiresAt: null,
           protocol: Protocol.XRAY,
         };
-      }
+      })
     );
 
     const users = new Map<string, UserRecord>();

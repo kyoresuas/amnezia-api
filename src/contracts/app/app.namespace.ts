@@ -42,6 +42,7 @@ export const AppContract = {
     DEFAULTS: {
       PORT: "443",
       SITE: "max.ru",
+      API_PORT: "10085",
     } as const,
   },
 } as const;
