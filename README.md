@@ -63,6 +63,11 @@ bash ./scripts/setup.sh
 - Исправить отображение и сохранение clientName для пользователей Xray
 - Добавить поддержку срока действия (expiresAt) и автоматического удаления клиентов Xray по истечении времени
 
+## Связаться со мной
+
+- **Telegram:** @stercuss  
+- **Email:** hey@kyoresuas.com
+
 ## Лицензия
 
 MIT — см. файл `LICENSE`.
