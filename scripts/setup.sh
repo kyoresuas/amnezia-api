@@ -179,7 +179,7 @@ setup_xray_stats() {
 
   $SUDO docker exec amnezia-xray sh -lc 'cat /opt/amnezia/xray/server.json 2>/dev/null || echo "{}"' > "$tmp_json"
 
-  python3 "$ROOT_DIR/scripts/setup_xray_stats.py" "$tmp_json"
+  python3 "$ROOT_DIR/scripts/xray/setup_xray_stats.py" "$tmp_json"
 
   $SUDO docker cp "$tmp_json" amnezia-xray:/opt/amnezia/xray/server.json
   rm -f "$tmp_json"
