@@ -414,6 +414,21 @@ export class AmneziaService {
       transport_proto: AppContract.Amnezia.DEFAULTS.TRANSPORT,
     };
 
+    // Поддерживаемые плейсхолдеры в appConfig.SERVER_NAME:
+    // {protocol} — протокол подключения (например, "AmneziaWG")
+    // {username} — имя клиента (clientName)
+    const baseServerName = appConfig.SERVER_NAME || "";
+    const protocolName = "AmneziaWG";
+    let description = baseServerName;
+
+    if (/\{protocol\}|\{username\}/i.test(baseServerName)) {
+      description = baseServerName
+        .replace(/\{protocol\}/gi, protocolName)
+        .replace(/\{username\}/gi, clientName);
+    } else if (!baseServerName) {
+      description = `${clientName} | ${protocolName}`;
+    }
+
     // JSON для сервера
     const serverJson = {
       containers: [
@@ -423,7 +438,7 @@ export class AmneziaService {
         },
       ],
       defaultContainer: AppContract.Amnezia.DOCKER_CONTAINER,
-      description: `${appConfig.SERVER_NAME} | ${clientName} | AmneziaWG`,
+      description,
       dns1:
         (
           await this.amnezia.run(

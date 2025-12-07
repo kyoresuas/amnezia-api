@@ -374,11 +374,26 @@ export class XrayService {
       },
     };
 
+    // Поддерживаемые плейсхолдеры в appConfig.SERVER_NAME:
+    // {protocol} — протокол подключения (например, "Xray")
+    // {username} — имя клиента (clientName)
+    const baseServerName = appConfig.SERVER_NAME || "";
+    const protocolName = "Xray";
+    let description = baseServerName;
+
+    if (/\{protocol\}|\{username\}/i.test(baseServerName)) {
+      description = baseServerName
+        .replace(/\{protocol\}/gi, protocolName)
+        .replace(/\{username\}/gi, clientName);
+    } else if (!baseServerName) {
+      description = `${clientName} | ${protocolName}`;
+    }
+
     // JSON для сервера
     const serverJson = {
       containers: [xrayContainerConfig],
       defaultContainer: AppContract.Xray.DOCKER_CONTAINER,
-      description: `${appConfig.SERVER_NAME} | ${clientName} | Xray`,
+      description,
       dns1,
       dns2,
       hostName: serverHost,
