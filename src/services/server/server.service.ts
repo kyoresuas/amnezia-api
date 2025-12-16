@@ -5,8 +5,9 @@ import { UsersService } from "@/services/users";
 import { appLogger } from "@/config/winstonLogger";
 import { AmneziaService } from "@/services/amnezia";
 import { ServerBackupPayload } from "@/types/server";
-import { ClientErrorCode, Protocol } from "@/types/shared";
 import { ServerConnection } from "@/helpers/serverConnection";
+import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
+import { ClientErrorCode, Protocol, ServerErrorCode } from "@/types/shared";
 
 /**
  * Сервис управления сервером
@@ -36,9 +37,7 @@ export class ServerService {
     protocols: Protocol[];
   }> {
     const users = await this.usersService.getUsers();
-    const protocols = appConfig.PROTOCOLS_ENABLED?.length
-      ? (appConfig.PROTOCOLS_ENABLED as Protocol[])
-      : [Protocol.AMNEZIAWG];
+    const protocols = await resolveEnabledProtocols();
 
     return {
       id: appConfig.SERVER_ID || "",
@@ -54,9 +53,13 @@ export class ServerService {
    * Сформировать резервную копию конфигурации сервера
    */
   async exportBackup(): Promise<ServerBackupPayload> {
-    const protocols = appConfig.PROTOCOLS_ENABLED?.length
-      ? (appConfig.PROTOCOLS_ENABLED as Protocol[])
-      : [Protocol.AMNEZIAWG];
+    const protocols = await resolveEnabledProtocols();
+
+    if (!protocols.length) {
+      throw new APIError(ServerErrorCode.SERVICE_UNAVAILABLE, {
+        msg: "swagger.errors.NO_PROTOCOLS_AVAILABLE",
+      });
+    }
 
     const payload: ServerBackupPayload = {
       generatedAt: new Date().toISOString(),

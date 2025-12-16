@@ -1,6 +1,12 @@
+import {
+  isDockerDaemonUnavailableError,
+  isDockerContainerUnavailableError,
+} from "@/helpers/dockerErrors";
 import { exec } from "child_process";
+import { APIError } from "@/utils/APIError";
 import { RunOptions } from "@/types/amnezia";
 import { AppContract } from "@/contracts/app";
+import { ServerErrorCode } from "@/types/shared";
 
 /**
  * Создать соединение с Xray
@@ -33,6 +39,22 @@ export class XrayConnection {
     return new Promise((resolve, reject) => {
       exec(finalCmd, { timeout, maxBuffer }, (error, stdout, stderr) => {
         if (error) {
+          if (isDockerDaemonUnavailableError(error)) {
+            return reject(
+              new APIError(ServerErrorCode.SERVICE_UNAVAILABLE, {
+                msg: "swagger.errors.DOCKER_NOT_AVAILABLE",
+              })
+            );
+          }
+
+          if (isDockerContainerUnavailableError(error)) {
+            return reject(
+              new APIError(ServerErrorCode.SERVICE_UNAVAILABLE, {
+                msg: "swagger.errors.CONTAINER_NOT_AVAILABLE",
+              })
+            );
+          }
+
           return reject(
             new Error(`Ошибка выполнения команды ${cmd}: ${error}`)
           );

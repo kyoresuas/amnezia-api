@@ -10,6 +10,7 @@ import { XrayService } from "@/services/xray";
 import appConfig from "@/constants/appConfig";
 import { AmneziaService } from "@/services/amnezia";
 import { ClientErrorCode, ServerErrorCode } from "@/types/shared";
+import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
 
 /**
  * Сервис для работы с пользователями
@@ -25,15 +26,27 @@ export class UsersService {
   /**
    * Получить список включенных протоколов
    */
-  private getEnabledProtocols(): Protocol[] {
-    return appConfig.PROTOCOLS_ENABLED ?? [Protocol.AMNEZIAWG];
+  private async getEnabledProtocols(): Promise<Protocol[]> {
+    if (appConfig.PROTOCOLS_ENABLED?.length) {
+      return appConfig.PROTOCOLS_ENABLED;
+    }
+
+    const enabled = await resolveEnabledProtocols();
+
+    if (!enabled.length) {
+      throw new APIError(ServerErrorCode.SERVICE_UNAVAILABLE, {
+        msg: "swagger.errors.NO_PROTOCOLS_AVAILABLE",
+      });
+    }
+
+    return enabled;
   }
 
   /**
    * Проверить, что протокол включен
    */
-  private ensureProtocolEnabled(protocol: Protocol): void {
-    const enabled = this.getEnabledProtocols();
+  private async ensureProtocolEnabled(protocol: Protocol): Promise<void> {
+    const enabled = await this.getEnabledProtocols();
 
     if (!enabled.includes(protocol)) {
       throw new APIError(ClientErrorCode.BAD_REQUEST);
@@ -60,7 +73,7 @@ export class UsersService {
    * Получить список пользователей
    */
   async getUsers(): Promise<UserRecord[]> {
-    const enabled = this.getEnabledProtocols();
+    const enabled = await this.getEnabledProtocols();
     const users = new Map<string, UserRecord>();
 
     for (const protocol of enabled) {
@@ -98,7 +111,7 @@ export class UsersService {
     protocol,
     expiresAt = null,
   }: CreateUserPayload): Promise<CreateUserResult> {
-    this.ensureProtocolEnabled(protocol);
+    await this.ensureProtocolEnabled(protocol);
 
     const service = this.getServiceByProtocol(protocol);
 
@@ -109,7 +122,7 @@ export class UsersService {
    * Удалить пользователя
    */
   async deleteUser({ clientId, protocol }: DeleteUserPayload): Promise<void> {
-    this.ensureProtocolEnabled(protocol);
+    await this.ensureProtocolEnabled(protocol);
 
     const service = this.getServiceByProtocol(protocol);
 

@@ -58,6 +58,22 @@ get_public_ip() {
   hostname -I 2>/dev/null | awk '{print $1}'
 }
 
+# Авто-детект поддерживаемых протоколов по запущенным контейнерам
+detect_protocols_enabled() {
+  if ! command -v docker >/dev/null 2>&1; then
+    return 0
+  fi
+
+  local containers protocols=""
+  containers="$($SUDO docker ps --format '{{.Names}}' 2>/dev/null || true)"
+
+  echo "$containers" | grep -qx "amnezia-awg" && protocols="${protocols}amneziawg,"
+  echo "$containers" | grep -qx "amnezia-xray" && protocols="${protocols}xray,"
+
+  protocols="${protocols%,}"
+  printf "%s" "$protocols"
+}
+
 # Устанавливает Node.js и pm2
 install_nodejs() {
   echo "[1/5] Установка Node.js LTS и pm2..."
@@ -99,6 +115,21 @@ setup_env() {
     echo "FASTIFY_API_KEY сгенерирован автоматически."
   else
     echo "FASTIFY_API_KEY уже задан. Пропуск."
+  fi
+
+  # Протоколы
+  local current_protocols auto_protocols
+  current_protocols="$(get_env_var PROTOCOLS_ENABLED)"
+  if [ -z "$current_protocols" ] || echo "$current_protocols" | grep -qiE '^\s*change-me\s*$'; then
+    auto_protocols="$(detect_protocols_enabled)"
+    if [ -n "$auto_protocols" ]; then
+      upsert_env_var PROTOCOLS_ENABLED "$auto_protocols"
+      echo "PROTOCOLS_ENABLED установлен автоматически: $auto_protocols"
+    else
+      echo "PROTOCOLS_ENABLED: контейнеры протоколов не найдены, пропускаю."
+    fi
+  else
+    echo "PROTOCOLS_ENABLED уже задан. Пропуск."
   fi
   
   # Регион сервера

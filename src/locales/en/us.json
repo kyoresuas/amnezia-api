@@ -12,7 +12,10 @@
       "VALIDATION": "Validation error",
       "UNKNOWN": "Unexpected error",
       "INVALID_MEDIA_TYPE": "Invalid content format",
-      "FILE_TOO_LARGE": "Upload file too large"
+      "FILE_TOO_LARGE": "Upload file too large",
+      "DOCKER_NOT_AVAILABLE": "Docker is not available on the server",
+      "CONTAINER_NOT_AVAILABLE": "Required container is not installed or not running",
+      "NO_PROTOCOLS_AVAILABLE": "No available protocols were found on the server"
     },
     "codes": {
       "100": "Please continue",
