@@ -14,6 +14,28 @@ import { AmneziaConnection } from "@/helpers/amneziaConnection";
 export class AmneziaService {
   static key = "amneziaService";
 
+  // Шаблон клиентского конфига AmneziaWG
+  private static readonly AMNEZIAWG_CLIENT_TEMPLATE =
+    `[Interface]\n` +
+    `Address = $CLIENT_ADDRESS/32\n` +
+    `DNS = $PRIMARY_DNS, $SECONDARY_DNS\n` +
+    `PrivateKey = $CLIENT_PRIVATE_KEY\n` +
+    `Jc = $JC\n` +
+    `Jmin = $JMIN\n` +
+    `Jmax = $JMAX\n` +
+    `S1 = $S1\n` +
+    `S2 = $S2\n` +
+    `H1 = $H1\n` +
+    `H2 = $H2\n` +
+    `H3 = $H3\n` +
+    `H4 = $H4\n\n` +
+    `[Peer]\n` +
+    `PublicKey = $SERVER_PUBLIC_KEY\n` +
+    `PresharedKey = $PRESHARED_KEY\n` +
+    `AllowedIPs = 0.0.0.0/0, ::/0\n` +
+    `$ENDPOINT_LINE` +
+    `PersistentKeepalive = $KEEPALIVE\n`;
+
   constructor(private amnezia: AmneziaConnection) {}
 
   /**
@@ -333,28 +355,29 @@ export class AmneziaService {
     } as const;
 
     // Текстовый конфиг
-    const configText =
-      `[Interface]\n` +
-      `Address = ${assignedIp}/32\n` +
-      `DNS = $PRIMARY_DNS, $SECONDARY_DNS\n` +
-      `PrivateKey = ${clientPrivateKey}\n` +
-      `Jc = ${awgParams.Jc}\n` +
-      `Jmin = ${awgParams.Jmin}\n` +
-      `Jmax = ${awgParams.Jmax}\n` +
-      `S1 = ${awgParams.S1}\n` +
-      `S2 = ${awgParams.S2}\n` +
-      `H1 = ${awgParams.H1}\n` +
-      `H2 = ${awgParams.H2}\n` +
-      `H3 = ${awgParams.H3}\n` +
-      `H4 = ${awgParams.H4}\n\n` +
-      `[Peer]\n` +
-      `PublicKey = ${serverPublicKey}\n` +
-      `PresharedKey = ${psk}\n` +
-      `AllowedIPs = 0.0.0.0/0, ::/0\n` +
-      (endpointHost && listenPort
-        ? `Endpoint = ${endpointHost}:${listenPort}\n`
-        : "") +
-      `PersistentKeepalive = ${keepAlive}\n`;
+    const configText = AmneziaService.AMNEZIAWG_CLIENT_TEMPLATE.replace(
+      /\$CLIENT_ADDRESS/g,
+      assignedIp
+    )
+      .replace(/\$CLIENT_PRIVATE_KEY/g, clientPrivateKey)
+      .replace(/\$JC/g, awgParams.Jc)
+      .replace(/\$JMIN/g, awgParams.Jmin)
+      .replace(/\$JMAX/g, awgParams.Jmax)
+      .replace(/\$S1/g, awgParams.S1)
+      .replace(/\$S2/g, awgParams.S2)
+      .replace(/\$H1/g, awgParams.H1)
+      .replace(/\$H2/g, awgParams.H2)
+      .replace(/\$H3/g, awgParams.H3)
+      .replace(/\$H4/g, awgParams.H4)
+      .replace(/\$SERVER_PUBLIC_KEY/g, serverPublicKey)
+      .replace(/\$PRESHARED_KEY/g, psk)
+      .replace(
+        /\$ENDPOINT_LINE/g,
+        endpointHost && listenPort
+          ? `Endpoint = ${endpointHost}:${listenPort}\n`
+          : ""
+      )
+      .replace(/\$KEEPALIVE/g, String(keepAlive));
 
     // Последний конфиг
     const lastConfig = {
