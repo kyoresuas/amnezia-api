@@ -75,8 +75,8 @@ detect_protocols_enabled() {
 }
 
 # Устанавливает Node.js и pm2
-install_nodejs() {
-  echo "[1/6] Установка Node.js LTS и pm2..."
+install_dependencies() {
+  echo "[1/6] Установка зависимостей..."
   
   if ! command -v node >/dev/null 2>&1; then
     if ! command -v curl >/dev/null 2>&1; then
@@ -186,9 +186,37 @@ setup_env() {
   fi
 }
 
+# Деплоит приложение
+deploy_app() {
+  echo "[3/6] Деплой..."
+  node ./scripts/deploy.js
+}
+
+# Настраивает автозапуск pm2 после ребута
+setup_pm2_startup() {
+  echo "[4/6] Настройка автозапуска pm2..."
+
+  if ! command -v pm2 >/dev/null 2>&1; then
+    echo "pm2 не найден, пропускаю настройку автозапуска."
+    return 0
+  fi
+
+  local pm2_user pm2_home
+  pm2_user="${SUDO_USER:-${USER:-root}}"
+  pm2_home="$(eval echo "~$pm2_user" 2>/dev/null || echo "${HOME:-/root}")"
+
+  $SUDO env "PATH=$PATH" pm2 startup systemd -u "$pm2_user" --hp "$pm2_home" >/dev/null 2>&1 || true
+
+  if [ -n "$SUDO" ] && [ "$pm2_user" != "${USER:-root}" ]; then
+    $SUDO -u "$pm2_user" env "PATH=$PATH" pm2 save >/dev/null 2>&1 || true
+  else
+    pm2 save >/dev/null 2>&1 || true
+  fi
+}
+
 # Настройка Xray Stats API
 setup_xray_stats() {
-  echo "[3/6] Настройка Xray Stats API..."
+  echo "[5/6] Настройка Xray Stats API..."
 
   if ! command -v docker >/dev/null 2>&1; then
     echo "Docker не установлен, пропускаю настройку Xray Stats API."
@@ -219,37 +247,9 @@ setup_xray_stats() {
   $SUDO docker restart amnezia-xray >/dev/null 2>&1 || true
 }
 
-# Деплоит приложение
-deploy_app() {
-  echo "[3/6] Деплой..."
-  node ./scripts/deploy.js
-}
-
-# Настраивает автозапуск pm2 после ребута
-setup_pm2_startup() {
-  echo "[4/6] Настройка автозапуска pm2..."
-
-  if ! command -v pm2 >/dev/null 2>&1; then
-    echo "pm2 не найден, пропускаю настройку автозапуска."
-    return 0
-  fi
-
-  local pm2_user pm2_home
-  pm2_user="${SUDO_USER:-${USER:-root}}"
-  pm2_home="$(eval echo "~$pm2_user" 2>/dev/null || echo "${HOME:-/root}")"
-
-  $SUDO env "PATH=$PATH" pm2 startup systemd -u "$pm2_user" --hp "$pm2_home" >/dev/null 2>&1 || true
-
-  if [ -n "$SUDO" ] && [ "$pm2_user" != "${USER:-root}" ]; then
-    $SUDO -u "$pm2_user" env "PATH=$PATH" pm2 save >/dev/null 2>&1 || true
-  else
-    pm2 save >/dev/null 2>&1 || true
-  fi
-}
-
 # Настраивает Nginx
 setup_nginx() {
-  echo "[5/6] Установка и настройка Nginx..."
+  echo "[6/6] Установка и настройка Nginx..."
   
   if ! command -v nginx >/dev/null 2>&1; then
     $SUDO apt-get update -y
@@ -292,7 +292,7 @@ NGINX
 
 # Показывает финальную информацию
 show_completion() {
-  echo "[6/6] Готово. Полезные команды:"
+  echo "Готово. Полезные команды:"
   echo "  pm2 status"
   echo "  pm2 logs $APP_NAME --lines 200"
   echo "  pm2 restart $APP_NAME"
@@ -324,7 +324,7 @@ show_completion() {
 
 # Основная функция
 main() {
-  install_nodejs
+  install_dependencies
   setup_env
   deploy_app
   setup_pm2_startup
