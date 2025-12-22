@@ -1,8 +1,8 @@
 # Amnezia API
 
-![Node](https://img.shields.io/badge/node-%3E%3D18-339933?style=flat-square&logo=node.js&logoColor=white)
-![Fastify](https://img.shields.io/badge/fastify-5.x-000000?style=flat-square&logo=fastify&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white)
+![Fastify](https://img.shields.io/badge/fastify-5.x-000000?logo=fastify&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 **Русский** · [English](README_EN.md)
 
