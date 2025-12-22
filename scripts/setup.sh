@@ -5,6 +5,7 @@ readonly APP_NAME="amnezia-api"
 readonly ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 readonly ENV_EXAMPLE="$ROOT_DIR/.env.example"
 readonly ENV_FILE="$ROOT_DIR/.env"
+IS_UPDATE=0
 
 # Определяем sudo если не root
 SUDO=""
@@ -72,6 +73,23 @@ detect_protocols_enabled() {
 
   protocols="${protocols%,}"
   printf "%s" "$protocols"
+}
+
+# Обновляет репозиторий 
+update_repo() {
+  echo "Обновление репозитория..."
+
+  if ! command -v git >/dev/null 2>&1; then
+    echo "git не найден, пропускаю git pull."
+    return 0
+  fi
+
+  if [ ! -d "$ROOT_DIR/.git" ]; then
+    echo "Директория .git не найдена (не git-репозиторий?), пропускаю git pull."
+    return 0
+  fi
+
+  git -C "$ROOT_DIR" pull --ff-only
 }
 
 # Устанавливает Node.js и pm2
@@ -292,7 +310,12 @@ NGINX
 
 # Показывает финальную информацию
 show_completion() {
-  echo "Готово. Полезные команды:"
+  if [ "${IS_UPDATE:-0}" -eq 1 ]; then
+    echo "Готово. Обновление завершено."
+  else
+    echo "Готово. Установка завершена."
+  fi
+  echo "Полезные команды:"
   echo "  pm2 status"
   echo "  pm2 logs $APP_NAME --lines 200"
   echo "  pm2 restart $APP_NAME"
@@ -324,12 +347,27 @@ show_completion() {
 
 # Основная функция
 main() {
-  install_dependencies
-  setup_env
+  if [ -f "$ENV_FILE" ]; then
+    IS_UPDATE=1
+  else
+    IS_UPDATE=0
+  fi
+
+  update_repo
+
+  if [ "${IS_UPDATE:-0}" -eq 0 ]; then
+    install_dependencies
+    setup_env
+  fi
+
   deploy_app
   setup_pm2_startup
-  setup_xray_stats
-  setup_nginx
+
+  if [ "${IS_UPDATE:-0}" -eq 0 ]; then
+    setup_xray_stats
+    setup_nginx
+  fi
+
   show_completion
 }
 
