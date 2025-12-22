@@ -1,15 +1,24 @@
 # Amnezia API
 
-Удобный API для управления Amnezia VPN в ваших проектах.
+![Node](https://img.shields.io/badge/node-%3E%3D18-339933?style=flat-square&logo=node.js&logoColor=white)
+![Fastify](https://img.shields.io/badge/fastify-5.x-000000?style=flat-square&logo=fastify&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+
+**Русский** · [English](README_EN.md)
+
+API предназначен для удаленного управления Amnezia и упрощения доступа к управлению VPN посредством программирования — для интеграции с приложениями, админ-панелями и ботами.
 
 ## Поддерживаемые протоколы
 
-API реализует поддержку двух протоколов — AmneziaWG и Xray.
+- **AmneziaWG**
+- **Xray**
 
 ## Быстрый старт
 
+### Установка и запуск
+
 ```bash
-# Установить GIT
+# Установить Git
 apt install git
 
 # Клонировать репозиторий
@@ -22,19 +31,33 @@ cd ./amnezia-api
 bash ./scripts/setup.sh
 ```
 
-## Аутентификация
+### Конфигурация
 
-Все маршруты защищены прехендлером и требуют заголовок:
+Конфигурация генерируется автоматически при запуске `./scripts/setup.sh`.
 
-- `x-api-key: <FASTIFY_API_KEY>`
+- **`.env.example`**: пример конфигурации
+- **`.env`**: ваша конфигурация
 
 ## Документация API
 
-Поднимается Swagger UI на маршруте `/docs`.
+Swagger UI поднимается на маршруте **`/docs`**. Откройте в браузере:
+
+- `http://<ваш_айпи>/docs`
+
+Изучите там схемы, параметры, примеры запросов и ответы.
+
+## Аутентификация
+
+Все маршруты защищены preHandler-ом и требуют заголовок:
+
+- `x-api-key: <FASTIFY_API_KEY>`
+
+Где `FASTIFY_API_KEY` задаётся в `.env`.
 
 ## Структура проекта
 
-Для работы над проектом необходимо понимать его структуру.
+<details>
+<summary>Показать структуру</summary>
 
 ```
 ├─ /scripts [скрипты]
@@ -47,7 +70,7 @@ bash ./scripts/setup.sh
 │  ├─ /helpers [специализированные помощники]
 │  ├─ /locales [файлы перевода]
 │  ├─ /middleware [промежуточное ПО для маршрутов API]
-│  ├─ /schemas [схемы маршрутов API для сваггера и валидации]
+│  ├─ /schemas [схемы маршрутов API для Swagger и валидации]
 │  ├─ /services [сервисы]
 │  ├─ /tasks [отложенные задачи]
 │  ├─ /types [типизация]
@@ -57,9 +80,7 @@ bash ./scripts/setup.sh
 └─ .env [конфигурация разработчика]
 ```
 
-## TODO
-
-- Добавить поддержку срока действия (expiresAt) и автоматического удаления клиентов Xray по истечении времени
+</details>
 
 ## Связаться со мной
 
