@@ -132,4 +132,23 @@ export class UsersService {
       throw new APIError(ClientErrorCode.NOT_FOUND);
     }
   }
+
+  /**
+   * Удалить всех клиентов с истекшим сроком действия
+   */
+  async cleanupExpiredClients(): Promise<number> {
+    const enabled = await this.getEnabledProtocols();
+
+    let removed = 0;
+
+    if (enabled.includes(Protocol.AMNEZIAWG)) {
+      removed += await this.amneziaService.cleanupExpiredClients();
+    }
+
+    if (enabled.includes(Protocol.XRAY)) {
+      removed += await this.xrayService.cleanupExpiredClients();
+    }
+
+    return removed;
+  }
 }

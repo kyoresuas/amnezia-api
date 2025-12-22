@@ -1,12 +1,12 @@
 import { di } from "@/config/DIContainer";
 import { TaskHandler } from "@/types/cron";
 import { appLogger } from "@/config/winstonLogger";
-import { AmneziaService } from "@/services/amnezia";
+import { UsersService } from "@/services/users";
 
 export const cleanupExpiredClientsTask: TaskHandler = async () => {
-  const amnezia = di.container.resolve<AmneziaService>(AmneziaService.key);
+  const users = di.container.resolve<UsersService>(UsersService.key);
 
-  const removed = await amnezia.cleanupExpiredClients();
+  const removed = await users.cleanupExpiredClients();
 
   if (removed === 0) {
     appLogger.info("Просроченных клиентов не найдено");

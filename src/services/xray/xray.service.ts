@@ -191,6 +191,10 @@ export class XrayService {
         // username
         const username = (client.username ?? "").trim() || id;
 
+        // expiresAt (seconds)
+        const expiresAt =
+          typeof client.expiresAt === "number" ? client.expiresAt : null;
+
         // Получить статистику трафика
         const traffic = await this.getUserTrafficStats(id);
 
@@ -207,7 +211,7 @@ export class XrayService {
           },
           endpoint: null,
           online: false,
-          expiresAt: null,
+          expiresAt,
           protocol: Protocol.XRAY,
         };
       })
@@ -235,8 +239,6 @@ export class XrayService {
     config: string;
     protocol: Protocol;
   }> {
-    void options;
-
     const clientId = randomUUID();
 
     // Считываем конфиг сервера
@@ -280,6 +282,7 @@ export class XrayService {
       id: clientId,
       flow: "xtls-rprx-vision",
       username: clientName,
+      expiresAt: options?.expiresAt ?? null,
     });
 
     // Обновляем конфиг
@@ -490,5 +493,51 @@ export class XrayService {
     await this.xray.restartContainer();
 
     return true;
+  }
+
+  /**
+   * Удалить всех клиентов с истекшим сроком действия
+   */
+  async cleanupExpiredClients(): Promise<number> {
+    const now = Math.floor(Date.now() / 1000);
+
+    const rawConfig = await this.xray.readServerConfig();
+    if (!rawConfig) {
+      throw new APIError(ServerErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    const serverConfig = this.parseServerConfig(rawConfig);
+
+    const inbounds = Array.isArray(serverConfig.inbounds)
+      ? serverConfig.inbounds
+      : [];
+
+    if (!inbounds.length) return 0;
+
+    const inbound = inbounds[0];
+    const settings = inbound.settings;
+    const clients = Array.isArray(settings?.clients) ? settings!.clients! : [];
+
+    if (!clients.length) return 0;
+
+    const isExpired = (client: XrayClientEntry): boolean => {
+      const expiresAt = client?.expiresAt;
+      return typeof expiresAt === "number" && expiresAt > 0 && expiresAt <= now;
+    };
+
+    const kept = clients.filter((c) => !isExpired(c));
+    const removed = clients.length - kept.length;
+
+    if (removed <= 0) return 0;
+
+    // Обновляем конфиг и применяем один раз
+    inbound.settings = { ...(settings ?? {}), clients: kept };
+    inbounds[0] = inbound;
+    serverConfig.inbounds = inbounds;
+
+    await this.xray.writeServerConfig(JSON.stringify(serverConfig, null, 2));
+    await this.xray.restartContainer();
+
+    return removed;
   }
 }

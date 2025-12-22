@@ -2,6 +2,7 @@ export type XrayClientEntry = {
   id?: string;
   flow?: string;
   username?: string;
+  expiresAt?: number | null;
 };
 
 export type XrayInbound = {
