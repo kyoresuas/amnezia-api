@@ -8,6 +8,12 @@ readonly ENV_FILE="$ROOT_DIR/.env"
 IS_UPDATE=0
 INSTALL_MODE="" # pm2 | docker
 
+LOG_FILE="$(mktemp /tmp/amnezia-api-setup.XXXXXX.log 2>/dev/null || echo "/tmp/amnezia-api-setup.$$.$RANDOM.log")"
+cleanup() {
+  rm -f "$LOG_FILE" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
 # Определяем sudo если не root
 SUDO=""
 if [ "${EUID:-$(id -u)}" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
@@ -56,6 +62,25 @@ ok() { printf "%b\n" "  ${C_GREEN}[OK]${C_RESET} $*"; }
 warn() { printf "%b\n" "${C_YELLOW}WARN:${C_RESET} $*" >&2; }
 err() { printf "%b\n" "${C_RED}ERROR:${C_RESET} $*" >&2; }
 kv() { printf "%b\n" "  ${C_DIM}$1:${C_RESET} ${C_BOLD}$2${C_RESET}"; }
+
+run_quiet() {
+  # run_quiet "title" command...
+  local title="$1"
+  shift
+
+  : >> "$LOG_FILE" 2>/dev/null || true
+
+  info "$title..."
+  if "$@" >>"$LOG_FILE" 2>&1; then
+    ok "$title"
+    return 0
+  fi
+
+  err "$title"
+  info "Диагностика:"
+  tail -n 40 "$LOG_FILE" >&2 || true
+  return 1
+}
 
 # Выбор режима установки/запуска
 choose_install_mode() {
@@ -168,7 +193,7 @@ update_repo() {
     return 0
   fi
 
-  git -C "$ROOT_DIR" pull --ff-only && ok "Репозиторий обновлён"
+  run_quiet "git pull" git -C "$ROOT_DIR" pull --ff-only
 }
 
 # Устанавливает Node.js и pm2
@@ -177,23 +202,55 @@ install_dependencies() {
   
   if ! command -v node >/dev/null 2>&1; then
     if ! command -v curl >/dev/null 2>&1; then
-      $SUDO apt-get update -y
-      $SUDO apt-get install -y curl
+      run_quiet "apt update" $SUDO apt-get update -y
+      run_quiet "apt install curl" $SUDO apt-get install -y -qq curl
     fi
-    curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | bash -s lts
+    run_quiet "Установка Node.js (n lts)" bash -lc 'curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | bash -s lts'
     hash -r
   fi
   
   node -v && npm -v && ok "Node.js / npm установлены"
   
   if ! command -v pm2 >/dev/null 2>&1; then
-    npm install -g pm2
+    run_quiet "npm i -g pm2" npm install -g pm2
   fi
   
   pm2 -v && ok "pm2 установлен"
 }
 
 # Установка Docker
+setup_docker_apt_repo() {
+  # Минимальная настройка Docker repo для Debian/Ubuntu, чтобы был docker-compose-plugin
+  if [ "$(uname -s 2>/dev/null || true)" != "Linux" ]; then
+    return 1
+  fi
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
+
+  # shellcheck disable=SC1091
+  . /etc/os-release
+
+  local arch codename id
+  id="${ID:-ubuntu}"
+  arch="$(dpkg --print-architecture 2>/dev/null || echo amd64)"
+  codename="${VERSION_CODENAME:-}"
+  if [ -z "$codename" ] && command -v lsb_release >/dev/null 2>&1; then
+    codename="$(lsb_release -cs 2>/dev/null || true)"
+  fi
+  [ -n "$codename" ] || codename="stable"
+
+  run_quiet "apt install prerequisites" $SUDO apt-get update -y
+  run_quiet "apt install ca-certificates/curl/gnupg" $SUDO apt-get install -y -qq ca-certificates curl gnupg
+
+  run_quiet "Подготовка keyrings" $SUDO install -m 0755 -d /etc/apt/keyrings
+  run_quiet "Docker GPG key" bash -lc "curl -fsSL 'https://download.docker.com/linux/$id/gpg' | $SUDO gpg --dearmor -o /etc/apt/keyrings/docker.gpg"
+  run_quiet "chmod docker.gpg" $SUDO chmod a+r /etc/apt/keyrings/docker.gpg
+
+  run_quiet "Docker apt repo" bash -lc "echo 'deb [arch=$arch signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$id $codename stable' | $SUDO tee /etc/apt/sources.list.d/docker.list >/dev/null"
+  run_quiet "apt update (docker repo)" $SUDO apt-get update -y
+}
+
 install_docker() {
   step "[1/6] Установка Docker"
 
@@ -207,44 +264,17 @@ install_docker() {
     return 1
   fi
 
-  # Базовые пакеты для репозитория Docker
-  $SUDO apt-get update -y
-  $SUDO apt-get install -y ca-certificates curl gnupg
-
-  # Определяем дистрибутив/кодовое имя
-  if [ ! -f /etc/os-release ]; then
-    err "/etc/os-release не найден — установите Docker вручную"
+  setup_docker_apt_repo || {
+    err "Не удалось настроить Docker repo"
     return 1
-  fi
+  }
 
-  # shellcheck disable=SC1091
-  . /etc/os-release
-
-  local arch codename
-  arch="$(dpkg --print-architecture 2>/dev/null || echo amd64)"
-  codename="${VERSION_CODENAME:-}"
-  if [ -z "$codename" ] && command -v lsb_release >/dev/null 2>&1; then
-    codename="$(lsb_release -cs 2>/dev/null || true)"
-  fi
-  [ -n "$ID" ] || ID="ubuntu"
-  [ -n "$codename" ] || codename="stable"
-
-  # Ключ и репозиторий Docker
-  $SUDO install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL "https://download.docker.com/linux/$ID/gpg" | $SUDO gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  $SUDO chmod a+r /etc/apt/keyrings/docker.gpg
-
-  echo \
-    "deb [arch=$arch signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$ID $codename stable" | \
-    $SUDO tee /etc/apt/sources.list.d/docker.list >/dev/null
-
-  $SUDO apt-get update -y
-  $SUDO apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  run_quiet "apt install docker" $SUDO apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
   # Запуск сервиса
   if command -v systemctl >/dev/null 2>&1; then
-    $SUDO systemctl enable docker >/dev/null 2>&1 || true
-    $SUDO systemctl start docker >/dev/null 2>&1 || true
+    run_quiet "systemctl enable docker" $SUDO systemctl enable docker
+    run_quiet "systemctl start docker" $SUDO systemctl start docker
   fi
 
   docker --version || $SUDO docker --version
@@ -261,7 +291,7 @@ ensure_docker_compose() {
     return 0
   fi
 
-  warn "Docker Compose не найден — ставлю docker-compose-plugin"
+  warn "Docker Compose не найден — ставлю"
 
   if [ "$(uname -s 2>/dev/null || true)" != "Linux" ]; then
     err "Авто-установка Docker Compose поддерживается только на Linux (Debian/Ubuntu)."
@@ -275,11 +305,17 @@ ensure_docker_compose() {
     return 1
   fi
 
-  $SUDO apt-get update -y
-  $SUDO apt-get install -y docker-compose-plugin
+  setup_docker_apt_repo >/dev/null 2>&1 || true
+  run_quiet "apt install docker-compose-plugin" $SUDO apt-get install -y -qq docker-compose-plugin || true
 
   if $SUDO docker compose version >/dev/null 2>&1; then
     ok "Docker Compose установлен"
+    return 0
+  fi
+
+  run_quiet "apt install docker-compose" $SUDO apt-get install -y -qq docker-compose || true
+  if command -v docker-compose >/dev/null 2>&1; then
+    ok "docker-compose установлен"
     return 0
   fi
 
@@ -289,7 +325,7 @@ ensure_docker_compose() {
   fi
 
   err "Не удалось установить Docker Compose."
-  info "Команда: apt-get install docker-compose-plugin"
+  info "Попробуйте: apt-get install docker-compose или docker-compose-plugin"
   return 1
 }
 
@@ -299,7 +335,6 @@ setup_env() {
   
   if [ -f "$ENV_EXAMPLE" ]; then
     cp -n "$ENV_EXAMPLE" "$ENV_FILE"
-    kv "Используется .env" "$ENV_FILE"
   else
     warn ".env.example не найден"
   fi
@@ -317,16 +352,10 @@ setup_env() {
   # Протоколы
   local current_protocols auto_protocols
   current_protocols="$(get_env_var PROTOCOLS_ENABLED)"
-  if [ -z "$current_protocols" ] || echo "$current_protocols" | grep -qiE '^\s*change-me\s*$'; then
-    auto_protocols="$(detect_protocols_enabled)"
-    if [ -n "$auto_protocols" ]; then
-      upsert_env_var PROTOCOLS_ENABLED "$auto_protocols"
-      ok "PROTOCOLS_ENABLED: $auto_protocols"
-    else
-      info "PROTOCOLS_ENABLED: авто-детект не дал результатов"
-    fi
-  else
-    info "PROTOCOLS_ENABLED уже задан. Пропуск."
+  auto_protocols="$(detect_protocols_enabled)"
+  if [ -n "$auto_protocols" ] && [ "$auto_protocols" != "$current_protocols" ]; then
+    upsert_env_var PROTOCOLS_ENABLED "$auto_protocols"
+    ok "PROTOCOLS_ENABLED: $auto_protocols"
   fi
 
   # FASTIFY_ROUTES (host:port)
@@ -341,7 +370,7 @@ setup_env() {
       ok "FASTIFY_ROUTES установлен для pm2: 127.0.0.1:4001"
     fi
   else
-    info "FASTIFY_ROUTES уже задан. Пропуск."
+    :
   fi
   
   # Регион сервера
@@ -418,22 +447,20 @@ deploy_docker() {
   if ! $SUDO docker info >/dev/null 2>&1; then
     warn "Docker демон не запущен. Пытаюсь запустить..."
     if command -v systemctl >/dev/null 2>&1; then
-      $SUDO systemctl start docker >/dev/null 2>&1 || true
+      run_quiet "systemctl start docker" $SUDO systemctl start docker || true
     fi
   fi
 
   ensure_docker_compose || return 1
 
   if $SUDO docker compose version >/dev/null 2>&1; then
-    $SUDO docker compose -f "$ROOT_DIR/docker-compose.yml" up -d --build
-    $SUDO docker compose -f "$ROOT_DIR/docker-compose.yml" ps
+    run_quiet "docker compose up" $SUDO docker compose -f "$ROOT_DIR/docker-compose.yml" up -d --build
     ok "Контейнеры запущены (docker compose)"
     return 0
   fi
 
   if command -v docker-compose >/dev/null 2>&1; then
-    $SUDO docker-compose -f "$ROOT_DIR/docker-compose.yml" up -d --build
-    $SUDO docker-compose -f "$ROOT_DIR/docker-compose.yml" ps
+    run_quiet "docker-compose up" $SUDO docker-compose -f "$ROOT_DIR/docker-compose.yml" up -d --build
     ok "Контейнеры запущены (docker-compose)"
     return 0
   fi
