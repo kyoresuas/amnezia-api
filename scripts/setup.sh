@@ -70,6 +70,35 @@ run_quiet() {
 
   : >> "$LOG_FILE" 2>/dev/null || true
 
+  if [ -t 1 ]; then
+    local spin='|/-\'
+    local i=0
+    ("$@" >>"$LOG_FILE" 2>&1) &
+    local pid=$!
+
+    # рисеум строку
+    while kill -0 "$pid" >/dev/null 2>&1; do
+      printf "\r\033[2K  %b%s...%b %b%c%b" \
+        "$C_DIM" "$title" "$C_RESET" "$C_CYAN" "${spin:i%4:1}" "$C_RESET"
+      i=$((i + 1))
+      sleep 0.12
+    done
+    wait "$pid" || true
+    local rc=$?
+
+    printf "\r\033[2K" # очистить строку
+
+    if [ "$rc" -eq 0 ]; then
+      ok "$title"
+      return 0
+    fi
+
+    err "$title"
+    info "Диагностика:"
+    tail -n 40 "$LOG_FILE" >&2 || true
+    return "$rc"
+  fi
+
   info "$title..."
   if "$@" >>"$LOG_FILE" 2>&1; then
     ok "$title"
@@ -111,7 +140,7 @@ choose_install_mode() {
   esac
 
   if [ "${input:-1}" != "1" ] && [ "${input:-1}" != "2" ] && [ -n "${input:-}" ]; then
-    warn "Неверный выбор '${input}', используетсяpm2"
+    warn "Неверный выбор '${input}' — используется pm2"
   fi
 
   kv "Режим установки" "$INSTALL_MODE"
