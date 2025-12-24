@@ -6,12 +6,44 @@ readonly ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 readonly ENV_EXAMPLE="$ROOT_DIR/.env.example"
 readonly ENV_FILE="$ROOT_DIR/.env"
 IS_UPDATE=0
+INSTALL_MODE="" # pm2 | docker
 
 # Определяем sudo если не root
 SUDO=""
 if [ "${EUID:-$(id -u)}" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
   SUDO="sudo"
 fi
+
+# Выбор режима установки/запуска
+choose_install_mode() {
+  # Если нет TTY, по умолчанию pm2
+  if [ ! -t 0 ]; then
+    INSTALL_MODE="pm2"
+    echo "Режим установки: pm2"
+    return 0
+  fi
+
+  local input
+  echo ""
+  echo "Как запустить $APP_NAME?"
+  echo "  1) pm2"
+  echo "  2) docker (docker compose)"
+  read -r -p "Выберите [1/2] (по умолчанию 1): " input || true
+
+  case "${input:-1}" in
+    2|docker|Docker|DOCKER)
+      INSTALL_MODE="docker"
+      ;;
+    1|pm2|PM2|"")
+      INSTALL_MODE="pm2"
+      ;;
+    *)
+      INSTALL_MODE="pm2"
+      ;;
+  esac
+
+  echo "Режим установки: $INSTALL_MODE"
+}
 
 # Обновляет или добавляет переменную в .env файл
 upsert_env_var() {
@@ -114,6 +146,64 @@ install_dependencies() {
   pm2 -v
 }
 
+# Устанавливает Docke
+install_docker() {
+  echo "Установка Docker..."
+
+  if [ "$(uname -s 2>/dev/null || true)" != "Linux" ]; then
+    echo "Авто-установка Docker поддерживается только на Linux (Debian/Ubuntu)."
+    return 1
+  fi
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    echo "apt-get не найден. Установите Docker вручную и повторите."
+    return 1
+  fi
+
+  # Базовые пакеты для репозитория Docker
+  $SUDO apt-get update -y
+  $SUDO apt-get install -y ca-certificates curl gnupg
+
+  # Определяем дистрибутив/кодовое имя
+  if [ ! -f /etc/os-release ]; then
+    echo "/etc/os-release не найден. Установите Docker вручную и повторите."
+    return 1
+  fi
+
+  # shellcheck disable=SC1091
+  . /etc/os-release
+
+  local arch codename
+  arch="$(dpkg --print-architecture 2>/dev/null || echo amd64)"
+  codename="${VERSION_CODENAME:-}"
+  if [ -z "$codename" ] && command -v lsb_release >/dev/null 2>&1; then
+    codename="$(lsb_release -cs 2>/dev/null || true)"
+  fi
+  [ -n "$ID" ] || ID="ubuntu"
+  [ -n "$codename" ] || codename="stable"
+
+  # Ключ и репозиторий Docker
+  $SUDO install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL "https://download.docker.com/linux/$ID/gpg" | $SUDO gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  $SUDO chmod a+r /etc/apt/keyrings/docker.gpg
+
+  echo \
+    "deb [arch=$arch signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$ID $codename stable" | \
+    $SUDO tee /etc/apt/sources.list.d/docker.list >/dev/null
+
+  $SUDO apt-get update -y
+  $SUDO apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  # Запуск сервиса
+  if command -v systemctl >/dev/null 2>&1; then
+    $SUDO systemctl enable docker >/dev/null 2>&1 || true
+    $SUDO systemctl start docker >/dev/null 2>&1 || true
+  fi
+
+  docker --version || $SUDO docker --version
+  $SUDO docker compose version >/dev/null 2>&1 || true
+}
+
 # Настраивает .env файл
 setup_env() {
   echo "[2/6] Подготовка .env..."
@@ -148,6 +238,21 @@ setup_env() {
     fi
   else
     echo "PROTOCOLS_ENABLED уже задан. Пропуск."
+  fi
+
+  # FASTIFY_ROUTES (host:port)
+  local current_routes
+  current_routes="$(get_env_var FASTIFY_ROUTES)"
+  if [ -z "$current_routes" ] || echo "$current_routes" | grep -qiE '^\s*change-me\s*$'; then
+    if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
+      upsert_env_var FASTIFY_ROUTES "0.0.0.0:4001"
+      echo "FASTIFY_ROUTES установлен для docker: 0.0.0.0:4001"
+    else
+      upsert_env_var FASTIFY_ROUTES "127.0.0.1:4001"
+      echo "FASTIFY_ROUTES установлен для pm2: 127.0.0.1:4001"
+    fi
+  else
+    echo "FASTIFY_ROUTES уже задан. Пропуск."
   fi
   
   # Регион сервера
@@ -208,6 +313,31 @@ setup_env() {
 deploy_app() {
   echo "[3/6] Деплой..."
   node ./scripts/deploy.js
+}
+
+# Запуск через docker compose
+deploy_docker() {
+  echo "[3/6] Docker..."
+
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker не найден. Пытаюсь установить..."
+    install_docker || return 1
+  fi
+
+  if $SUDO docker compose version >/dev/null 2>&1; then
+    $SUDO docker compose -f "$ROOT_DIR/docker-compose.yml" up -d --build
+    $SUDO docker compose -f "$ROOT_DIR/docker-compose.yml" ps
+    return 0
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1; then
+    $SUDO docker-compose -f "$ROOT_DIR/docker-compose.yml" up -d --build
+    $SUDO docker-compose -f "$ROOT_DIR/docker-compose.yml" ps
+    return 0
+  fi
+
+  echo "Не найдено 'docker compose' и 'docker-compose'."
+  return 1
 }
 
 # Настраивает автозапуск pm2 после ребута
@@ -316,10 +446,17 @@ show_completion() {
     echo "Готово. Установка завершена."
   fi
   echo "Полезные команды:"
-  echo "  pm2 status"
-  echo "  pm2 logs $APP_NAME --lines 200"
-  echo "  pm2 restart $APP_NAME"
-  echo "  pm2 save"
+  if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
+    echo "  docker compose -f $ROOT_DIR/docker-compose.yml ps"
+    echo "  docker compose -f $ROOT_DIR/docker-compose.yml logs -f --tail 200"
+    echo "  docker compose -f $ROOT_DIR/docker-compose.yml restart"
+    echo "  docker compose -f $ROOT_DIR/docker-compose.yml pull"
+  else
+    echo "  pm2 status"
+    echo "  pm2 logs $APP_NAME --lines 200"
+    echo "  pm2 restart $APP_NAME"
+    echo "  pm2 save"
+  fi
   
   echo ""
   echo "Информация для доступа:"
@@ -354,14 +491,21 @@ main() {
   fi
 
   update_repo
+  choose_install_mode
 
   if [ "${IS_UPDATE:-0}" -eq 0 ]; then
-    install_dependencies
     setup_env
+    if [ "${INSTALL_MODE:-pm2}" != "docker" ]; then
+      install_dependencies
+    fi
   fi
 
-  deploy_app
-  setup_pm2_startup
+  if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
+    deploy_docker
+  else
+    deploy_app
+    setup_pm2_startup
+  fi
 
   if [ "${IS_UPDATE:-0}" -eq 0 ]; then
     setup_xray_stats

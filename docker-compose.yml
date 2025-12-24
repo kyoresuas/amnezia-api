@@ -1,0 +1,17 @@
+name: amnezia-api
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: amnezia-api:local
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4001:4001"
+    environment:
+      FASTIFY_ROUTES: "0.0.0.0:4001"
+      ENV: "production"
+    env_file:
+      - .env
