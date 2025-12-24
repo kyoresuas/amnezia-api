@@ -14,21 +14,64 @@ if [ "${EUID:-$(id -u)}" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
   SUDO="sudo"
 fi
 
+supports_color() {
+  [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != "dumb" ]
+}
+
+if supports_color; then
+  C_RESET=$'\033[0m'
+  C_BOLD=$'\033[1m'
+  C_DIM=$'\033[2m'
+  C_RED=$'\033[31m'
+  C_GREEN=$'\033[32m'
+  C_YELLOW=$'\033[33m'
+  C_BLUE=$'\033[34m'
+  C_MAGENTA=$'\033[35m'
+  C_CYAN=$'\033[36m'
+else
+  C_RESET=""
+  C_BOLD=""
+  C_DIM=""
+  C_RED=""
+  C_GREEN=""
+  C_YELLOW=""
+  C_BLUE=""
+  C_MAGENTA=""
+  C_CYAN=""
+fi
+
+line() { printf "%s\n" "$*"; }
+hr() { printf "%b\n" "${C_DIM}------------------------------------------------------------${C_RESET}"; }
+
+section() {
+  printf "\n%b\n" "${C_BOLD}${C_CYAN}$*${C_RESET}"
+}
+
+step() {
+  printf "%b\n" "${C_BOLD}${C_BLUE}$*${C_RESET}"
+}
+
+info() { printf "%b\n" "  ${C_DIM}$*${C_RESET}"; }
+ok() { printf "%b\n" "  ${C_GREEN}[OK]${C_RESET} $*"; }
+warn() { printf "%b\n" "${C_YELLOW}WARN:${C_RESET} $*" >&2; }
+err() { printf "%b\n" "${C_RED}ERROR:${C_RESET} $*" >&2; }
+kv() { printf "%b\n" "  ${C_DIM}$1:${C_RESET} ${C_BOLD}$2${C_RESET}"; }
+
 # Выбор режима установки/запуска
 choose_install_mode() {
   # Если нет TTY, по умолчанию pm2
   if [ ! -t 0 ]; then
     INSTALL_MODE="pm2"
-    echo "Режим установки: pm2"
+    kv "Режим установки" "pm2"
     return 0
   fi
 
   local input
-  echo ""
-  echo "Как запустить $APP_NAME?"
-  echo "  1) pm2"
-  echo "  2) docker (docker compose)"
-  read -r -p "Выберите [1/2] (по умолчанию 1): " input || true
+  section "Как запустить ${APP_NAME}?"
+  info "1) pm2"
+  info "2) docker (docker compose)"
+  hr
+  read -r -p "$(printf "%b" "${C_BOLD}Выберите [1/2] (по умолчанию 1): ${C_RESET}")" input || true
 
   case "${input:-1}" in
     2|docker|Docker|DOCKER)
@@ -42,7 +85,11 @@ choose_install_mode() {
       ;;
   esac
 
-  echo "Режим установки: $INSTALL_MODE"
+  if [ "${input:-1}" != "1" ] && [ "${input:-1}" != "2" ] && [ -n "${input:-}" ]; then
+    warn "Неверный выбор '${input}', используетсяpm2"
+  fi
+
+  kv "Режим установки" "$INSTALL_MODE"
 }
 
 # Обновляет или добавляет переменную в .env файл
@@ -109,24 +156,24 @@ detect_protocols_enabled() {
 
 # Обновляет репозиторий 
 update_repo() {
-  echo "Обновление репозитория..."
+  section "Обновление репозитория"
 
   if ! command -v git >/dev/null 2>&1; then
-    echo "git не найден, пропускаю git pull."
+    warn "git не найден — git pull пропущен"
     return 0
   fi
 
   if [ ! -d "$ROOT_DIR/.git" ]; then
-    echo "Директория .git не найдена (не git-репозиторий?), пропускаю git pull."
+    warn ".git не найден — git pull пропущен"
     return 0
   fi
 
-  git -C "$ROOT_DIR" pull --ff-only
+  git -C "$ROOT_DIR" pull --ff-only && ok "Репозиторий обновлён"
 }
 
 # Устанавливает Node.js и pm2
 install_dependencies() {
-  echo "[1/6] Установка зависимостей..."
+  step "[1/6] Зависимости (pm2)"
   
   if ! command -v node >/dev/null 2>&1; then
     if ! command -v curl >/dev/null 2>&1; then
@@ -137,26 +184,26 @@ install_dependencies() {
     hash -r
   fi
   
-  node -v && npm -v
+  node -v && npm -v && ok "Node.js / npm установлены"
   
   if ! command -v pm2 >/dev/null 2>&1; then
     npm install -g pm2
   fi
   
-  pm2 -v
+  pm2 -v && ok "pm2 установлен"
 }
 
-# Устанавливает Docke
+# Установка Docker
 install_docker() {
-  echo "Установка Docker..."
+  step "[1/6] Установка Docker"
 
   if [ "$(uname -s 2>/dev/null || true)" != "Linux" ]; then
-    echo "Авто-установка Docker поддерживается только на Linux (Debian/Ubuntu)."
+    err "Авто-установка Docker поддерживается только на Linux (Debian/Ubuntu)."
     return 1
   fi
 
   if ! command -v apt-get >/dev/null 2>&1; then
-    echo "apt-get не найден. Установите Docker вручную и повторите."
+    err "apt-get не найден. Установите Docker вручную и повторите."
     return 1
   fi
 
@@ -166,7 +213,7 @@ install_docker() {
 
   # Определяем дистрибутив/кодовое имя
   if [ ! -f /etc/os-release ]; then
-    echo "/etc/os-release не найден. Установите Docker вручную и повторите."
+    err "/etc/os-release не найден — установите Docker вручную"
     return 1
   fi
 
@@ -202,17 +249,59 @@ install_docker() {
 
   docker --version || $SUDO docker --version
   $SUDO docker compose version >/dev/null 2>&1 || true
+  ok "Docker установлен"
+}
+
+# Убедиться, что docker compose доступен 
+ensure_docker_compose() {
+  if $SUDO docker compose version >/dev/null 2>&1; then
+    return 0
+  fi
+  if command -v docker-compose >/dev/null 2>&1; then
+    return 0
+  fi
+
+  warn "Docker Compose не найден — ставлю docker-compose-plugin"
+
+  if [ "$(uname -s 2>/dev/null || true)" != "Linux" ]; then
+    err "Авто-установка Docker Compose поддерживается только на Linux (Debian/Ubuntu)."
+    info "Установите Docker Desktop/Compose вручную и повторите."
+    return 1
+  fi
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    err "apt-get не найден — Docker Compose нужно поставить вручную"
+    info "Нужно: docker compose (v2) или docker-compose"
+    return 1
+  fi
+
+  $SUDO apt-get update -y
+  $SUDO apt-get install -y docker-compose-plugin
+
+  if $SUDO docker compose version >/dev/null 2>&1; then
+    ok "Docker Compose установлен"
+    return 0
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1; then
+    ok "docker-compose найден"
+    return 0
+  fi
+
+  err "Не удалось установить Docker Compose."
+  info "Команда: apt-get install docker-compose-plugin"
+  return 1
 }
 
 # Настраивает .env файл
 setup_env() {
-  echo "[2/6] Подготовка .env..."
+  step "[2/6] Подготовка .env"
   
   if [ -f "$ENV_EXAMPLE" ]; then
     cp -n "$ENV_EXAMPLE" "$ENV_FILE"
-    echo "Используется .env: $ENV_FILE"
+    kv "Используется .env" "$ENV_FILE"
   else
-    echo ".env.example не найден" >&2
+    warn ".env.example не найден"
   fi
   
   # API ключ
@@ -220,9 +309,9 @@ setup_env() {
   current_api_key="$(get_env_var FASTIFY_API_KEY)"
   if [ -z "$current_api_key" ] || echo "$current_api_key" | grep -qiE '^\s*change-me\s*$'; then
     upsert_env_var FASTIFY_API_KEY "$(generate_api_key)"
-    echo "FASTIFY_API_KEY сгенерирован автоматически."
+    ok "FASTIFY_API_KEY сгенерирован автоматически"
   else
-    echo "FASTIFY_API_KEY уже задан. Пропуск."
+    info "FASTIFY_API_KEY уже задан. Пропуск."
   fi
 
   # Протоколы
@@ -232,12 +321,12 @@ setup_env() {
     auto_protocols="$(detect_protocols_enabled)"
     if [ -n "$auto_protocols" ]; then
       upsert_env_var PROTOCOLS_ENABLED "$auto_protocols"
-      echo "PROTOCOLS_ENABLED установлен автоматически: $auto_protocols"
+      ok "PROTOCOLS_ENABLED: $auto_protocols"
     else
-      echo "PROTOCOLS_ENABLED: контейнеры протоколов не найдены, пропускаю."
+      info "PROTOCOLS_ENABLED: авто-детект не дал результатов"
     fi
   else
-    echo "PROTOCOLS_ENABLED уже задан. Пропуск."
+    info "PROTOCOLS_ENABLED уже задан. Пропуск."
   fi
 
   # FASTIFY_ROUTES (host:port)
@@ -246,32 +335,32 @@ setup_env() {
   if [ -z "$current_routes" ] || echo "$current_routes" | grep -qiE '^\s*change-me\s*$'; then
     if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
       upsert_env_var FASTIFY_ROUTES "0.0.0.0:4001"
-      echo "FASTIFY_ROUTES установлен для docker: 0.0.0.0:4001"
+      ok "FASTIFY_ROUTES установлен для docker: 0.0.0.0:4001"
     else
       upsert_env_var FASTIFY_ROUTES "127.0.0.1:4001"
-      echo "FASTIFY_ROUTES установлен для pm2: 127.0.0.1:4001"
+      ok "FASTIFY_ROUTES установлен для pm2: 127.0.0.1:4001"
     fi
   else
-    echo "FASTIFY_ROUTES уже задан. Пропуск."
+    info "FASTIFY_ROUTES уже задан. Пропуск."
   fi
   
   # Регион сервера
   local current_region input_region
   current_region="$(get_env_var SERVER_REGION)"
-  read -r -p "Введите SERVER_REGION [${current_region:-пропустить}]: " input_region || true
+  read -r -p "$(printf "%b" "${C_BOLD}Введите SERVER_REGION${C_RESET} [${current_region:-пропустить}]: ")" input_region || true
   [ -n "$input_region" ] && upsert_env_var SERVER_REGION "$input_region"
   
   # Вес сервера
   local current_weight input_weight
   current_weight="$(get_env_var SERVER_WEIGHT)"
   while true; do
-    read -r -p "Введите SERVER_WEIGHT [${current_weight:-пропустить}]: " input_weight || true
+    read -r -p "$(printf "%b" "${C_BOLD}Введите SERVER_WEIGHT${C_RESET} [${current_weight:-пропустить}]: ")" input_weight || true
     [ -z "$input_weight" ] && break
     if [[ "$input_weight" =~ ^[0-9]+$ ]]; then
       upsert_env_var SERVER_WEIGHT "$input_weight"
       break
     else
-      echo "Нужно целое число или оставьте пустым для пропуска."
+      warn "Нужно целое число или оставьте пустым для пропуска."
     fi
   done
   
@@ -279,13 +368,13 @@ setup_env() {
   local current_max_peers input_max_peers
   current_max_peers="$(get_env_var SERVER_MAX_PEERS)"
   while true; do
-    read -r -p "Введите SERVER_MAX_PEERS [${current_max_peers:-пропустить}]: " input_max_peers || true
+    read -r -p "$(printf "%b" "${C_BOLD}Введите SERVER_MAX_PEERS${C_RESET} [${current_max_peers:-пропустить}]: ")" input_max_peers || true
     [ -z "$input_max_peers" ] && break
     if [[ "$input_max_peers" =~ ^[0-9]+$ ]]; then
       upsert_env_var SERVER_MAX_PEERS "$input_max_peers"
       break
     else
-      echo "Нужно целое число или оставьте пустым для пропуска."
+      warn "Нужно целое число или оставьте пустым для пропуска."
     fi
   done
   
@@ -294,15 +383,15 @@ setup_env() {
   auto_public_ip=$(get_public_ip)
   if [ -n "$auto_public_ip" ]; then
     upsert_env_var SERVER_PUBLIC_HOST "$auto_public_ip"
-    echo "SERVER_PUBLIC_HOST установлен в $auto_public_ip"
+    ok "SERVER_PUBLIC_HOST установлен: $auto_public_ip"
   else
-    echo "Не удалось автоматически определить внешний IP для SERVER_PUBLIC_HOST"
+    warn "Не удалось автоматически определить внешний IP для SERVER_PUBLIC_HOST"
   fi
   
   # Описание
   local current_desc input_desc
   current_desc="$(get_env_var SERVER_NAME)"
-  read -r -p "Введите SERVER_NAME [${current_desc:-пропустить}]: " input_desc || true
+  read -r -p "$(printf "%b" "${C_BOLD}Введите SERVER_NAME${C_RESET} [${current_desc:-пропустить}]: ")" input_desc || true
   if [ -n "$input_desc" ]; then
     local esc_desc="${input_desc//\"/\\\"}"
     upsert_env_var SERVER_NAME "\"$esc_desc\""
@@ -311,41 +400,55 @@ setup_env() {
 
 # Деплоит приложение
 deploy_app() {
-  echo "[3/6] Деплой..."
+  step "[3/6] Деплой (pm2)"
   node ./scripts/deploy.js
+  ok "Деплой завершён"
 }
 
 # Запуск через docker compose
 deploy_docker() {
-  echo "[3/6] Docker..."
+  step "[3/6] Запуск (docker)"
 
   if ! command -v docker >/dev/null 2>&1; then
-    echo "Docker не найден. Пытаюсь установить..."
+    warn "Docker не найден. Пытаюсь установить..."
     install_docker || return 1
   fi
+
+  # Если демон не запущен - пробуем поднять
+  if ! $SUDO docker info >/dev/null 2>&1; then
+    warn "Docker демон не запущен. Пытаюсь запустить..."
+    if command -v systemctl >/dev/null 2>&1; then
+      $SUDO systemctl start docker >/dev/null 2>&1 || true
+    fi
+  fi
+
+  ensure_docker_compose || return 1
 
   if $SUDO docker compose version >/dev/null 2>&1; then
     $SUDO docker compose -f "$ROOT_DIR/docker-compose.yml" up -d --build
     $SUDO docker compose -f "$ROOT_DIR/docker-compose.yml" ps
+    ok "Контейнеры запущены (docker compose)"
     return 0
   fi
 
   if command -v docker-compose >/dev/null 2>&1; then
     $SUDO docker-compose -f "$ROOT_DIR/docker-compose.yml" up -d --build
     $SUDO docker-compose -f "$ROOT_DIR/docker-compose.yml" ps
+    ok "Контейнеры запущены (docker-compose)"
     return 0
   fi
 
-  echo "Не найдено 'docker compose' и 'docker-compose'."
+  err "Не найдено 'docker compose' и 'docker-compose'."
+  info "Поставьте docker-compose-plugin или docker-compose и повторите."
   return 1
 }
 
 # Настраивает автозапуск pm2 после ребута
 setup_pm2_startup() {
-  echo "[4/6] Настройка автозапуска pm2..."
+  step "[4/6] Автозапуск pm2"
 
   if ! command -v pm2 >/dev/null 2>&1; then
-    echo "pm2 не найден, пропускаю настройку автозапуска."
+    warn "pm2 не найден — автозапуск пропущен"
     return 0
   fi
 
@@ -360,24 +463,25 @@ setup_pm2_startup() {
   else
     pm2 save >/dev/null 2>&1 || true
   fi
+  ok "pm2 автозапуск настроен"
 }
 
 # Настройка Xray Stats API
 setup_xray_stats() {
-  echo "[5/6] Настройка Xray Stats API..."
+  step "[5/6] Настройка Xray Stats API"
 
   if ! command -v docker >/dev/null 2>&1; then
-    echo "Docker не установлен, пропускаю настройку Xray Stats API."
+    warn "Docker не установлен — Xray Stats API пропущен"
     return 0
   fi
 
   if ! $SUDO docker ps --format '{{.Names}}' | grep -qx "amnezia-xray"; then
-    echo "Контейнер amnezia-xray не найден, пропускаю настройку Xray Stats API."
+    info "amnezia-xray не найден — Xray Stats API пропущен"
     return 0
   fi
 
   if ! command -v python3 >/dev/null 2>&1; then
-    echo "Установка python3 для настройки Xray Stats API..."
+    warn "python3 не найден. Устанавливаю..."
     $SUDO apt-get update -y
     $SUDO apt-get install -y python3
   fi
@@ -391,13 +495,14 @@ setup_xray_stats() {
   $SUDO docker cp "$tmp_json" amnezia-xray:/opt/amnezia/xray/server.json
   rm -f "$tmp_json"
 
-  echo "Перезапуск контейнера amnezia-xray для применения настроек Stats API..."
+  info "Перезапуск контейнера amnezia-xray..."
   $SUDO docker restart amnezia-xray >/dev/null 2>&1 || true
+  ok "Xray Stats API настроен"
 }
 
 # Настраивает Nginx
 setup_nginx() {
-  echo "[6/6] Установка и настройка Nginx..."
+  step "[6/6] Установка и настройка Nginx"
   
   if ! command -v nginx >/dev/null 2>&1; then
     $SUDO apt-get update -y
@@ -435,50 +540,55 @@ NGINX
   
   local public_ip
   public_ip=$(get_public_ip)
-  echo "Nginx настроен успешно"
+  ok "Nginx настроен"
 }
 
 # Показывает финальную информацию
 show_completion() {
+  section "Готово"
   if [ "${IS_UPDATE:-0}" -eq 1 ]; then
-    echo "Готово. Обновление завершено."
+    ok "Обновление завершено"
   else
-    echo "Готово. Установка завершена."
+    ok "Установка завершена"
   fi
-  echo "Полезные команды:"
+  hr
+  line "Полезные команды:"
   if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
-    echo "  docker compose -f $ROOT_DIR/docker-compose.yml ps"
-    echo "  docker compose -f $ROOT_DIR/docker-compose.yml logs -f --tail 200"
-    echo "  docker compose -f $ROOT_DIR/docker-compose.yml restart"
-    echo "  docker compose -f $ROOT_DIR/docker-compose.yml pull"
+    info "docker compose -f $ROOT_DIR/docker-compose.yml ps"
+    info "docker compose -f $ROOT_DIR/docker-compose.yml logs -f --tail 200"
+    info "docker compose -f $ROOT_DIR/docker-compose.yml restart"
+    info "docker compose -f $ROOT_DIR/docker-compose.yml pull"
   else
-    echo "  pm2 status"
-    echo "  pm2 logs $APP_NAME --lines 200"
-    echo "  pm2 restart $APP_NAME"
-    echo "  pm2 save"
+    info "pm2 status"
+    info "pm2 logs $APP_NAME --lines 200"
+    info "pm2 restart $APP_NAME"
+    info "pm2 save"
   fi
   
-  echo ""
-  echo "Информация для доступа:"
+  section "Информация для доступа"
   
   local public_ip api_key
   public_ip=$(get_public_ip)
   api_key="$(get_env_var FASTIFY_API_KEY)"
   
-  if [ -n "$public_ip" ]; then
-    echo "API URL: http://$public_ip/"
-    echo "Swagger документация: http://$public_ip/docs"
+  if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
+    kv "API URL" "http://localhost:4001/"
+    kv "Swagger" "http://localhost:4001/docs"
   else
-    echo "API URL: http://localhost/"
-    echo "Swagger документация: http://localhost/docs"
+    if [ -n "$public_ip" ]; then
+      kv "API URL" "http://$public_ip/"
+      kv "Swagger" "http://$public_ip/docs"
+    else
+      kv "API URL" "http://localhost/"
+      kv "Swagger" "http://localhost/docs"
+    fi
   fi
   
   if [ -n "$api_key" ]; then
-    echo "API ключ: $api_key"
-    echo ""
-    echo "Используйте заголовок: x-api-key: $api_key"
+    kv "API ключ" "$api_key"
+    info "Заголовок: x-api-key: $api_key"
   else
-    echo "API ключ не найден в .env файле"
+    warn "API ключ не найден в .env файле"
   fi
 }
 
