@@ -627,23 +627,15 @@ show_completion() {
   public_ip=$(get_public_ip)
   api_key="$(get_env_var FASTIFY_API_KEY)"
   
-  if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
-    kv "API URL" "http://localhost:4001/"
-    kv "Swagger" "http://localhost:4001/docs"
+  if [ -n "$public_ip" ]; then
+    kv "API URL" "http://$public_ip/"
+    kv "Swagger" "http://$public_ip/docs"
   else
-    if [ -n "$public_ip" ]; then
-      kv "API URL" "http://$public_ip/"
-      kv "Swagger" "http://$public_ip/docs"
-    else
-      kv "API URL" "http://localhost/"
-      kv "Swagger" "http://localhost/docs"
-    fi
+    kv "API URL" "http://localhost/"
+    kv "Swagger" "http://localhost/docs"
   fi
   
   if [ -n "$api_key" ]; then
-    kv "API ключ" "$api_key"
-    info "Заголовок: x-api-key: $api_key"
-  else
     warn "API ключ не найден в .env файле"
   fi
 }
