@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-FROM docker:27-cli AS dockercli
+FROM docker:cli AS dockercli
 
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
@@ -32,9 +32,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV ENV=production
 
-RUN mkdir -p /usr/libexec/docker/cli-plugins
 COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
-COPY --from=dockercli /usr/libexec/docker/cli-plugins/docker-compose /usr/libexec/docker/cli-plugins/docker-compose
 
 RUN useradd -r -u 10001 -g root appuser
 USER 10001
