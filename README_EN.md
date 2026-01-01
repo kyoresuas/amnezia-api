@@ -18,9 +18,6 @@ This API is designed for remote management of Amnezia and to simplify programmat
 ### Install & run
 
 ```bash
-# Install Git
-apt install git
-
 # Clone repository
 git clone https://github.com/kyoresuas/amnezia-api.git
 

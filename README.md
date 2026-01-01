@@ -18,9 +18,6 @@ API предназначен для удаленного управления Am
 ### Установка и запуск
 
 ```bash
-# Установить Git
-apt install git
-
 # Клонировать репозиторий
 git clone https://github.com/kyoresuas/amnezia-api.git
 
