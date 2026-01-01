@@ -2,6 +2,7 @@ name: amnezia-api
 
 services:
   api:
+    container_name: amnezia-api
     build:
       context: .
       dockerfile: Dockerfile
@@ -18,5 +19,6 @@ services:
     environment:
       FASTIFY_ROUTES: "0.0.0.0:4001"
       ENV: "production"
+      DOCKER_API_VERSION: "${DOCKER_API_VERSION:-1.41}"
     env_file:
       - .env

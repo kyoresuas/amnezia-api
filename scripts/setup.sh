@@ -423,6 +423,25 @@ setup_env() {
       fi
     fi
   fi
+
+  if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
+    local current_docker_api detected_api
+    current_docker_api="$(get_env_var DOCKER_API_VERSION)"
+
+    if [ -z "$current_docker_api" ] || echo "$current_docker_api" | grep -qiE '^\s*change-me\s*$'; then
+      detected_api=""
+
+      if command -v docker >/dev/null 2>&1; then
+        detected_api="$(docker version --format '{{.Server.APIVersion}}' 2>/dev/null || true)"
+      fi
+
+      if echo "$detected_api" | grep -qE '^[0-9]+\.[0-9]+$'; then
+        upsert_env_var DOCKER_API_VERSION "$detected_api"
+      else
+        upsert_env_var DOCKER_API_VERSION "1.41"
+      fi
+    fi
+  fi
   
   # Регион сервера
   local current_region input_region
