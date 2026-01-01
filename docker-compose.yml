@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: amnezia-api
+    pull_policy: never
     init: true
     restart: unless-stopped
     volumes:

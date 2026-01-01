@@ -83,7 +83,7 @@ run_quiet() {
       i=$((i + 1))
       sleep 0.12
     done
-    wait "$pid" || true
+    wait "$pid"
     local rc=$?
 
     printf "\r\033[2K" # очистить строку
@@ -320,17 +320,14 @@ ensure_docker_compose() {
     return 0
   fi
 
-  warn "Docker Compose не найден — ставлю"
-
   if [ "$(uname -s 2>/dev/null || true)" != "Linux" ]; then
-    err "Авто-установка Docker Compose поддерживается только на Linux (Debian/Ubuntu)."
+    err "Авто-установка Docker Compose поддерживается только на Debian/Ubuntu."
     info "Установите Docker Desktop/Compose вручную и повторите."
     return 1
   fi
 
   if ! command -v apt-get >/dev/null 2>&1; then
     err "apt-get не найден — Docker Compose нужно поставить вручную"
-    info "Нужно: docker compose (v2) или docker-compose"
     return 1
   fi
 
@@ -638,7 +635,8 @@ show_completion() {
     info "docker compose -f $ROOT_DIR/docker-compose.yml ps"
     info "docker compose -f $ROOT_DIR/docker-compose.yml logs -f --tail 200"
     info "docker compose -f $ROOT_DIR/docker-compose.yml restart"
-    info "docker compose -f $ROOT_DIR/docker-compose.yml pull"
+    info "docker compose -f $ROOT_DIR/docker-compose.yml build api"
+    info "docker compose -f $ROOT_DIR/docker-compose.yml up -d --build"
   else
     info "pm2 status"
     info "pm2 logs $APP_NAME --lines 200"
@@ -661,6 +659,8 @@ show_completion() {
   fi
   
   if [ -n "$api_key" ]; then
+    kv "API ключ" "$api_key"
+  else
     warn "API ключ не найден в .env файле"
   fi
 }
