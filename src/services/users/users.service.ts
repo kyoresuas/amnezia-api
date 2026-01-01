@@ -8,6 +8,7 @@ import { Protocol } from "@/types/shared";
 import { APIError } from "@/utils/APIError";
 import { XrayService } from "@/services/xray";
 import appConfig from "@/constants/appConfig";
+import { appLogger } from "@/config/winstonLogger";
 import { AmneziaService } from "@/services/amnezia";
 import { ClientErrorCode, ServerErrorCode } from "@/types/shared";
 import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
@@ -142,11 +143,27 @@ export class UsersService {
     let removed = 0;
 
     if (enabled.includes(Protocol.AMNEZIAWG)) {
-      removed += await this.amneziaService.cleanupExpiredClients();
+      try {
+        removed += await this.amneziaService.cleanupExpiredClients();
+      } catch (err) {
+        appLogger.warn(
+          `AmneziaWG недоступен, пропускаем очистку просроченных клиентов: ${String(
+            err
+          )}`
+        );
+      }
     }
 
     if (enabled.includes(Protocol.XRAY)) {
-      removed += await this.xrayService.cleanupExpiredClients();
+      try {
+        removed += await this.xrayService.cleanupExpiredClients();
+      } catch (err) {
+        appLogger.warn(
+          `Xray недоступен, пропускаем очистку просроченных клиентов: ${String(
+            err
+          )}`
+        );
+      }
     }
 
     return removed;

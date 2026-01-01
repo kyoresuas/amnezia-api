@@ -5,9 +5,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: amnezia-api:local
+    image: amnezia-api
     init: true
     restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID:-999}"
     ports:
       - "127.0.0.1:4001:4001"
     environment:

@@ -401,6 +401,31 @@ setup_env() {
   else
     :
   fi
+
+  # Определяем DOCKER_GID, нужен для доступа к /var/run/docker.sock из API контейнера
+  if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
+    local current_docker_gid detected_gid
+    current_docker_gid="$(get_env_var DOCKER_GID)"
+
+    if [ -z "$current_docker_gid" ] || echo "$current_docker_gid" | grep -qiE '^\s*change-me\s*$'; then
+      detected_gid=""
+
+      if [ -S /var/run/docker.sock ]; then
+        detected_gid="$(stat -c '%g' /var/run/docker.sock 2>/dev/null || true)"
+      fi
+
+      if [ -z "$detected_gid" ] && command -v getent >/dev/null 2>&1; then
+        detected_gid="$(getent group docker 2>/dev/null | cut -d: -f3 || true)"
+      fi
+
+      if [ -n "$detected_gid" ]; then
+        upsert_env_var DOCKER_GID "$detected_gid"
+        ok "DOCKER_GID: $detected_gid"
+      else
+        warn "Не получилось определить DOCKER_GID"
+      fi
+    fi
+  fi
   
   # Регион сервера
   local current_region input_region
