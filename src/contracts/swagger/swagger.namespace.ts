@@ -260,11 +260,6 @@ export namespace SwaggerContract {
       tags: [],
       components: {
         securitySchemes: {
-          Bearer: {
-            type: "http",
-            scheme: "bearer",
-            bearerFormat: "JWT",
-          },
           ApiKey: {
             type: "apiKey",
             in: "header",
