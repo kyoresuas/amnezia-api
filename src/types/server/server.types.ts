@@ -16,6 +16,44 @@ export type XrayBackupData = {
   shortId: string;
 };
 
+export type ServerLoadDiskStats = {
+  totalBytes: number;
+  usedBytes: number;
+  availableBytes: number;
+  usedPercent: number;
+};
+
+export type ServerLoadNetworkStats = {
+  rxBytes: number;
+  txBytes: number;
+};
+
+export type ServerLoadDockerContainerStats = {
+  name: string;
+  cpuPercent: number | null;
+  memUsageBytes: number | null;
+  memLimitBytes: number | null;
+  netRxBytes: number | null;
+  netTxBytes: number | null;
+  pids: number | null;
+  raw: { cpu: string; mem: string; net: string; pids: string };
+};
+
+export type ServerLoadDockerStats = {
+  containers: ServerLoadDockerContainerStats[];
+};
+
+export type ServerLoadPayload = {
+  timestamp: string;
+  uptimeSec: number;
+  loadavg: [number, number, number];
+  cpu: { cores: number };
+  memory: { totalBytes: number; freeBytes: number; usedBytes: number };
+  disk: ServerLoadDiskStats | null;
+  network: ServerLoadNetworkStats | null;
+  docker: ServerLoadDockerStats | null;
+};
+
 export type ServerBackupPayload = {
   generatedAt: string;
   serverId: string | null;
