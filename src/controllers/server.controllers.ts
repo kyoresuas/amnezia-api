@@ -1,6 +1,8 @@
 import {
   GetServerType,
   getServerSchema,
+  GetServerLoadType,
+  getServerLoadSchema,
   RebootServerType,
   rebootServerSchema,
   GetServerBackupType,
@@ -10,6 +12,7 @@ import {
 } from "@/schemas";
 import {
   getServerHandler,
+  getServerLoadHandler,
   rebootServerHandler,
   getServerBackupHandler,
   importServerBackupHandler,
@@ -26,6 +29,17 @@ export const getServerController: AppFastifyRoute<GetServerType> = {
   schema: getServerSchema,
   preHandler: authPreHandler(),
   handler: getServerHandler,
+};
+
+/**
+ * Получить метрики нагрузки сервера
+ */
+export const getServerLoadController: AppFastifyRoute<GetServerLoadType> = {
+  url: "/server/load",
+  method: "GET",
+  schema: getServerLoadSchema,
+  preHandler: authPreHandler(),
+  handler: getServerLoadHandler,
 };
 
 /**
