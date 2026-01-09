@@ -10,10 +10,10 @@ import { appLogger } from "@/config/winstonLogger";
 import { AmneziaService } from "@/services/amnezia";
 import { isDockerContainerRunning } from "@/helpers/docker";
 import { ServerConnection } from "@/helpers/serverConnection";
+import { ServerLoadDockerContainerStats } from "@/types/server";
 import { ServerBackupPayload, ServerLoadPayload } from "@/types/server";
 import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
 import { ClientErrorCode, Protocol, ServerErrorCode } from "@/types/shared";
-import { ServerLoadDockerContainerStats } from "@/types/server";
 
 /**
  * Сервис управления сервером
@@ -265,19 +265,17 @@ export class ServerService {
         const parts = line.split("\t");
         if (parts.length < 5) return null;
 
-        const raw = {
-          cpu: parts[1] || "",
-          mem: parts[2] || "",
-          net: parts[3] || "",
-          pids: parts[4] || "",
-        };
+        const cpuString = parts[1] || "";
+        const memString = parts[2] || "";
+        const netString = parts[3] || "";
+        const pidsString = parts[4] || "";
 
-        const cpuPercent = parseCpuPercent(raw.cpu);
-        const memParsed = parseMemUsage(raw.mem);
-        const netParsed = parseNetIo(raw.net);
+        const cpuPercent = parseCpuPercent(cpuString);
+        const memParsed = parseMemUsage(memString);
+        const netParsed = parseNetIo(netString);
         const pids = (() => {
-          const n = Number((raw.pids || "").trim());
-          return Number.isFinite(n) ? n : null;
+          const number = Number((pidsString || "").trim());
+          return Number.isFinite(number) ? number : null;
         })();
 
         return {
@@ -288,7 +286,6 @@ export class ServerService {
           netRxBytes: netParsed.rx,
           netTxBytes: netParsed.tx,
           pids,
-          raw,
         };
       };
 

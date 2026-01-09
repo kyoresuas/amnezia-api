@@ -172,18 +172,6 @@ export const getServerLoadSchema = {
                       "Количество процессов, если удалось распарсить",
                     example: 12,
                   },
-                  raw: {
-                    type: "object",
-                    description:
-                      "Сырые строки из docker stats (для отладки/совместимости)",
-                    required: ["cpu", "mem", "net", "pids"],
-                    properties: {
-                      cpu: { type: "string", example: "0.15%" },
-                      mem: { type: "string", example: "12.0MiB / 2.0GiB" },
-                      net: { type: "string", example: "1.0MB / 2.0MB" },
-                      pids: { type: "string", example: "12" },
-                    },
-                  },
                 },
               },
             },

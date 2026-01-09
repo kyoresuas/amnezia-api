@@ -36,7 +36,6 @@ export type ServerLoadDockerContainerStats = {
   netRxBytes: number | null;
   netTxBytes: number | null;
   pids: number | null;
-  raw: { cpu: string; mem: string; net: string; pids: string };
 };
 
 export type ServerLoadDockerStats = {
