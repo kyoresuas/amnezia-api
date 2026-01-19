@@ -5,8 +5,8 @@ import { AppContract } from "@/contracts/app";
 import { ClientTableEntry } from "@/types/amnezia";
 import { AmneziaBackupData } from "@/types/server";
 import { ClientErrorCode, Protocol } from "@/types/shared";
-import { ClientRecord, ClientPeer } from "@/types/clients";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
+import { ClientRecord, ClientPeer, CreateClientResult } from "@/types/clients";
 
 /**
  * Сервис для работы с AmneziaWG
@@ -222,11 +222,7 @@ export class AmneziaService {
   async createClient(
     clientName: string,
     options?: { expiresAt?: number | null }
-  ): Promise<{
-    id: string;
-    config: string;
-    protocol: Protocol;
-  }> {
+  ): Promise<CreateClientResult> {
     // Проверка лимита максимального числа peer'ов
     const maxPeers = appConfig.SERVER_MAX_PEERS;
     if (maxPeers) {

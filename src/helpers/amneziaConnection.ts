@@ -6,6 +6,7 @@ import { exec } from "child_process";
 import { APIError } from "@/utils/APIError";
 import { RunOptions } from "@/types/amnezia";
 import { AppContract } from "@/contracts/app";
+import { CommandResult } from "@/types/shared";
 import { ServerErrorCode } from "@/types/shared";
 import { ClientTableEntry } from "@/types/amnezia";
 
@@ -32,7 +33,7 @@ export class AmneziaConnection {
   run(
     cmd: string,
     options?: RunOptions
-  ): Promise<{ stdout: string; stderr: string }> {
+  ): Promise<CommandResult> {
     const finalCmd = this.buildCommand(cmd);
     const timeout = options?.timeout ?? 5000;
     const maxBuffer = options?.maxBufferBytes ?? 10 * 1024 * 1024;

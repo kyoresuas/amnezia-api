@@ -1,5 +1,11 @@
 import { Protocol } from "@/types/shared";
 
+
+export type TrafficStats = {
+  received: number;
+  sent: number;
+};
+
 export type CreateClientPayload = {
   clientName: string;
   protocol: Protocol;
@@ -22,10 +28,7 @@ export interface ClientPeer {
   name: string | null;
   allowedIps: string[];
   lastHandshake: number;
-  traffic: {
-    received: number;
-    sent: number;
-  };
+  traffic: TrafficStats;
   endpoint: string | null;
   online: boolean;
   expiresAt: number | null;

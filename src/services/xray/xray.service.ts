@@ -1,3 +1,8 @@
+import {
+  Protocol,
+  ClientErrorCode,
+  ServerErrorCode,
+} from "@/types/shared";
 import { deflateSync } from "zlib";
 import { randomUUID } from "crypto";
 import { APIError } from "@/utils/APIError";
@@ -7,7 +12,7 @@ import { XrayBackupData } from "@/types/server";
 import { XrayConnection } from "@/helpers/xrayConnection";
 import { ClientRecord, ClientPeer } from "@/types/clients";
 import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
-import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
+import { CreateClientResult, TrafficStats } from "@/types/clients";
 
 /**
  * Сервис для работы с Xray
@@ -116,7 +121,7 @@ export class XrayService {
    */
   private async getUserTrafficStats(
     id: string
-  ): Promise<{ received: number; sent: number } | null> {
+  ): Promise<TrafficStats | null> {
     const serverAddr = `127.0.0.1:${AppContract.Xray.DEFAULTS.API_PORT}`;
 
     const parseValue = (output: string): number => {
@@ -234,11 +239,7 @@ export class XrayService {
   async createClient(
     clientName: string,
     options?: { expiresAt?: number | null }
-  ): Promise<{
-    id: string;
-    config: string;
-    protocol: Protocol;
-  }> {
+  ): Promise<CreateClientResult> {
     const clientId = randomUUID();
 
     // Считываем конфиг сервера

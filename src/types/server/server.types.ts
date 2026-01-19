@@ -60,3 +60,12 @@ export type ServerBackupPayload = {
   amnezia?: AmneziaBackupData;
   xray?: XrayBackupData;
 };
+
+export type ServerStatusPayload = {
+  id: string;
+  region: string;
+  weight: number;
+  maxPeers: number;
+  totalPeers: number;
+  protocols: Protocol[];
+};

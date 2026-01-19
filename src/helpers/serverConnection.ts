@@ -1,5 +1,6 @@
 import { exec } from "child_process";
 import { RunOptions } from "@/types/amnezia";
+import { CommandResult } from "@/types/shared";
 
 /**
  * Создать соединение с сервером
@@ -11,7 +12,7 @@ export class ServerConnection {
   run(
     cmd: string,
     options?: RunOptions
-  ): Promise<{ stdout: string; stderr: string }> {
+  ): Promise<CommandResult> {
     const timeout = options?.timeout ?? 2000;
     const maxBuffer = options?.maxBufferBytes ?? 10 * 1024 * 1024;
 

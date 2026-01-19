@@ -1,17 +1,21 @@
 import os from "os";
+import { 
+  ServerLoadPayload, 
+  ServerStatusPayload, 
+  ServerBackupPayload, 
+  ServerLoadDockerContainerStats, 
+} from "@/types/server";
 import fs from "fs/promises";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { XrayService } from "@/services/xray";
 import { AppContract } from "@/contracts/app";
 import { isNotNull } from "@/utils/primitive";
-import { ClientsService } from "@/services/clients";
 import { appLogger } from "@/config/winstonLogger";
 import { AmneziaService } from "@/services/amnezia";
+import { ClientsService } from "@/services/clients";
 import { isDockerContainerRunning } from "@/helpers/docker";
 import { ServerConnection } from "@/helpers/serverConnection";
-import { ServerLoadDockerContainerStats } from "@/types/server";
-import { ServerBackupPayload, ServerLoadPayload } from "@/types/server";
 import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
 import { ClientErrorCode, Protocol, ServerErrorCode } from "@/types/shared";
 
@@ -34,14 +38,7 @@ export class ServerService {
   /**
    * Получить агрегированную информацию о сервере
    */
-  async getServerStatus(): Promise<{
-    id: string;
-    region: string;
-    weight: number;
-    maxPeers: number;
-    totalPeers: number;
-    protocols: Protocol[];
-  }> {
+  async getServerStatus(): Promise<ServerStatusPayload> {
     const clients = await this.clientsService.getClients();
     const protocols = await resolveEnabledProtocols();
 
