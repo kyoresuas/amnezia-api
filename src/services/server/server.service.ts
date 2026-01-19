@@ -50,7 +50,7 @@ export class ServerService {
       region: appConfig.SERVER_REGION || "",
       weight: appConfig.SERVER_WEIGHT || 0,
       maxPeers: appConfig.SERVER_MAX_PEERS || 0,
-      totalPeers: clients.reduce((acc, client) => acc + client.devices.length, 0),
+      totalPeers: clients.reduce((acc, client) => acc + client.peers.length, 0),
       protocols,
     };
   }

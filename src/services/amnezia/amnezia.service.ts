@@ -5,7 +5,7 @@ import { AppContract } from "@/contracts/app";
 import { ClientTableEntry } from "@/types/amnezia";
 import { AmneziaBackupData } from "@/types/server";
 import { ClientErrorCode, Protocol } from "@/types/shared";
-import { ClientRecord, ClientDevice } from "@/types/clients";
+import { ClientRecord, ClientPeer } from "@/types/clients";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
 
 /**
@@ -100,10 +100,10 @@ export class AmneziaService {
         );
       });
 
-    // Получаем данные пользователей
+    // Получаем данные клиентов (username/label/expiresAt) из clientsTable
     const userData: Record<
       string,
-      { name: string; devices: string[]; expiresAt?: number }
+      { name: string; peerNames: string[]; expiresAt?: number }
     > = {};
 
     // Считываем clientsTable
@@ -117,23 +117,23 @@ export class AmneziaService {
 
       if (!clientKey || !clientName) continue;
 
-      // Парсим имя клиента и его устройство
+      // Парсим имя клиента и label peer'а
       const nameMatch = clientName.match(/^\s*(.*?)\s*(?:\[(.*)\])?\s*$/);
       const userName = (nameMatch?.[1] || clientName).trim();
-      const deviceName = (nameMatch?.[2] || "").trim();
+      const peerName = (nameMatch?.[2] || "").trim();
 
       // Инициализируем или обновляем запись пользователя
       if (!userData[clientKey]) {
         userData[clientKey] = {
           name: userName,
-          devices: [],
+          peerNames: [],
           expiresAt,
         };
       }
 
-      // Добавляем устройство, если оно указано и еще не добавлено
-      if (deviceName && !userData[clientKey].devices.includes(deviceName)) {
-        userData[clientKey].devices.push(deviceName);
+      // Добавляем label peer'а, если он указан и еще не добавлен
+      if (peerName && !userData[clientKey].peerNames.includes(peerName)) {
+        userData[clientKey].peerNames.push(peerName);
       }
 
       // Обновляем expiresAt, если он есть
@@ -142,8 +142,8 @@ export class AmneziaService {
       }
     }
 
-    // Преобразуем peers в devices
-    const devices: (ClientDevice & { username: string })[] = peers.map((peer) => {
+    // Преобразуем peers в список peer'ов
+    const peerEntries: (ClientPeer & { username: string })[] = peers.map((peer) => {
       const parts = peer.split("\t");
 
       // id
@@ -174,7 +174,8 @@ export class AmneziaService {
       const online = lastHandshakeSecondsAgo < 180;
 
       const username = userData[id]?.name || id;
-      const name = userData[id]?.devices?.[0] ?? null;
+      // label peer'а (если он был закодирован в clientsTable.userData.clientName)
+      const name = userData[id]?.peerNames?.[0] ?? null;
 
       // expiresAt
       const expiresAt = userData[id]?.expiresAt || null;
@@ -198,15 +199,15 @@ export class AmneziaService {
 
     // Группируем по username
     const users = new Map<string, ClientRecord>();
-    for (const { username, ...device } of devices) {
+    for (const { username, ...peer } of peerEntries) {
       // Получаем или создаем пользователя
       const entry = users.get(username) || {
         username,
-        devices: [],
+        peers: [],
       };
 
-      // Добавляем устройство
-      entry.devices.push(device);
+      // Добавляем peer
+      entry.peers.push(peer);
 
       // Обновляем пользователя
       users.set(username, entry);
@@ -226,13 +227,13 @@ export class AmneziaService {
     config: string;
     protocol: Protocol;
   }> {
-    // Проверка лимита максимального числа устройств
+    // Проверка лимита максимального числа peer'ов
     const maxPeers = appConfig.SERVER_MAX_PEERS;
     if (maxPeers) {
       const clients = await this.getClients();
 
       const currentPeers = clients.reduce(
-        (acc, client) => acc + client.devices.length,
+        (acc, client) => acc + client.peers.length,
         0
       );
 

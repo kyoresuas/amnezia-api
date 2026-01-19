@@ -18,16 +18,16 @@ export const getClientsSchema = {
           description: "Клиенты",
           items: {
             type: "object",
-            required: ["username", "devices"],
+            required: ["username", "peers"],
             properties: {
               username: {
                 type: "string",
                 description: "Имя клиента",
                 example: "Kyoresuas",
               },
-              devices: {
+              peers: {
                 type: "array",
-                description: "Список устройств клиента",
+                description: "Список peer'ов клиента",
                 items: {
                   type: "object",
                   required: [
@@ -46,7 +46,7 @@ export const getClientsSchema = {
                     name: {
                       type: "string",
                       nullable: true,
-                      description: "Название устройства",
+                      description: "Название peer'а (если есть)",
                       example: "macOS 26.0",
                     },
                     allowedIps: {

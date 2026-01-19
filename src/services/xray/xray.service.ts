@@ -5,7 +5,7 @@ import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { XrayBackupData } from "@/types/server";
 import { XrayConnection } from "@/helpers/xrayConnection";
-import { ClientRecord, ClientDevice } from "@/types/clients";
+import { ClientRecord, ClientPeer } from "@/types/clients";
 import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
 import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
 
@@ -182,8 +182,8 @@ export class XrayService {
       ? inbound.settings?.clients
       : [];
 
-    // Устройства пользователей
-    const devices: (ClientDevice & { username: string })[] = await Promise.all(
+    // Peer'ы пользователей
+    const peerEntries: (ClientPeer & { username: string })[] = await Promise.all(
       clients.map(async (client: XrayClientEntry, index: number) => {
         // id
         const id = (client.id ?? "").trim() || `xray-client-${index + 1}`;
@@ -198,7 +198,7 @@ export class XrayService {
         // Получить статистику трафика
         const traffic = await this.getUserTrafficStats(id);
 
-        // Устройство пользователя
+        // Peer пользователя
         return {
           username,
           id,
@@ -219,9 +219,9 @@ export class XrayService {
 
     const users = new Map<string, ClientRecord>();
 
-    for (const { username, ...device } of devices) {
-      const entry = users.get(username) || { username, devices: [] };
-      entry.devices.push(device);
+    for (const { username, ...peer } of peerEntries) {
+      const entry = users.get(username) || { username, peers: [] };
+      entry.peers.push(peer);
       users.set(username, entry);
     }
 

@@ -83,19 +83,19 @@ export class ClientsService {
       const serviceClients = await service.getClients();
 
       for (const client of serviceClients) {
-        const normalizedDevices = client.devices.map((device) => ({
-          ...device,
-          protocol: device.protocol ?? protocol,
+        const normalizedPeers = client.peers.map((peer) => ({
+          ...peer,
+          protocol: peer.protocol ?? protocol,
         }));
 
         const existing = clients.get(client.username);
 
         if (existing) {
-          existing.devices.push(...normalizedDevices);
+          existing.peers.push(...normalizedPeers);
         } else {
           clients.set(client.username, {
             username: client.username,
-            devices: normalizedDevices,
+            peers: normalizedPeers,
           });
         }
       }

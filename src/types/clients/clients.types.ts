@@ -17,7 +17,7 @@ export type CreateClientResult = {
   protocol: Protocol;
 };
 
-export interface ClientDevice {
+export interface ClientPeer {
   id: string;
   name: string | null;
   allowedIps: string[];
@@ -34,6 +34,6 @@ export interface ClientDevice {
 
 export interface ClientRecord {
   username: string;
-  devices: ClientDevice[];
+  peers: ClientPeer[];
 }
 
