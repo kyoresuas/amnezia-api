@@ -1,7 +1,7 @@
 import { di } from "@/config/DIContainer";
-import { ImportServerBackupType } from "@/schemas";
 import { ServerService } from "@/services/server";
 import { AppFastifyHandler } from "@/types/shared";
+import { ImportServerBackupType } from "@/schemas";
 
 export const importServerBackupHandler: AppFastifyHandler<
   ImportServerBackupType

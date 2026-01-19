@@ -1,10 +1,10 @@
 import {
   GetServerType,
   getServerSchema,
-  GetServerLoadType,
-  getServerLoadSchema,
   RebootServerType,
+  GetServerLoadType,
   rebootServerSchema,
+  getServerLoadSchema,
   GetServerBackupType,
   getServerBackupSchema,
   ImportServerBackupType,
@@ -12,8 +12,8 @@ import {
 } from "@/schemas";
 import {
   getServerHandler,
-  getServerLoadHandler,
   rebootServerHandler,
+  getServerLoadHandler,
   getServerBackupHandler,
   importServerBackupHandler,
 } from "@/handlers/server";
