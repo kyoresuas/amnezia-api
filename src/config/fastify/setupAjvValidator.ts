@@ -1,6 +1,5 @@
 import Ajv from "ajv";
 import ajvErrors from "ajv-errors";
-import { isValidObjectId } from "mongoose";
 import { validate as isValidUUID } from "uuid";
 import { AppFastifyInstance, CustomFormat } from "@/types/shared";
 
@@ -25,12 +24,6 @@ export const setupAjvValidator = (fastify: AppFastifyInstance): void => {
   ajv.addFormat(CustomFormat.UUID, {
     type: "string",
     validate: (value) => isValidUUID(value),
-  });
-
-  // Формат для Mongoose ID
-  ajv.addFormat(CustomFormat.MONGOOSE_ID, {
-    type: "string",
-    validate: (value) => isValidObjectId(value),
   });
 
   // Формат для даты и времени

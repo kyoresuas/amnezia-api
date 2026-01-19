@@ -148,11 +148,9 @@ export class ClientsService {
     if (enabled.includes(Protocol.AMNEZIAWG)) {
       try {
         removed += await this.amneziaService.cleanupExpiredClients();
-      } catch (err) {
+      } catch {
         appLogger.warn(
-          `AmneziaWG недоступен, пропускаем очистку просроченных клиентов: ${String(
-            err
-          )}`
+          `AmneziaWG недоступен, пропускаем очистку просроченных клиентов`
         );
       }
     }
@@ -160,11 +158,9 @@ export class ClientsService {
     if (enabled.includes(Protocol.XRAY)) {
       try {
         removed += await this.xrayService.cleanupExpiredClients();
-      } catch (err) {
+      } catch {
         appLogger.warn(
-          `Xray недоступен, пропускаем очистку просроченных клиентов: ${String(
-            err
-          )}`
+          `Xray недоступен, пропускаем очистку просроченных клиентов`
         );
       }
     }
