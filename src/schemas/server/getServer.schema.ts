@@ -4,7 +4,6 @@ import { AppFastifySchema, Protocol } from "@/types/shared";
 export const getServerSchema = {
   tags: [SwaggerContract.Tags.SERVER],
   summary: "Информация о текущем сервере",
-  security: [{ ApiKey: [] }],
   response: {
     200: {
       type: "object",

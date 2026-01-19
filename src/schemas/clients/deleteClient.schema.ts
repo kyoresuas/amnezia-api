@@ -5,7 +5,6 @@ import { clientIdSchema, protocolSchema } from "./common.schema";
 export const deleteClientSchema = {
   tags: [SwaggerContract.Tags.CLIENTS],
   summary: "Удалить клиента",
-  security: [{ ApiKey: [] }],
   body: {
     type: "object",
     required: ["clientId"],

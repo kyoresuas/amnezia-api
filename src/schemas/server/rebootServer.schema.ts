@@ -5,7 +5,6 @@ import { SwaggerContract } from "@/contracts/swagger";
 export const rebootServerSchema = {
   tags: [SwaggerContract.Tags.SERVER],
   summary: "Перезагрузить сервер",
-  security: [{ ApiKey: [] }],
   response: {
     200: {
       type: "object",

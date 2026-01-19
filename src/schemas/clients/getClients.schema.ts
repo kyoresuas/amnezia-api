@@ -5,7 +5,6 @@ import { clientIdSchema, protocolSchema } from "./common.schema";
 export const getClientsSchema = {
   tags: [SwaggerContract.Tags.CLIENTS],
   summary: "Получить всех клиентов",
-  security: [{ ApiKey: [] }],
   querystring: SwaggerContract.EnablePaginationSchema,
   response: {
     200: {

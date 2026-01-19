@@ -4,7 +4,6 @@ import { AppFastifySchema, Protocol, CustomFormat } from "@/types/shared";
 export const getServerBackupSchema = {
   tags: [SwaggerContract.Tags.SERVER],
   summary: "Резервная копия конфигурации сервера",
-  security: [{ ApiKey: [] }],
   response: {
     200: {
       type: "object",

@@ -109,7 +109,6 @@ const xrayPayloadSchema = {
 export const importServerBackupSchema = {
   tags: [SwaggerContract.Tags.SERVER],
   summary: "Импорт резервной копии конфигурации сервера",
-  security: [{ ApiKey: [] }],
   body: {
     type: "object",
     required: ["generatedAt", "serverId", "protocols"],

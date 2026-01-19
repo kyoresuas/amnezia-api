@@ -5,7 +5,6 @@ import { clientIdSchema, protocolSchema } from "./common.schema";
 export const createClientSchema = {
   tags: [SwaggerContract.Tags.CLIENTS],
   summary: "Создать нового клиента",
-  security: [{ ApiKey: [] }],
   body: {
     type: "object",
     required: ["clientName"],

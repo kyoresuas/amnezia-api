@@ -4,7 +4,6 @@ import { SwaggerContract } from "@/contracts/swagger";
 export const getServerLoadSchema = {
   tags: [SwaggerContract.Tags.SERVER],
   summary: "Получить метрики нагрузки сервера",
-  security: [{ ApiKey: [] }],
   response: {
     200: {
       type: "object",

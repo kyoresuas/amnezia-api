@@ -267,6 +267,7 @@ export namespace SwaggerContract {
           },
         },
       },
+      security: [{ ApiKey: [] }],
     };
 
     openapi.info = {
