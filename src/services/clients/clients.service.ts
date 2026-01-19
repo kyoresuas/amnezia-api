@@ -1,9 +1,9 @@
 import {
-  UserRecord,
-  CreateUserResult,
-  DeleteUserPayload,
-  CreateUserPayload,
-} from "@/types/users";
+  ClientRecord,
+  CreateClientResult,
+  DeleteClientPayload,
+  CreateClientPayload,
+} from "@/types/clients";
 import { Protocol } from "@/types/shared";
 import { APIError } from "@/utils/APIError";
 import { XrayService } from "@/services/xray";
@@ -14,10 +14,10 @@ import { ClientErrorCode, ServerErrorCode } from "@/types/shared";
 import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
 
 /**
- * Сервис для работы с пользователями
+ * Сервис для работы с клиентами
  */
-export class UsersService {
-  static key = "usersService";
+export class ClientsService {
+  static key = "clientsService";
 
   constructor(
     private amneziaService: AmneziaService,
@@ -71,47 +71,47 @@ export class UsersService {
   }
 
   /**
-   * Получить список пользователей
+   * Получить список клиентов
    */
-  async getUsers(): Promise<UserRecord[]> {
+  async getClients(): Promise<ClientRecord[]> {
     const enabled = await this.getEnabledProtocols();
-    const users = new Map<string, UserRecord>();
+    const clients = new Map<string, ClientRecord>();
 
     for (const protocol of enabled) {
       const service = this.getServiceByProtocol(protocol);
 
-      const serviceUsers = await service.getUsers();
+      const serviceClients = await service.getClients();
 
-      for (const user of serviceUsers) {
-        const normalizedDevices = user.devices.map((device) => ({
+      for (const client of serviceClients) {
+        const normalizedDevices = client.devices.map((device) => ({
           ...device,
           protocol: device.protocol ?? protocol,
         }));
 
-        const existing = users.get(user.username);
+        const existing = clients.get(client.username);
 
         if (existing) {
           existing.devices.push(...normalizedDevices);
         } else {
-          users.set(user.username, {
-            username: user.username,
+          clients.set(client.username, {
+            username: client.username,
             devices: normalizedDevices,
           });
         }
       }
     }
 
-    return Array.from(users.values());
+    return Array.from(clients.values());
   }
 
   /**
-   * Создать пользователя
+   * Создать клиента
    */
-  async createUser({
+  async createClient({
     clientName,
     protocol,
     expiresAt = null,
-  }: CreateUserPayload): Promise<CreateUserResult> {
+  }: CreateClientPayload): Promise<CreateClientResult> {
     await this.ensureProtocolEnabled(protocol);
 
     const service = this.getServiceByProtocol(protocol);
@@ -120,9 +120,12 @@ export class UsersService {
   }
 
   /**
-   * Удалить пользователя
+   * Удалить клиента
    */
-  async deleteUser({ clientId, protocol }: DeleteUserPayload): Promise<void> {
+  async deleteClient({
+    clientId,
+    protocol,
+  }: DeleteClientPayload): Promise<void> {
     await this.ensureProtocolEnabled(protocol);
 
     const service = this.getServiceByProtocol(protocol);
@@ -169,3 +172,4 @@ export class UsersService {
     return removed;
   }
 }
+

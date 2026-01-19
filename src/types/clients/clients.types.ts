@@ -1,23 +1,23 @@
 import { Protocol } from "@/types/shared";
 
-export type CreateUserPayload = {
+export type CreateClientPayload = {
   clientName: string;
   protocol: Protocol;
   expiresAt?: number | null;
 };
 
-export type DeleteUserPayload = {
+export type DeleteClientPayload = {
   clientId: string;
   protocol: Protocol;
 };
 
-export type CreateUserResult = {
+export type CreateClientResult = {
   id: string;
   config: string;
   protocol: Protocol;
 };
 
-export interface UserDevice {
+export interface ClientDevice {
   id: string;
   name: string | null;
   allowedIps: string[];
@@ -32,7 +32,8 @@ export interface UserDevice {
   protocol: Protocol;
 }
 
-export interface UserRecord {
+export interface ClientRecord {
   username: string;
-  devices: UserDevice[];
+  devices: ClientDevice[];
 }
+

@@ -13,3 +13,4 @@ export const protocolSchema = {
   enum: Object.values(Protocol),
   example: Protocol.AMNEZIAWG,
 } as const satisfies AppJSONSchema;
+

@@ -2,9 +2,9 @@ import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 import { clientIdSchema, protocolSchema } from "./common.schema";
 
-export const getUsersSchema = {
-  tags: [SwaggerContract.Tags.USERS],
-  summary: "Получить всех пользователей",
+export const getClientsSchema = {
+  tags: [SwaggerContract.Tags.CLIENTS],
+  summary: "Получить всех клиентов",
   security: [{ ApiKey: [] }],
   querystring: SwaggerContract.EnablePaginationSchema,
   response: {
@@ -16,19 +16,19 @@ export const getUsersSchema = {
         total: SwaggerContract.PaginatedResponseSchema.properties.total,
         items: {
           type: "array",
-          description: "Пользователи",
+          description: "Клиенты",
           items: {
             type: "object",
             required: ["username", "devices"],
             properties: {
               username: {
                 type: "string",
-                description: "Имя пользователя",
+                description: "Имя клиента",
                 example: "Kyoresuas",
               },
               devices: {
                 type: "array",
-                description: "Список устройств пользователя",
+                description: "Список устройств клиента",
                 items: {
                   type: "object",
                   required: [
@@ -98,4 +98,5 @@ export const getUsersSchema = {
   },
 } as const satisfies AppFastifySchema;
 
-export type GetUsersType = typeof getUsersSchema;
+export type GetClientsType = typeof getClientsSchema;
+

@@ -1,22 +1,22 @@
 import i18next from "i18next";
 import { di } from "@/config/DIContainer";
-import { CreateUserType } from "@/schemas";
-import { UsersService } from "@/services/users";
+import { CreateClientType } from "@/schemas";
+import { ClientsService } from "@/services/clients";
 import { AppFastifyHandler, Protocol } from "@/types/shared";
 
-export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
+export const createClientHandler: AppFastifyHandler<CreateClientType> = async (
   req,
   reply
 ) => {
   const { clientName, expiresAt, protocol = Protocol.AMNEZIAWG } = req.body;
 
-  const usersService = di.container.resolve<UsersService>(UsersService.key);
+  const clientsService = di.container.resolve<ClientsService>(ClientsService.key);
 
   const {
     id,
     config,
     protocol: createdProtocol,
-  } = await usersService.createUser({
+  } = await clientsService.createClient({
     clientName,
     expiresAt: expiresAt ?? null,
     protocol,
@@ -31,3 +31,4 @@ export const createUserHandler: AppFastifyHandler<CreateUserType> = async (
     },
   });
 };
+

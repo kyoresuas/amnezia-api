@@ -17,7 +17,7 @@ export namespace SwaggerContract {
    * Теги для документации
    */
   export enum Tags {
-    USERS = "Users",
+    CLIENTS = "Clients",
     SERVER = "Server",
   }
 
@@ -275,8 +275,8 @@ export namespace SwaggerContract {
     };
 
     openapi.tags!.push({
-      name: SwaggerContract.Tags.USERS,
-      description: "Маршруты для управления пользователями",
+      name: SwaggerContract.Tags.CLIENTS,
+      description: "Маршруты для управления клиентами",
     });
 
     openapi.tags!.push({

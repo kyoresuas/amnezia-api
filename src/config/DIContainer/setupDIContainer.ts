@@ -3,8 +3,8 @@ import { di } from "./awilixManager";
 import { appLogger } from "../winstonLogger";
 import { CronService } from "@/services/cron";
 import { XrayService } from "@/services/xray";
-import { UsersService } from "@/services/users";
 import { ServerService } from "@/services/server";
+import { ClientsService } from "@/services/clients";
 import { AmneziaService } from "@/services/amnezia";
 import { XrayConnection } from "@/helpers/xrayConnection";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
@@ -23,8 +23,8 @@ export const setupDIContainer = (): void => {
     // Сервисы
     [CronService.key]: asClass(CronService).singleton(),
     [XrayService.key]: asClass(XrayService).singleton(),
-    [UsersService.key]: asClass(UsersService).singleton(),
     [ServerService.key]: asClass(ServerService).singleton(),
+    [ClientsService.key]: asClass(ClientsService).singleton(),
     [AmneziaService.key]: asClass(AmneziaService).singleton(),
   });
 

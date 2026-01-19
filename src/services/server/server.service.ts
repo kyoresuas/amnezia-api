@@ -5,7 +5,7 @@ import appConfig from "@/constants/appConfig";
 import { XrayService } from "@/services/xray";
 import { AppContract } from "@/contracts/app";
 import { isNotNull } from "@/utils/primitive";
-import { UsersService } from "@/services/users";
+import { ClientsService } from "@/services/clients";
 import { appLogger } from "@/config/winstonLogger";
 import { AmneziaService } from "@/services/amnezia";
 import { isDockerContainerRunning } from "@/helpers/docker";
@@ -25,7 +25,7 @@ export class ServerService {
 
   constructor(
     private readonly xrayService: XrayService,
-    private readonly usersService: UsersService,
+    private readonly clientsService: ClientsService,
     private readonly amneziaService: AmneziaService
   ) {
     this.server = new ServerConnection();
@@ -42,7 +42,7 @@ export class ServerService {
     totalPeers: number;
     protocols: Protocol[];
   }> {
-    const users = await this.usersService.getUsers();
+    const clients = await this.clientsService.getClients();
     const protocols = await resolveEnabledProtocols();
 
     return {
@@ -50,7 +50,7 @@ export class ServerService {
       region: appConfig.SERVER_REGION || "",
       weight: appConfig.SERVER_WEIGHT || 0,
       maxPeers: appConfig.SERVER_MAX_PEERS || 0,
-      totalPeers: users.reduce((acc, user) => acc + user.devices.length, 0),
+      totalPeers: clients.reduce((acc, client) => acc + client.devices.length, 0),
       protocols,
     };
   }

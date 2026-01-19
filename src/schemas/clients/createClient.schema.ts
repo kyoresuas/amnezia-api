@@ -2,8 +2,8 @@ import { SwaggerContract } from "@/contracts/swagger";
 import { AppFastifySchema, Protocol } from "@/types/shared";
 import { clientIdSchema, protocolSchema } from "./common.schema";
 
-export const createUserSchema = {
-  tags: [SwaggerContract.Tags.USERS],
+export const createClientSchema = {
+  tags: [SwaggerContract.Tags.CLIENTS],
   summary: "Создать нового клиента",
   security: [{ ApiKey: [] }],
   body: {
@@ -56,4 +56,5 @@ export const createUserSchema = {
   },
 } as const satisfies AppFastifySchema;
 
-export type CreateUserType = typeof createUserSchema;
+export type CreateClientType = typeof createClientSchema;
+

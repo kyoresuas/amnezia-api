@@ -4,8 +4,8 @@ import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { ClientTableEntry } from "@/types/amnezia";
 import { AmneziaBackupData } from "@/types/server";
-import { UserRecord, UserDevice } from "@/types/users";
 import { ClientErrorCode, Protocol } from "@/types/shared";
+import { ClientRecord, ClientDevice } from "@/types/clients";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
 
 /**
@@ -76,9 +76,9 @@ export class AmneziaService {
   }
 
   /**
-   * Получить список пользователей из wg dump
+   * Получить список клиентов из wg dump
    */
-  async getUsers(): Promise<UserRecord[]> {
+  async getClients(): Promise<ClientRecord[]> {
     const dump = await this.amnezia.getWgDump();
 
     if (!dump) return [];
@@ -143,7 +143,7 @@ export class AmneziaService {
     }
 
     // Преобразуем peers в devices
-    const devices: (UserDevice & { username: string })[] = peers.map((peer) => {
+    const devices: (ClientDevice & { username: string })[] = peers.map((peer) => {
       const parts = peer.split("\t");
 
       // id
@@ -197,7 +197,7 @@ export class AmneziaService {
     });
 
     // Группируем по username
-    const users = new Map<string, UserRecord>();
+    const users = new Map<string, ClientRecord>();
     for (const { username, ...device } of devices) {
       // Получаем или создаем пользователя
       const entry = users.get(username) || {
@@ -229,10 +229,10 @@ export class AmneziaService {
     // Проверка лимита максимального числа устройств
     const maxPeers = appConfig.SERVER_MAX_PEERS;
     if (maxPeers) {
-      const users = await this.getUsers();
+      const clients = await this.getClients();
 
-      const currentPeers = users.reduce(
-        (acc, user) => acc + user.devices.length,
+      const currentPeers = clients.reduce(
+        (acc, client) => acc + client.devices.length,
         0
       );
 

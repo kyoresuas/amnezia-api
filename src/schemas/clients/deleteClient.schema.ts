@@ -2,8 +2,8 @@ import { SwaggerContract } from "@/contracts/swagger";
 import { AppFastifySchema, Protocol } from "@/types/shared";
 import { clientIdSchema, protocolSchema } from "./common.schema";
 
-export const deleteUserSchema = {
-  tags: [SwaggerContract.Tags.USERS],
+export const deleteClientSchema = {
+  tags: [SwaggerContract.Tags.CLIENTS],
   summary: "Удалить клиента",
   security: [{ ApiKey: [] }],
   body: {
@@ -25,4 +25,5 @@ export const deleteUserSchema = {
   },
 } as const satisfies AppFastifySchema;
 
-export type DeleteUserType = typeof deleteUserSchema;
+export type DeleteClientType = typeof deleteClientSchema;
+

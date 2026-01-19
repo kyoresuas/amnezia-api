@@ -4,8 +4,8 @@ import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { XrayBackupData } from "@/types/server";
-import { UserRecord, UserDevice } from "@/types/users";
 import { XrayConnection } from "@/helpers/xrayConnection";
+import { ClientRecord, ClientDevice } from "@/types/clients";
 import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
 import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
 
@@ -161,9 +161,9 @@ export class XrayService {
   }
 
   /**
-   * Получить список пользователей
+   * Получить список клиентов
    */
-  async getUsers(): Promise<UserRecord[]> {
+  async getClients(): Promise<ClientRecord[]> {
     const configRaw = await this.xray.readServerConfig();
     const serverConfig = this.parseServerConfig(configRaw);
 
@@ -183,7 +183,7 @@ export class XrayService {
       : [];
 
     // Устройства пользователей
-    const devices: (UserDevice & { username: string })[] = await Promise.all(
+    const devices: (ClientDevice & { username: string })[] = await Promise.all(
       clients.map(async (client: XrayClientEntry, index: number) => {
         // id
         const id = (client.id ?? "").trim() || `xray-client-${index + 1}`;
@@ -217,7 +217,7 @@ export class XrayService {
       })
     );
 
-    const users = new Map<string, UserRecord>();
+    const users = new Map<string, ClientRecord>();
 
     for (const { username, ...device } of devices) {
       const entry = users.get(username) || { username, devices: [] };
