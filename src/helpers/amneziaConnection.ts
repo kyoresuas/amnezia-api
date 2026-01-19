@@ -1,7 +1,7 @@
 import {
   isDockerDaemonUnavailableError,
   isDockerContainerUnavailableError,
-} from "@/helpers/dockerErrors";
+} from "@/utils/dockerErrors";
 import { exec } from "child_process";
 import { APIError } from "@/utils/APIError";
 import { RunOptions } from "@/types/amnezia";
