@@ -5,6 +5,11 @@ export type TrafficStats = {
   sent: number;
 };
 
+export enum PeerStatus {
+  Active = "active",
+  Disabled = "disabled",
+}
+
 export type CreateClientPayload = {
   clientName: string;
   protocol: Protocol;
@@ -19,7 +24,8 @@ export type DeleteClientPayload = {
 export type UpdateClientPayload = {
   clientId: string;
   protocol: Protocol;
-  expiresAt: number | null;
+  status?: PeerStatus;
+  expiresAt?: number | null;
 };
 
 export type CreateClientResult = {
@@ -37,6 +43,7 @@ export interface ClientPeer {
   endpoint: string | null;
   online: boolean;
   expiresAt: number | null;
+  status: PeerStatus;
   protocol: Protocol;
 }
 

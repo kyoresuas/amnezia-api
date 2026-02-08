@@ -1,3 +1,9 @@
+import {
+  ClientPeer,
+  PeerStatus,
+  ClientRecord,
+  CreateClientResult,
+} from "@/types/clients";
 import { deflateSync } from "zlib";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
@@ -6,7 +12,6 @@ import { ClientTableEntry } from "@/types/amnezia";
 import { AmneziaBackupData } from "@/types/server";
 import { ClientErrorCode, Protocol } from "@/types/shared";
 import { AmneziaConnection } from "@/helpers/amneziaConnection";
-import { ClientRecord, ClientPeer, CreateClientResult } from "@/types/clients";
 
 /**
  * Сервис для работы с AmneziaWG
@@ -37,6 +42,66 @@ export class AmneziaService {
     `PersistentKeepalive = $KEEPALIVE\n`;
 
   constructor(private amnezia: AmneziaConnection) {}
+
+  /**
+   * Получить AllowedIPs для peer'а
+   */
+  private getPeerAllowedIps(config: string, clientId: string): string | null {
+    const sections = config.split("[Peer]");
+
+    for (const section of sections) {
+      if (
+        !section.trim() ||
+        !section.includes("PublicKey") ||
+        !section.includes(clientId)
+      ) {
+        continue;
+      }
+
+      const match = section.match(/AllowedIPs\s*=\s*([^\n]+)/i);
+      return match?.[1]?.trim() || null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Обновить AllowedIPs для peer'а
+   */
+  private updatePeerAllowedIps(
+    config: string,
+    clientId: string,
+    allowedIps: string
+  ): string {
+    const sections = config.split("[Peer]");
+    let changed = false;
+
+    const updatedSections = sections.map((section) => {
+      if (
+        !section.trim() ||
+        !section.includes("PublicKey") ||
+        !section.includes(clientId)
+      ) {
+        return section;
+      }
+
+      changed = true;
+
+      if (/AllowedIPs\s*=/i.test(section)) {
+        return section.replace(
+          /AllowedIPs\s*=\s*([^\n]+)/i,
+          `AllowedIPs = ${allowedIps}`
+        );
+      }
+
+      return section.replace(
+        /PublicKey\s*=\s*([^\n]+)/i,
+        (line) => `${line}\nAllowedIPs = ${allowedIps}`
+      );
+    });
+
+    return changed ? updatedSections.join("[Peer]") : config;
+  }
 
   /**
    * Экспортировать данные AmneziaWG для резервной копии
@@ -143,59 +208,65 @@ export class AmneziaService {
     }
 
     // Преобразуем peers в список peer'ов
-    const peerEntries: (ClientPeer & { username: string })[] = peers.map((peer) => {
-      const parts = peer.split("\t");
+    const peerEntries: (ClientPeer & { username: string })[] = peers.map(
+      (peer) => {
+        const parts = peer.split("\t");
 
-      // id
-      const id = parts[0];
+        // id
+        const id = parts[0];
 
-      // endpoint
-      const endpoint = parts[2] && parts[2] !== "(none)" ? parts[2] : null;
+        // endpoint
+        const endpoint = parts[2] && parts[2] !== "(none)" ? parts[2] : null;
 
-      // allowedIps
-      const allowedIps = parts[3].split(",").map((s) => s.trim());
+        // allowedIps
+        const allowedIps = parts[3].split(",").map((s) => s.trim());
 
-      // lastHandshake
-      const lastHandshake =
-        Number(parts[4]) > 1_000_000_000_000
-          ? Math.floor(Number(parts[4]) / 1_000_000_000)
-          : Number(parts[4]);
+        // lastHandshake
+        const lastHandshake =
+          Number(parts[4]) > 1_000_000_000_000
+            ? Math.floor(Number(parts[4]) / 1_000_000_000)
+            : Number(parts[4]);
 
-      // received
-      const received = Number(parts[5]);
+        // received
+        const received = Number(parts[5]);
 
-      // sent
-      const sent = Number(parts[6]);
+        // sent
+        const sent = Number(parts[6]);
 
-      // lastHandshakeSecondsAgo
-      const lastHandshakeSecondsAgo = now - lastHandshake;
+        // lastHandshakeSecondsAgo
+        const lastHandshakeSecondsAgo = now - lastHandshake;
 
-      // online
-      const online = lastHandshakeSecondsAgo < 180;
+        // online
+        const online = lastHandshakeSecondsAgo < 180;
 
-      const username = userData[id]?.name || id;
-      // label peer'а (если он был закодирован в clientsTable.userData.clientName)
-      const name = userData[id]?.peerNames?.[0] ?? null;
+        const username = userData[id]?.name || id;
+        // label peer'а (если он был закодирован в clientsTable.userData.clientName)
+        const name = userData[id]?.peerNames?.[0] ?? null;
 
-      // expiresAt
-      const expiresAt = userData[id]?.expiresAt || null;
+        // expiresAt
+        const expiresAt = userData[id]?.expiresAt || null;
+        const isBlocked =
+          allowedIps.length === 1 && allowedIps[0] === "0.0.0.0/32";
+        const status = isBlocked ? PeerStatus.Disabled : PeerStatus.Active;
 
-      return {
-        username,
-        id,
-        name,
-        allowedIps,
-        lastHandshake,
-        traffic: {
-          received,
-          sent,
-        },
-        endpoint,
-        online,
-        expiresAt,
-        protocol: Protocol.AMNEZIAWG,
-      };
-    });
+        return {
+          username,
+          id,
+          name,
+          allowedIps,
+          lastHandshake,
+          traffic: {
+            received,
+            sent,
+          },
+          endpoint,
+          online,
+          expiresAt,
+          status,
+          protocol: Protocol.AMNEZIAWG,
+        };
+      }
+    );
 
     // Группируем по username
     const users = new Map<string, ClientRecord>();
@@ -307,6 +378,7 @@ export class AmneziaService {
     const userData: ClientTableEntry["userData"] = {
       clientName,
       creationDate,
+      allowedIp: assignedIp,
     };
 
     if (options?.expiresAt) {
@@ -469,9 +541,9 @@ export class AmneziaService {
   /**
    * Обновить expiresAt клиента
    */
-  async updateClientExpiresAt(
+  async updateClient(
     clientId: string,
-    expiresAt: number | null
+    options: { expiresAt?: number | null; status?: PeerStatus }
   ): Promise<boolean> {
     const table = await this.amnezia.readClientsTable();
 
@@ -482,15 +554,70 @@ export class AmneziaService {
     if (!entry) return false;
 
     const userData = entry.userData ?? {};
+    const now = Math.floor(Date.now() / 1000);
 
-    if (expiresAt === null) {
-      delete userData.expiresAt;
-    } else {
-      userData.expiresAt = expiresAt;
+    if (options.expiresAt !== undefined) {
+      if (options.expiresAt === null) {
+        delete userData.expiresAt;
+      } else {
+        userData.expiresAt = options.expiresAt;
+      }
     }
 
     entry.userData = userData;
     await this.amnezia.writeClientsTable(table);
+
+    const config = await this.amnezia.readWgConfig();
+    if (config) {
+      const currentAllowedIps = this.getPeerAllowedIps(config, clientId);
+
+      if (
+        !userData.allowedIp &&
+        currentAllowedIps &&
+        currentAllowedIps !== "0.0.0.0/32"
+      ) {
+        const firstIp = currentAllowedIps.split(",")[0].trim();
+        userData.allowedIp = firstIp.includes("/")
+          ? firstIp.split("/")[0]
+          : firstIp;
+        entry.userData = userData;
+        await this.amnezia.writeClientsTable(table);
+      }
+
+      const isExpired =
+        typeof userData.expiresAt === "number" && userData.expiresAt <= now;
+      const targetStatus =
+        options.status ??
+        (options.expiresAt !== undefined
+          ? isExpired
+            ? PeerStatus.Disabled
+            : PeerStatus.Active
+          : null);
+
+      const targetAllowedIps =
+        targetStatus === PeerStatus.Disabled
+          ? "0.0.0.0/32"
+          : targetStatus === PeerStatus.Active
+            ? userData.allowedIp
+              ? userData.allowedIp.includes("/")
+                ? userData.allowedIp
+                : `${userData.allowedIp}/32`
+              : null
+            : null;
+
+      if (targetAllowedIps && currentAllowedIps !== targetAllowedIps) {
+        const newConfig = this.updatePeerAllowedIps(
+          config,
+          clientId,
+          targetAllowedIps
+        );
+
+        if (newConfig !== config) {
+          await this.amnezia.writeWgConfig(newConfig);
+          await this.amnezia.syncWgConfig();
+        }
+      }
+    }
 
     return true;
   }
@@ -555,27 +682,55 @@ export class AmneziaService {
 
     const table = await this.amnezia.readClientsTable();
 
-    const idsToDelete = table
-      .map((entry) => {
-        const expiresAt = entry?.userData?.expiresAt;
-        const id = entry?.clientId?.trim();
+    const expired = table.filter((entry) => {
+      const expiresAt = entry?.userData?.expiresAt;
+      return typeof expiresAt === "number" && expiresAt <= now;
+    });
 
-        if (expiresAt && expiresAt <= now) {
-          return id;
+    if (!expired.length) return 0;
+
+    const config = await this.amnezia.readWgConfig();
+    let updatedConfig = config;
+    let updatedTable = false;
+
+    if (config) {
+      for (const entry of expired) {
+        const clientId = entry?.clientId?.trim();
+        if (!clientId) continue;
+
+        const userData = entry.userData ?? {};
+        const currentAllowedIps = this.getPeerAllowedIps(config, clientId);
+
+        if (
+          !userData.allowedIp &&
+          currentAllowedIps &&
+          currentAllowedIps !== "0.0.0.0/32"
+        ) {
+          const firstIp = currentAllowedIps.split(",")[0].trim();
+          userData.allowedIp = firstIp.includes("/")
+            ? firstIp.split("/")[0]
+            : firstIp;
+          entry.userData = userData;
+          updatedTable = true;
         }
 
-        return null;
-      })
-      .filter((x): x is string => Boolean(x));
-
-    if (!idsToDelete.length) return 0;
-
-    let removed = 0;
-    for (const id of idsToDelete) {
-      const ok = await this.deleteClient(id);
-      if (ok) removed++;
+        updatedConfig = this.updatePeerAllowedIps(
+          updatedConfig,
+          clientId,
+          "0.0.0.0/32"
+        );
+      }
     }
 
-    return removed;
+    if (updatedTable) {
+      await this.amnezia.writeClientsTable(table);
+    }
+
+    if (config && updatedConfig !== config) {
+      await this.amnezia.writeWgConfig(updatedConfig);
+      await this.amnezia.syncWgConfig();
+    }
+
+    return expired.length;
   }
 }
