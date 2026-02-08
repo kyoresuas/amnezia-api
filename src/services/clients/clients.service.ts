@@ -3,6 +3,7 @@ import {
   CreateClientResult,
   DeleteClientPayload,
   CreateClientPayload,
+  UpdateClientPayload,
 } from "@/types/clients";
 import { Protocol } from "@/types/shared";
 import { APIError } from "@/utils/APIError";
@@ -138,6 +139,25 @@ export class ClientsService {
   }
 
   /**
+   * Обновить expiresAt клиента
+   */
+  async updateClientExpiresAt({
+    clientId,
+    protocol,
+    expiresAt,
+  }: UpdateClientPayload): Promise<void> {
+    await this.ensureProtocolEnabled(protocol);
+
+    const service = this.getServiceByProtocol(protocol);
+
+    const ok = await service.updateClientExpiresAt(clientId, expiresAt);
+
+    if (!ok) {
+      throw new APIError(ClientErrorCode.NOT_FOUND);
+    }
+  }
+
+  /**
    * Удалить всех клиентов с истекшим сроком действия
    */
   async cleanupExpiredClients(): Promise<number> {
@@ -168,4 +188,3 @@ export class ClientsService {
     return removed;
   }
 }
-

@@ -1,6 +1,5 @@
 import { Protocol } from "@/types/shared";
 
-
 export type TrafficStats = {
   received: number;
   sent: number;
@@ -15,6 +14,12 @@ export type CreateClientPayload = {
 export type DeleteClientPayload = {
   clientId: string;
   protocol: Protocol;
+};
+
+export type UpdateClientPayload = {
+  clientId: string;
+  protocol: Protocol;
+  expiresAt: number | null;
 };
 
 export type CreateClientResult = {
@@ -39,4 +44,3 @@ export interface ClientRecord {
   username: string;
   peers: ClientPeer[];
 }
-

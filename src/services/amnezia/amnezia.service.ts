@@ -467,6 +467,35 @@ export class AmneziaService {
   }
 
   /**
+   * Обновить expiresAt клиента
+   */
+  async updateClientExpiresAt(
+    clientId: string,
+    expiresAt: number | null
+  ): Promise<boolean> {
+    const table = await this.amnezia.readClientsTable();
+
+    const entry = table.find(
+      (x) => ((x && (x.clientId || x.publicKey)) || "") === clientId
+    );
+
+    if (!entry) return false;
+
+    const userData = entry.userData ?? {};
+
+    if (expiresAt === null) {
+      delete userData.expiresAt;
+    } else {
+      userData.expiresAt = expiresAt;
+    }
+
+    entry.userData = userData;
+    await this.amnezia.writeClientsTable(table);
+
+    return true;
+  }
+
+  /**
    * Удалить клиента
    */
   async deleteClient(clientId: string): Promise<boolean> {

@@ -1,8 +1,3 @@
-import {
-  Protocol,
-  ClientErrorCode,
-  ServerErrorCode,
-} from "@/types/shared";
 import { deflateSync } from "zlib";
 import { randomUUID } from "crypto";
 import { APIError } from "@/utils/APIError";
@@ -13,6 +8,7 @@ import { XrayConnection } from "@/helpers/xrayConnection";
 import { ClientRecord, ClientPeer } from "@/types/clients";
 import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
 import { CreateClientResult, TrafficStats } from "@/types/clients";
+import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
 
 /**
  * Сервис для работы с Xray
@@ -119,9 +115,7 @@ export class XrayService {
   /**
    * Получить статистику трафика пользователя из Xray Stats API
    */
-  private async getUserTrafficStats(
-    id: string
-  ): Promise<TrafficStats | null> {
+  private async getUserTrafficStats(id: string): Promise<TrafficStats | null> {
     const serverAddr = `127.0.0.1:${AppContract.Xray.DEFAULTS.API_PORT}`;
 
     const parseValue = (output: string): number => {
@@ -188,39 +182,40 @@ export class XrayService {
       : [];
 
     // Peer'ы пользователей
-    const peerEntries: (ClientPeer & { username: string })[] = await Promise.all(
-      clients.map(async (client: XrayClientEntry, index: number) => {
-        // id
-        const id = (client.id ?? "").trim() || `xray-client-${index + 1}`;
+    const peerEntries: (ClientPeer & { username: string })[] =
+      await Promise.all(
+        clients.map(async (client: XrayClientEntry, index: number) => {
+          // id
+          const id = (client.id ?? "").trim() || `xray-client-${index + 1}`;
 
-        // username
-        const username = (client.username ?? "").trim() || id;
+          // username
+          const username = (client.username ?? "").trim() || id;
 
-        // expiresAt (seconds)
-        const expiresAt =
-          typeof client.expiresAt === "number" ? client.expiresAt : null;
+          // expiresAt (seconds)
+          const expiresAt =
+            typeof client.expiresAt === "number" ? client.expiresAt : null;
 
-        // Получить статистику трафика
-        const traffic = await this.getUserTrafficStats(id);
+          // Получить статистику трафика
+          const traffic = await this.getUserTrafficStats(id);
 
-        // Peer пользователя
-        return {
-          username,
-          id,
-          name: null,
-          allowedIps: [],
-          lastHandshake: 0,
-          traffic: {
-            received: traffic?.received ?? 0,
-            sent: traffic?.sent ?? 0,
-          },
-          endpoint: null,
-          online: false,
-          expiresAt,
-          protocol: Protocol.XRAY,
-        };
-      })
-    );
+          // Peer пользователя
+          return {
+            username,
+            id,
+            name: null,
+            allowedIps: [],
+            lastHandshake: 0,
+            traffic: {
+              received: traffic?.received ?? 0,
+              sent: traffic?.sent ?? 0,
+            },
+            endpoint: null,
+            online: false,
+            expiresAt,
+            protocol: Protocol.XRAY,
+          };
+        })
+      );
 
     const users = new Map<string, ClientRecord>();
 
@@ -431,6 +426,57 @@ export class XrayService {
       config: clientConfig,
       protocol: Protocol.XRAY,
     };
+  }
+
+  /**
+   * Обновить expiresAt клиента
+   */
+  async updateClientExpiresAt(
+    clientId: string,
+    expiresAt: number | null
+  ): Promise<boolean> {
+    const rawConfig = await this.xray.readServerConfig();
+
+    if (!rawConfig) {
+      throw new APIError(ServerErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    const serverConfig = this.parseServerConfig(rawConfig);
+
+    const inbounds = Array.isArray(serverConfig.inbounds)
+      ? serverConfig.inbounds
+      : [];
+
+    if (!inbounds.length) {
+      throw new APIError(ServerErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    const inbound = inbounds[0];
+    const settings = inbound.settings;
+
+    if (!settings || !Array.isArray(settings.clients)) {
+      throw new APIError(ServerErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    const clientIndex = settings.clients.findIndex(
+      (client: { id?: string }) => client?.id === clientId
+    );
+
+    if (clientIndex < 0) return false;
+
+    settings.clients[clientIndex] = {
+      ...settings.clients[clientIndex],
+      expiresAt,
+    };
+
+    inbound.settings = settings;
+    inbounds[0] = inbound;
+    serverConfig.inbounds = inbounds;
+
+    await this.xray.writeServerConfig(JSON.stringify(serverConfig, null, 2));
+    await this.xray.restartContainer();
+
+    return true;
   }
 
   /**
