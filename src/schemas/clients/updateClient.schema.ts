@@ -1,3 +1,4 @@
+import { PeerStatus } from "@/types/clients";
 import { SwaggerContract } from "@/contracts/swagger";
 import { AppFastifySchema, Protocol } from "@/types/shared";
 import { clientIdSchema, protocolSchema } from "./common.schema";
@@ -7,7 +8,7 @@ export const updateClientSchema = {
   summary: "Обновить данные клиента",
   body: {
     type: "object",
-    required: ["clientId", "expiresAt"],
+    required: ["clientId"],
     properties: {
       clientId: clientIdSchema,
       protocol: {
@@ -17,8 +18,14 @@ export const updateClientSchema = {
       expiresAt: {
         type: "integer",
         nullable: true,
-        description: "Дата удаления клиента",
+        description: "Дата окончания доступа",
         example: 1735689600,
+      },
+      status: {
+        type: "string",
+        description: "Статус ключа",
+        enum: Object.values(PeerStatus),
+        example: PeerStatus.Active,
       },
     },
   },

@@ -141,16 +141,20 @@ export class ClientsService {
   /**
    * Обновить expiresAt клиента
    */
-  async updateClientExpiresAt({
+  async updateClient({
     clientId,
     protocol,
     expiresAt,
+    status,
   }: UpdateClientPayload): Promise<void> {
     await this.ensureProtocolEnabled(protocol);
 
     const service = this.getServiceByProtocol(protocol);
 
-    const ok = await service.updateClientExpiresAt(clientId, expiresAt);
+    const ok = await service.updateClient(clientId, {
+      expiresAt,
+      status,
+    });
 
     if (!ok) {
       throw new APIError(ClientErrorCode.NOT_FOUND);

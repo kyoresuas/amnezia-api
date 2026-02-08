@@ -9,6 +9,7 @@ export type XrayInbound = {
   port?: number;
   settings?: {
     clients?: XrayClientEntry[];
+    clientsDisabled?: XrayClientEntry[];
   };
   streamSettings?: {
     realitySettings?: {

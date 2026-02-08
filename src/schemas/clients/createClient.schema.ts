@@ -21,7 +21,7 @@ export const createClientSchema = {
       expiresAt: {
         type: "integer",
         nullable: true,
-        description: "Дата удаления клиента",
+        description: "Дата окончания доступа",
         example: 1735689600,
       },
     },
@@ -56,4 +56,3 @@ export const createClientSchema = {
 } as const satisfies AppFastifySchema;
 
 export type CreateClientType = typeof createClientSchema;
-

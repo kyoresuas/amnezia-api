@@ -5,9 +5,9 @@ import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { XrayBackupData } from "@/types/server";
 import { XrayConnection } from "@/helpers/xrayConnection";
-import { ClientRecord, ClientPeer } from "@/types/clients";
 import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
 import { CreateClientResult, TrafficStats } from "@/types/clients";
+import { ClientRecord, ClientPeer, PeerStatus } from "@/types/clients";
 import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
 
 /**
@@ -180,42 +180,71 @@ export class XrayService {
     const clients = Array.isArray(inbound?.settings?.clients)
       ? inbound.settings?.clients
       : [];
+    const clientsDisabled = Array.isArray(inbound?.settings?.clientsDisabled)
+      ? inbound.settings?.clientsDisabled
+      : [];
 
-    // Peer'ы пользователей
-    const peerEntries: (ClientPeer & { username: string })[] =
-      await Promise.all(
-        clients.map(async (client: XrayClientEntry, index: number) => {
-          // id
-          const id = (client.id ?? "").trim() || `xray-client-${index + 1}`;
+    const activeEntries = await Promise.all(
+      clients.map(async (client: XrayClientEntry, index: number) => {
+        // id
+        const id = (client.id ?? "").trim() || `xray-client-${index + 1}`;
 
-          // username
-          const username = (client.username ?? "").trim() || id;
+        // username
+        const username = (client.username ?? "").trim() || id;
 
-          // expiresAt (seconds)
-          const expiresAt =
-            typeof client.expiresAt === "number" ? client.expiresAt : null;
+        // expiresAt (seconds)
+        const expiresAt =
+          typeof client.expiresAt === "number" ? client.expiresAt : null;
+        const status = PeerStatus.Active;
 
-          // Получить статистику трафика
-          const traffic = await this.getUserTrafficStats(id);
+        // Получить статистику трафика
+        const traffic = await this.getUserTrafficStats(id);
 
-          // Peer пользователя
-          return {
-            username,
-            id,
-            name: null,
-            allowedIps: [],
-            lastHandshake: 0,
-            traffic: {
-              received: traffic?.received ?? 0,
-              sent: traffic?.sent ?? 0,
-            },
-            endpoint: null,
-            online: false,
-            expiresAt,
-            protocol: Protocol.XRAY,
-          };
-        })
-      );
+        return {
+          username,
+          id,
+          name: null,
+          allowedIps: [],
+          lastHandshake: 0,
+          traffic: {
+            received: traffic?.received ?? 0,
+            sent: traffic?.sent ?? 0,
+          },
+          endpoint: null,
+          online: false,
+          expiresAt,
+          status,
+          protocol: Protocol.XRAY,
+        };
+      })
+    );
+
+    const disabledEntries: (ClientPeer & { username: string })[] =
+      clientsDisabled.map((client: XrayClientEntry, index: number) => {
+        const id = (client.id ?? "").trim() || `xray-disabled-${index + 1}`;
+        const username = (client.username ?? "").trim() || id;
+        const expiresAt =
+          typeof client.expiresAt === "number" ? client.expiresAt : null;
+
+        return {
+          username,
+          id,
+          name: null,
+          allowedIps: [],
+          lastHandshake: 0,
+          traffic: { received: 0, sent: 0 },
+          endpoint: null,
+          online: false,
+          expiresAt,
+          status: PeerStatus.Disabled,
+          protocol: Protocol.XRAY,
+        };
+      });
+
+    const peerEntries: (ClientPeer & { username: string })[] = [
+      ...activeEntries,
+      ...disabledEntries,
+    ];
 
     const users = new Map<string, ClientRecord>();
 
@@ -431,9 +460,9 @@ export class XrayService {
   /**
    * Обновить expiresAt клиента
    */
-  async updateClientExpiresAt(
+  async updateClient(
     clientId: string,
-    expiresAt: number | null
+    options: { expiresAt?: number | null; status?: PeerStatus }
   ): Promise<boolean> {
     const rawConfig = await this.xray.readServerConfig();
 
@@ -454,22 +483,68 @@ export class XrayService {
     const inbound = inbounds[0];
     const settings = inbound.settings;
 
-    if (!settings || !Array.isArray(settings.clients)) {
+    if (!settings) {
       throw new APIError(ServerErrorCode.INTERNAL_SERVER_ERROR);
     }
 
-    const clientIndex = settings.clients.findIndex(
+    const clients = Array.isArray(settings.clients) ? settings.clients : [];
+    const clientsDisabled = Array.isArray(settings.clientsDisabled)
+      ? settings.clientsDisabled
+      : [];
+
+    const now = Math.floor(Date.now() / 1000);
+    const isExpired =
+      typeof options.expiresAt === "number" && options.expiresAt <= now;
+    const targetStatus =
+      options.status ??
+      (options.expiresAt !== undefined
+        ? isExpired
+          ? PeerStatus.Disabled
+          : PeerStatus.Active
+        : null);
+
+    const activeIndex = clients.findIndex(
+      (client: { id?: string }) => client?.id === clientId
+    );
+    const disabledIndex = clientsDisabled.findIndex(
       (client: { id?: string }) => client?.id === clientId
     );
 
-    if (clientIndex < 0) return false;
+    if (activeIndex < 0 && disabledIndex < 0) return false;
 
-    settings.clients[clientIndex] = {
-      ...settings.clients[clientIndex],
-      expiresAt,
+    if (activeIndex >= 0) {
+      const updated = {
+        ...clients[activeIndex],
+        ...(options.expiresAt !== undefined
+          ? { expiresAt: options.expiresAt }
+          : {}),
+      };
+      if (targetStatus === PeerStatus.Disabled) {
+        clients.splice(activeIndex, 1);
+        clientsDisabled.push(updated);
+      } else {
+        clients[activeIndex] = updated;
+      }
+    } else if (disabledIndex >= 0) {
+      const updated = {
+        ...clientsDisabled[disabledIndex],
+        ...(options.expiresAt !== undefined
+          ? { expiresAt: options.expiresAt }
+          : {}),
+      };
+      if (targetStatus === PeerStatus.Active) {
+        clientsDisabled.splice(disabledIndex, 1);
+        clients.push(updated);
+      } else {
+        clientsDisabled[disabledIndex] = updated;
+      }
+    }
+
+    inbound.settings = {
+      ...settings,
+      clients,
+      clientsDisabled,
     };
-
-    inbound.settings = settings;
     inbounds[0] = inbound;
     serverConfig.inbounds = inbounds;
 
@@ -564,6 +639,9 @@ export class XrayService {
     const inbound = inbounds[0];
     const settings = inbound.settings;
     const clients = Array.isArray(settings?.clients) ? settings!.clients! : [];
+    const clientsDisabled = Array.isArray(settings?.clientsDisabled)
+      ? settings!.clientsDisabled!
+      : [];
 
     if (!clients.length) return 0;
 
@@ -572,19 +650,23 @@ export class XrayService {
       return typeof expiresAt === "number" && expiresAt > 0 && expiresAt <= now;
     };
 
+    const expired = clients.filter((c) => isExpired(c));
     const kept = clients.filter((c) => !isExpired(c));
-    const removed = clients.length - kept.length;
 
-    if (removed <= 0) return 0;
+    if (!expired.length) return 0;
 
     // Обновляем конфиг и применяем один раз
-    inbound.settings = { ...(settings ?? {}), clients: kept };
+    inbound.settings = {
+      ...(settings ?? {}),
+      clients: kept,
+      clientsDisabled: [...clientsDisabled, ...expired],
+    };
     inbounds[0] = inbound;
     serverConfig.inbounds = inbounds;
 
     await this.xray.writeServerConfig(JSON.stringify(serverConfig, null, 2));
     await this.xray.restartContainer();
 
-    return removed;
+    return expired.length;
   }
 }

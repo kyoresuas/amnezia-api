@@ -30,10 +30,7 @@ export class AmneziaConnection {
   /**
    * Выполнить команду
    */
-  run(
-    cmd: string,
-    options?: RunOptions
-  ): Promise<CommandResult> {
+  run(cmd: string, options?: RunOptions): Promise<CommandResult> {
     const finalCmd = this.buildCommand(cmd);
     const timeout = options?.timeout ?? 5000;
     const maxBuffer = options?.maxBufferBytes ?? 10 * 1024 * 1024;

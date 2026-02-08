@@ -1,3 +1,4 @@
+import { PeerStatus } from "@/types/clients";
 import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 import { clientIdSchema, protocolSchema } from "./common.schema";
@@ -33,6 +34,7 @@ export const getClientsSchema = {
                   required: [
                     "id",
                     "name",
+                    "status",
                     "allowedIps",
                     "lastHandshake",
                     "traffic",
@@ -48,6 +50,12 @@ export const getClientsSchema = {
                       nullable: true,
                       description: "Название peer'а (если есть)",
                       example: "macOS 26.0",
+                    },
+                    status: {
+                      type: "string",
+                      description: "Статус ключа",
+                      enum: Object.values(PeerStatus),
+                      example: PeerStatus.Active,
                     },
                     allowedIps: {
                       type: "array",
@@ -80,7 +88,7 @@ export const getClientsSchema = {
                     expiresAt: {
                       type: "number",
                       nullable: true,
-                      description: "Дата удаления клиента",
+                      description: "Дата окончания доступа",
                       example: 1735689600,
                     },
                     protocol: protocolSchema,
@@ -98,4 +106,3 @@ export const getClientsSchema = {
 } as const satisfies AppFastifySchema;
 
 export type GetClientsType = typeof getClientsSchema;
-

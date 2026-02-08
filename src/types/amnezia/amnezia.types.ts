@@ -6,5 +6,10 @@ export type RunOptions = {
 export type ClientTableEntry = {
   clientId?: string;
   publicKey?: string;
-  userData?: { clientName?: string; creationDate?: string; expiresAt?: number };
+  userData?: {
+    clientName?: string;
+    creationDate?: string;
+    expiresAt?: number;
+    allowedIp?: string;
+  };
 };
