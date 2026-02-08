@@ -1,9 +1,9 @@
 import os from "os";
-import { 
-  ServerLoadPayload, 
-  ServerStatusPayload, 
-  ServerBackupPayload, 
-  ServerLoadDockerContainerStats, 
+import {
+  ServerLoadPayload,
+  ServerStatusPayload,
+  ServerBackupPayload,
+  ServerLoadDockerContainerStats,
 } from "@/types/server";
 import fs from "fs/promises";
 import { APIError } from "@/utils/APIError";

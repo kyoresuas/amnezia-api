@@ -4,9 +4,10 @@ import { RebootServerType } from "@/schemas";
 import { ServerService } from "@/services/server";
 import { AppFastifyHandler } from "@/types/shared";
 
-export const rebootServerHandler: AppFastifyHandler<
-  RebootServerType
-> = async (req, reply) => {
+export const rebootServerHandler: AppFastifyHandler<RebootServerType> = async (
+  req,
+  reply
+) => {
   const serverService = di.container.resolve<ServerService>(ServerService.key);
 
   await serverService.rebootServer();

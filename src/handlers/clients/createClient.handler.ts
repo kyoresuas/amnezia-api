@@ -10,7 +10,9 @@ export const createClientHandler: AppFastifyHandler<CreateClientType> = async (
 ) => {
   const { clientName, expiresAt, protocol = Protocol.AMNEZIAWG } = req.body;
 
-  const clientsService = di.container.resolve<ClientsService>(ClientsService.key);
+  const clientsService = di.container.resolve<ClientsService>(
+    ClientsService.key
+  );
 
   const {
     id,
@@ -31,4 +33,3 @@ export const createClientHandler: AppFastifyHandler<CreateClientType> = async (
     },
   });
 };
-

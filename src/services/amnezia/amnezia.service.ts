@@ -598,12 +598,12 @@ export class AmneziaService {
         targetStatus === PeerStatus.Disabled
           ? "0.0.0.0/32"
           : targetStatus === PeerStatus.Active
-            ? userData.allowedIp
-              ? userData.allowedIp.includes("/")
-                ? userData.allowedIp
-                : `${userData.allowedIp}/32`
-              : null
-            : null;
+          ? userData.allowedIp
+            ? userData.allowedIp.includes("/")
+              ? userData.allowedIp
+              : `${userData.allowedIp}/32`
+            : null
+          : null;
 
       if (targetAllowedIps && currentAllowedIps !== targetAllowedIps) {
         const newConfig = this.updatePeerAllowedIps(

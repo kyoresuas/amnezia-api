@@ -25,4 +25,3 @@ export const deleteClientSchema = {
 } as const satisfies AppFastifySchema;
 
 export type DeleteClientType = typeof deleteClientSchema;
-

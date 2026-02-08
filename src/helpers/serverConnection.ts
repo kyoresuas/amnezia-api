@@ -9,10 +9,7 @@ export class ServerConnection {
   /**
    * Выполнить системную команду на хосте
    */
-  run(
-    cmd: string,
-    options?: RunOptions
-  ): Promise<CommandResult> {
+  run(cmd: string, options?: RunOptions): Promise<CommandResult> {
     const timeout = options?.timeout ?? 2000;
     const maxBuffer = options?.maxBufferBytes ?? 10 * 1024 * 1024;
 

@@ -8,10 +8,11 @@ export const getClientsHandler: AppFastifyHandler<GetClientsType> = async (
   req,
   reply
 ) => {
-  const clientsService = di.container.resolve<ClientsService>(ClientsService.key);
+  const clientsService = di.container.resolve<ClientsService>(
+    ClientsService.key
+  );
 
   const clients = await clientsService.getClients();
 
   reply.code(200).send({ total: clients.length, items: primitive(clients) });
 };
-

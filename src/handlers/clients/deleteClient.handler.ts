@@ -10,10 +10,11 @@ export const deleteClientHandler: AppFastifyHandler<DeleteClientType> = async (
 ) => {
   const { clientId, protocol = Protocol.AMNEZIAWG } = req.body;
 
-  const clientsService = di.container.resolve<ClientsService>(ClientsService.key);
+  const clientsService = di.container.resolve<ClientsService>(
+    ClientsService.key
+  );
 
   await clientsService.deleteClient({ clientId, protocol });
 
   reply.code(200).send({ message: i18next.t("swagger.messages.DELETED") });
 };
-
