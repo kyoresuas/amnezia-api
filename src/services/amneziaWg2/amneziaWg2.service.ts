@@ -11,16 +11,16 @@ import { AppContract } from "@/contracts/app";
 import { ClientTableEntry } from "@/types/amnezia";
 import { AmneziaBackupData } from "@/types/server";
 import { ClientErrorCode, Protocol } from "@/types/shared";
-import { AmneziaConnection } from "@/helpers/amneziaConnection";
+import { AmneziaWg2Connection } from "@/helpers/amneziaWg2Connection";
 
 /**
- * Сервис для работы с AmneziaWG
+ * Сервис для работы с AmneziaWG 2.0
  */
-export class AmneziaService {
-  static key = "amneziaService";
+export class AmneziaWg2Service {
+  static key = "amneziaWg2Service";
 
   // Шаблон клиентского конфига AmneziaWG
-  private static readonly AMNEZIAWG_CLIENT_TEMPLATE =
+  private static readonly AMNEZIAWG2_CLIENT_TEMPLATE =
     `[Interface]\n` +
     `Address = $CLIENT_ADDRESS/32\n` +
     `DNS = $PRIMARY_DNS, $SECONDARY_DNS\n` +
@@ -41,7 +41,7 @@ export class AmneziaService {
     `$ENDPOINT_LINE` +
     `PersistentKeepalive = $KEEPALIVE\n`;
 
-  constructor(private amnezia: AmneziaConnection) {}
+  constructor(private amnezia: AmneziaWg2Connection) {}
 
   /**
    * Получить AllowedIPs для peer'а
@@ -111,8 +111,8 @@ export class AmneziaService {
       await Promise.all([
         this.amnezia.readWgConfig(),
         this.amnezia.readClientsTable(),
-        this.amnezia.readFile(AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY),
-        this.amnezia.readFile(AppContract.Amnezia.PATHS.WG_PSK),
+        this.amnezia.readFile(AppContract.AmneziaWG2.PATHS.SERVER_PUBLIC_KEY),
+        this.amnezia.readFile(AppContract.AmneziaWG2.PATHS.WG_PSK),
       ]);
 
     return {
@@ -130,11 +130,11 @@ export class AmneziaService {
     await this.amnezia.writeWgConfig(data.wgConfig);
     await this.amnezia.writeClientsTable(data.clients);
     await this.amnezia.writeFile(
-      AppContract.Amnezia.PATHS.WG_PSK,
+      AppContract.AmneziaWG2.PATHS.WG_PSK,
       `${data.presharedKey.trim()}\n`
     );
     await this.amnezia.writeFile(
-      AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY,
+      AppContract.AmneziaWG2.PATHS.SERVER_PUBLIC_KEY,
       `${data.serverPublicKey.trim()}\n`
     );
     await this.amnezia.syncWgConfig();
@@ -263,7 +263,7 @@ export class AmneziaService {
           online,
           expiresAt,
           status,
-          protocol: Protocol.AMNEZIAWG,
+          protocol: Protocol.AMNEZIAWG2,
         };
       }
     );
@@ -353,7 +353,7 @@ export class AmneziaService {
     // Считать PSK
     const psk = (
       await this.amnezia.run(
-        `cat ${AppContract.Amnezia.PATHS.WG_PSK} 2>/dev/null || true`
+        `cat ${AppContract.AmneziaWG2.PATHS.WG_PSK} 2>/dev/null || true`
       )
     ).stdout.trim();
 
@@ -391,7 +391,7 @@ export class AmneziaService {
     // Получаем публичный ключ сервера
     const serverPublicKey = (
       await this.amnezia.run(
-        `cat ${AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`
+        `cat ${AppContract.AmneziaWG2.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`
       )
     ).stdout.trim();
 
@@ -403,8 +403,8 @@ export class AmneziaService {
     const endpointHost = appConfig.SERVER_PUBLIC_HOST || "";
 
     // Получаем MTU
-    const mtu = AppContract.Amnezia.DEFAULTS.MTU;
-    const keepAlive = AppContract.Amnezia.DEFAULTS.KEEPALIVE;
+    const mtu = AppContract.AmneziaWG2.DEFAULTS.MTU;
+    const keepAlive = AppContract.AmneziaWG2.DEFAULTS.KEEPALIVE;
 
     // Параметры AWG
     const getVal = (key: string) =>
@@ -424,7 +424,7 @@ export class AmneziaService {
     } as const;
 
     // Текстовый конфиг
-    const configText = AmneziaService.AMNEZIAWG_CLIENT_TEMPLATE.replace(
+    const configText = AmneziaWg2Service.AMNEZIAWG2_CLIENT_TEMPLATE.replace(
       /\$CLIENT_ADDRESS/g,
       assignedIp
     )
@@ -470,14 +470,14 @@ export class AmneziaService {
       ...awgParams,
       last_config: JSON.stringify(lastConfig, null, 2),
       port: String(listenPort || ""),
-      transport_proto: AppContract.Amnezia.DEFAULTS.TRANSPORT,
+      transport_proto: AppContract.AmneziaWG2.DEFAULTS.TRANSPORT,
     };
 
     // Поддерживаемые плейсхолдеры в appConfig.SERVER_NAME:
     // {protocol} — протокол подключения (например, "AmneziaWG")
     // {username} — имя клиента (clientName)
     const baseServerName = appConfig.SERVER_NAME || "";
-    const protocolName = "AmneziaWG";
+    const protocolName = "AmneziaWG2";
     let description = baseServerName;
 
     if (/\{protocol\}|\{username\}/i.test(baseServerName)) {
@@ -493,10 +493,10 @@ export class AmneziaService {
       containers: [
         {
           awg,
-          container: AppContract.Amnezia.DOCKER_CONTAINER,
+          container: AppContract.AmneziaWG2.DOCKER_CONTAINER,
         },
       ],
-      defaultContainer: AppContract.Amnezia.DOCKER_CONTAINER,
+      defaultContainer: AppContract.AmneziaWG2.DOCKER_CONTAINER,
       description,
       dns1:
         (
@@ -535,7 +535,11 @@ export class AmneziaService {
 
     const clientConfig = `vpn://${base64String}`;
 
-    return { id: clientId, config: clientConfig, protocol: Protocol.AMNEZIAWG };
+    return {
+      id: clientId,
+      config: clientConfig,
+      protocol: Protocol.AMNEZIAWG2,
+    };
   }
 
   /**

@@ -5,9 +5,11 @@ import { CronService } from "@/services/cron";
 import { XrayService } from "@/services/xray";
 import { ServerService } from "@/services/server";
 import { ClientsService } from "@/services/clients";
-import { AmneziaService } from "@/services/amnezia";
+import { AmneziaWgService } from "@/services/amneziaWg";
+import { AmneziaWg2Service } from "@/services/amneziaWg2";
 import { XrayConnection } from "@/helpers/xrayConnection";
-import { AmneziaConnection } from "@/helpers/amneziaConnection";
+import { AmneziaWgConnection } from "@/helpers/amneziaWgConnection";
+import { AmneziaWg2Connection } from "@/helpers/amneziaWg2Connection";
 
 /**
  * Внедрить зависимости в DI-контейнер
@@ -18,14 +20,16 @@ export const setupDIContainer = (): void => {
   di.container.register({
     // Подключения
     [XrayConnection.key]: asClass(XrayConnection).singleton(),
-    [AmneziaConnection.key]: asClass(AmneziaConnection).singleton(),
+    [AmneziaWgConnection.key]: asClass(AmneziaWgConnection).singleton(),
+    [AmneziaWg2Connection.key]: asClass(AmneziaWg2Connection).singleton(),
 
     // Сервисы
     [CronService.key]: asClass(CronService).singleton(),
     [XrayService.key]: asClass(XrayService).singleton(),
     [ServerService.key]: asClass(ServerService).singleton(),
     [ClientsService.key]: asClass(ClientsService).singleton(),
-    [AmneziaService.key]: asClass(AmneziaService).singleton(),
+    [AmneziaWgService.key]: asClass(AmneziaWgService).singleton(),
+    [AmneziaWg2Service.key]: asClass(AmneziaWg2Service).singleton(),
   });
 
   appLogger.verbose("Зависимости внедрены");

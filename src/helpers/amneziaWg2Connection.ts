@@ -11,19 +11,19 @@ import { ServerErrorCode } from "@/types/shared";
 import { ClientTableEntry } from "@/types/amnezia";
 
 /**
- * Создать соединение с AmneziaVPN
+ * Создать соединение с AmneziaWG 2.0
  */
-export class AmneziaConnection {
-  static key = "amnezia";
+export class AmneziaWg2Connection {
+  static key = "amneziaWg2";
 
   /**
    * Построить команду
    */
   private buildCommand(cmd: string): string {
-    if (!AppContract.Amnezia.DOCKER_CONTAINER) return cmd;
+    if (!AppContract.AmneziaWG2.DOCKER_CONTAINER) return cmd;
 
     return `docker exec ${
-      AppContract.Amnezia.DOCKER_CONTAINER
+      AppContract.AmneziaWG2.DOCKER_CONTAINER
     } sh -lc '${cmd.replace(/'/g, "'\\''")}'`;
   }
 
@@ -87,7 +87,7 @@ export class AmneziaConnection {
    */
   async readWgConfig(): Promise<string> {
     const { stdout } = await this.run(
-      `cat ${AppContract.Amnezia.PATHS.WG_CONF} 2>/dev/null || true`
+      `cat ${AppContract.AmneziaWG2.PATHS.WG_CONF} 2>/dev/null || true`
     );
 
     return stdout;
@@ -97,7 +97,7 @@ export class AmneziaConnection {
    * Записать wg0.conf
    */
   async writeWgConfig(content: string): Promise<void> {
-    const heredoc = `cat > ${AppContract.Amnezia.PATHS.WG_CONF} <<"EOF"\n${content}\nEOF`;
+    const heredoc = `cat > ${AppContract.AmneziaWG2.PATHS.WG_CONF} <<"EOF"\n${content}\nEOF`;
 
     await this.run(heredoc);
   }
@@ -106,10 +106,10 @@ export class AmneziaConnection {
    * Получить dump wg
    */
   async getWgDump(): Promise<string> {
-    if (!AppContract.Amnezia.INTERFACE) return "";
+    if (!AppContract.AmneziaWG2.INTERFACE) return "";
 
     const { stdout } = await this.run(
-      `wg show ${AppContract.Amnezia.INTERFACE} dump`
+      `wg show ${AppContract.AmneziaWG2.INTERFACE} dump`
     );
 
     return stdout;
@@ -119,10 +119,10 @@ export class AmneziaConnection {
    * Применить конфигурацию wg
    */
   async syncWgConfig(): Promise<void> {
-    if (!AppContract.Amnezia.INTERFACE) return;
+    if (!AppContract.AmneziaWG2.INTERFACE) return;
 
     await this.run(
-      `wg syncconf ${AppContract.Amnezia.INTERFACE} <(wg-quick strip ${AppContract.Amnezia.PATHS.WG_CONF})`
+      `wg syncconf ${AppContract.AmneziaWG2.INTERFACE} <(wg-quick strip ${AppContract.AmneziaWG2.PATHS.WG_CONF})`
     );
   }
 
@@ -131,7 +131,7 @@ export class AmneziaConnection {
    */
   async getServerPublicKey(): Promise<string> {
     const { stdout } = await this.run(
-      `cat ${AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`
+      `cat ${AppContract.AmneziaWG2.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`
     );
 
     return stdout;
@@ -142,7 +142,7 @@ export class AmneziaConnection {
    */
   async getListenPort(): Promise<string> {
     const { stdout } = await this.run(
-      `cat ${AppContract.Amnezia.PATHS.WG_CONF} 2>/dev/null || true`
+      `cat ${AppContract.AmneziaWG2.PATHS.WG_CONF} 2>/dev/null || true`
     );
 
     return stdout;
@@ -153,7 +153,7 @@ export class AmneziaConnection {
    */
   async readClientsTable(): Promise<ClientTableEntry[]> {
     const raw = await this.readFile(
-      AppContract.Amnezia.PATHS.CLIENTS_TABLE || ""
+      AppContract.AmneziaWG2.PATHS.CLIENTS_TABLE || ""
     );
 
     try {
@@ -171,7 +171,7 @@ export class AmneziaConnection {
     const payload = JSON.stringify(table);
 
     await this.writeFile(
-      AppContract.Amnezia.PATHS.CLIENTS_TABLE || "",
+      AppContract.AmneziaWG2.PATHS.CLIENTS_TABLE || "",
       payload
     );
   }

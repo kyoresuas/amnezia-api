@@ -12,7 +12,7 @@ import { XrayService } from "@/services/xray";
 import { AppContract } from "@/contracts/app";
 import { isNotNull } from "@/utils/primitive";
 import { appLogger } from "@/config/winstonLogger";
-import { AmneziaService } from "@/services/amnezia";
+import { AmneziaService } from "@/services/amneziaWg";
 import { ClientsService } from "@/services/clients";
 import { isDockerContainerRunning } from "@/helpers/docker";
 import { ServerConnection } from "@/helpers/serverConnection";

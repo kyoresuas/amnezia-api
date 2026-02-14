@@ -15,8 +15,12 @@ export async function resolveEnabledProtocols(): Promise<Protocol[]> {
   // Иначе пробуем авто-детект по наличию запущенных Docker-контейнеров
   const enabled: Protocol[] = [];
 
-  if (await isDockerContainerRunning(AppContract.Amnezia.DOCKER_CONTAINER)) {
+  if (await isDockerContainerRunning(AppContract.AmneziaWG.DOCKER_CONTAINER)) {
     enabled.push(Protocol.AMNEZIAWG);
+  }
+
+  if (await isDockerContainerRunning(AppContract.AmneziaWG2.DOCKER_CONTAINER)) {
+    enabled.push(Protocol.AMNEZIAWG2);
   }
 
   if (await isDockerContainerRunning(AppContract.Xray.DOCKER_CONTAINER)) {

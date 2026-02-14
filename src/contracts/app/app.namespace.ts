@@ -1,10 +1,10 @@
 export const AppContract = {
   // Константы для AmneziaWG
-  Amnezia: {
-    // Имя Docker-контейнера с AmneziaWG
+  AmneziaWG: {
+    // Имя Docker-контейнера
     DOCKER_CONTAINER: "amnezia-awg",
 
-    // Имя интерфейса AmneziaWG
+    // Имя интерфейса
     INTERFACE: "wg0",
 
     // Пути к файлам внутри контейнера
@@ -15,7 +15,31 @@ export const AppContract = {
       WG_PSK: "/opt/amnezia/awg/wireguard_psk.key",
     } as const,
 
-    // Значения по умолчанию для AmneziaWG
+    // Значения по умолчанию
+    DEFAULTS: {
+      MTU: "1376",
+      KEEPALIVE: "25",
+      TRANSPORT: "udp",
+    } as const,
+  },
+
+  // Константы для AmneziaWG 2.0
+  AmneziaWG2: {
+    // Имя Docker-контейнера
+    DOCKER_CONTAINER: "amnezia-awg2",
+
+    // Имя интерфейса
+    INTERFACE: "wg0",
+
+    // Пути к файлам внутри контейнера
+    PATHS: {
+      CLIENTS_TABLE: "/opt/amnezia/awg2/clientsTable",
+      WG_CONF: "/opt/amnezia/awg2/wg0.conf",
+      SERVER_PUBLIC_KEY: "/opt/amnezia/awg2/wireguard_server_public_key.key",
+      WG_PSK: "/opt/amnezia/awg2/wireguard_psk.key",
+    } as const,
+
+    // Значения по умолчанию
     DEFAULTS: {
       MTU: "1376",
       KEEPALIVE: "25",

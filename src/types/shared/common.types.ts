@@ -1,4 +1,3 @@
-
 export type ArgumentsType<F extends () => any> = F extends (
   ...args: infer A
 ) => any
@@ -26,6 +25,7 @@ export enum CustomFormat {
 
 export enum Protocol {
   AMNEZIAWG = "amneziawg",
+  AMNEZIAWG2 = "amneziawg2",
   XRAY = "xray",
 }
 
