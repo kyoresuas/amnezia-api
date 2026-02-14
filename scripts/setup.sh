@@ -202,6 +202,7 @@ detect_protocols_enabled() {
   containers="$($SUDO docker ps --format '{{.Names}}' 2>/dev/null || true)"
 
   echo "$containers" | grep -qx "amnezia-awg" && protocols="${protocols}amneziawg,"
+  echo "$containers" | grep -qx "amnezia-awg2" && protocols="${protocols}amneziawg2,"
   echo "$containers" | grep -qx "amnezia-xray" && protocols="${protocols}xray,"
 
   protocols="${protocols%,}"
