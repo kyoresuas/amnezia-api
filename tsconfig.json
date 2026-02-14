@@ -25,5 +25,12 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": false
   },
-  "exclude": ["node_modules", "build", "dist", "scripts", "eslint.config.mjs"]
+  "exclude": [
+    "dist",
+    "build",
+    "scripts",
+    "node_modules",
+    "amnezia-client", // Testing
+    "eslint.config.mjs"
+  ]
 }

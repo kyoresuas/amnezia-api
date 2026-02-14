@@ -1,6 +1,36 @@
 import { SwaggerContract } from "@/contracts/swagger";
 import { AppFastifySchema, Protocol, CustomFormat } from "@/types/shared";
 
+const clientsTableItemSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    clientId: {
+      type: "string",
+      description: "Публичный ключ клиента",
+    },
+    publicKey: {
+      type: "string",
+      description: "Дополнительный публичный ключ",
+    },
+    userData: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        clientName: {
+          type: "string",
+        },
+        creationDate: {
+          type: "string",
+        },
+        expiresAt: {
+          type: "number",
+        },
+      },
+    },
+  },
+} as const;
+
 export const getServerBackupSchema = {
   tags: [SwaggerContract.Tags.SERVER],
   summary: "Резервная копия конфигурации сервера",
@@ -31,7 +61,7 @@ export const getServerBackupSchema = {
             type: "string",
             enum: Object.values(Protocol),
           },
-          example: [Protocol.AMNEZIAWG, Protocol.XRAY],
+          example: [Protocol.AMNEZIAWG, Protocol.AMNEZIAWG2, Protocol.XRAY],
         },
         amnezia: {
           type: "object",
@@ -52,35 +82,7 @@ export const getServerBackupSchema = {
             clients: {
               type: "array",
               description: "Содержимое таблицы клиентов AmneziaWG",
-              items: {
-                type: "object",
-                additionalProperties: false,
-                properties: {
-                  clientId: {
-                    type: "string",
-                    description: "Публичный ключ клиента",
-                  },
-                  publicKey: {
-                    type: "string",
-                    description: "Дополнительный публичный ключ",
-                  },
-                  userData: {
-                    type: "object",
-                    additionalProperties: false,
-                    properties: {
-                      clientName: {
-                        type: "string",
-                      },
-                      creationDate: {
-                        type: "string",
-                      },
-                      expiresAt: {
-                        type: "number",
-                      },
-                    },
-                  },
-                },
-              },
+              items: clientsTableItemSchema,
             },
           },
           example: {
@@ -99,6 +101,29 @@ export const getServerBackupSchema = {
                 },
               },
             ],
+          },
+        },
+        amneziaWg2: {
+          type: "object",
+          required: ["wgConfig", "presharedKey", "serverPublicKey", "clients"],
+          properties: {
+            wgConfig: {
+              type: "string",
+              description: "Содержимое файла awg0.conf",
+            },
+            presharedKey: {
+              type: "string",
+              description: "Содержимое файла wireguard_psk.key",
+            },
+            serverPublicKey: {
+              type: "string",
+              description: "Публичный ключ сервера AmneziaWG",
+            },
+            clients: {
+              type: "array",
+              description: "Содержимое таблицы клиентов AmneziaWG 2.0",
+              items: clientsTableItemSchema,
+            },
           },
         },
         xray: {
