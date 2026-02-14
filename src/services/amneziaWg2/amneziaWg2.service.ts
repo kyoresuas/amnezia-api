@@ -30,10 +30,17 @@ export class AmneziaWg2Service {
     `Jmax = $JMAX\n` +
     `S1 = $S1\n` +
     `S2 = $S2\n` +
+    `S3 = $S3\n` +
+    `S4 = $S4\n` +
     `H1 = $H1\n` +
     `H2 = $H2\n` +
     `H3 = $H3\n` +
     `H4 = $H4\n\n` +
+    `I1 = $I1\n` +
+    `I2 = $I2\n` +
+    `I3 = $I3\n` +
+    `I4 = $I4\n` +
+    `I5 = $I5\n\n` +
     `[Peer]\n` +
     `PublicKey = $SERVER_PUBLIC_KEY\n` +
     `PresharedKey = $PRESHARED_KEY\n` +
@@ -311,12 +318,12 @@ export class AmneziaWg2Service {
 
     // Сгенерировать приватный ключ
     const clientPrivateKey = (
-      await this.amnezia.run(`wg genkey`)
+      await this.amnezia.run(`awg genkey`)
     ).stdout.trim();
 
     // Сгенерировать публичный ключ
     const clientId = (
-      await this.amnezia.run(`echo '${clientPrivateKey}' | wg pubkey`)
+      await this.amnezia.run(`echo '${clientPrivateKey}' | awg pubkey`)
     ).stdout.trim();
 
     // Считать конфиг
@@ -407,9 +414,19 @@ export class AmneziaWg2Service {
     const keepAlive = AppContract.AmneziaWG2.DEFAULTS.KEEPALIVE;
 
     // Параметры AWG
-    const getVal = (key: string) =>
-      config.match(new RegExp(`^\\s*${key}\\s*=\\s*([^\\s]+)`, "mi"))?.[1] ||
-      "";
+    const getVal = (key: string) => {
+      const direct =
+        config.match(new RegExp(`^\\s*${key}\\s*=\\s*([^\\s]+)`, "mi"))?.[1] ||
+        "";
+      if (direct) return direct;
+
+      const commented =
+        config.match(
+          new RegExp(`^\\s*#\\s*${key}\\s*=\\s*([^\\s]+)`, "mi")
+        )?.[1] || "";
+
+      return commented;
+    };
 
     const awgParams = {
       Jc: getVal("Jc"),
@@ -417,10 +434,17 @@ export class AmneziaWg2Service {
       Jmax: getVal("Jmax"),
       S1: getVal("S1"),
       S2: getVal("S2"),
+      S3: getVal("S3"),
+      S4: getVal("S4"),
       H1: getVal("H1"),
       H2: getVal("H2"),
       H3: getVal("H3"),
       H4: getVal("H4"),
+      I1: getVal("I1"),
+      I2: getVal("I2"),
+      I3: getVal("I3"),
+      I4: getVal("I4"),
+      I5: getVal("I5"),
     } as const;
 
     // Текстовый конфиг
@@ -434,10 +458,17 @@ export class AmneziaWg2Service {
       .replace(/\$JMAX/g, awgParams.Jmax)
       .replace(/\$S1/g, awgParams.S1)
       .replace(/\$S2/g, awgParams.S2)
+      .replace(/\$S3/g, awgParams.S3)
+      .replace(/\$S4/g, awgParams.S4)
       .replace(/\$H1/g, awgParams.H1)
       .replace(/\$H2/g, awgParams.H2)
       .replace(/\$H3/g, awgParams.H3)
       .replace(/\$H4/g, awgParams.H4)
+      .replace(/\$I1/g, awgParams.I1)
+      .replace(/\$I2/g, awgParams.I2)
+      .replace(/\$I3/g, awgParams.I3)
+      .replace(/\$I4/g, awgParams.I4)
+      .replace(/\$I5/g, awgParams.I5)
       .replace(/\$SERVER_PUBLIC_KEY/g, serverPublicKey)
       .replace(/\$PRESHARED_KEY/g, psk)
       .replace(
@@ -468,6 +499,7 @@ export class AmneziaWg2Service {
     // AWG
     const awg = {
       ...awgParams,
+      protocol_version: "2",
       last_config: JSON.stringify(lastConfig, null, 2),
       port: String(listenPort || ""),
       transport_proto: AppContract.AmneziaWG2.DEFAULTS.TRANSPORT,

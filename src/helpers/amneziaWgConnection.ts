@@ -157,8 +157,26 @@ export class AmneziaWgConnection {
     );
 
     try {
-      const parsed = JSON.parse(raw || "[]");
-      return Array.isArray(parsed) ? (parsed as ClientTableEntry[]) : [];
+      const parsed = JSON.parse(raw || "[]") as unknown;
+
+      // Текущий формат
+      if (Array.isArray(parsed)) {
+        return parsed as ClientTableEntry[];
+      }
+
+      // Старый формат
+      if (parsed && typeof parsed === "object") {
+        const obj = parsed as Record<string, unknown>;
+        return Object.keys(obj).map((clientId) => ({
+          clientId,
+          userData:
+            obj?.[clientId] && typeof obj[clientId] === "object"
+              ? (obj[clientId] as ClientTableEntry["userData"])
+              : undefined,
+        }));
+      }
+
+      return [];
     } catch {
       return [];
     }

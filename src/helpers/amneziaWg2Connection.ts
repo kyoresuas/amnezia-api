@@ -109,7 +109,7 @@ export class AmneziaWg2Connection {
     if (!AppContract.AmneziaWG2.INTERFACE) return "";
 
     const { stdout } = await this.run(
-      `wg show ${AppContract.AmneziaWG2.INTERFACE} dump`
+      `awg show ${AppContract.AmneziaWG2.INTERFACE} dump`
     );
 
     return stdout;
@@ -122,7 +122,7 @@ export class AmneziaWg2Connection {
     if (!AppContract.AmneziaWG2.INTERFACE) return;
 
     await this.run(
-      `wg syncconf ${AppContract.AmneziaWG2.INTERFACE} <(wg-quick strip ${AppContract.AmneziaWG2.PATHS.WG_CONF})`
+      `awg syncconf ${AppContract.AmneziaWG2.INTERFACE} <(awg-quick strip ${AppContract.AmneziaWG2.PATHS.WG_CONF})`
     );
   }
 
@@ -157,8 +157,26 @@ export class AmneziaWg2Connection {
     );
 
     try {
-      const parsed = JSON.parse(raw || "[]");
-      return Array.isArray(parsed) ? (parsed as ClientTableEntry[]) : [];
+      const parsed = JSON.parse(raw || "[]") as unknown;
+
+      // Текущий формат
+      if (Array.isArray(parsed)) {
+        return parsed as ClientTableEntry[];
+      }
+
+      // Старый формат
+      if (parsed && typeof parsed === "object") {
+        const obj = parsed as Record<string, unknown>;
+        return Object.keys(obj).map((clientId) => ({
+          clientId,
+          userData:
+            obj?.[clientId] && typeof obj[clientId] === "object"
+              ? (obj[clientId] as ClientTableEntry["userData"])
+              : undefined,
+        }));
+      }
+
+      return [];
     } catch {
       return [];
     }

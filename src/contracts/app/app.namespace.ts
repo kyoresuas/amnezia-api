@@ -29,14 +29,14 @@ export const AppContract = {
     DOCKER_CONTAINER: "amnezia-awg2",
 
     // Имя интерфейса
-    INTERFACE: "wg0",
+    INTERFACE: "awg0",
 
     // Пути к файлам внутри контейнера
     PATHS: {
-      CLIENTS_TABLE: "/opt/amnezia/awg2/clientsTable",
-      WG_CONF: "/opt/amnezia/awg2/wg0.conf",
-      SERVER_PUBLIC_KEY: "/opt/amnezia/awg2/wireguard_server_public_key.key",
-      WG_PSK: "/opt/amnezia/awg2/wireguard_psk.key",
+      CLIENTS_TABLE: "/opt/amnezia/awg/clientsTable",
+      WG_CONF: "/opt/amnezia/awg/awg0.conf",
+      SERVER_PUBLIC_KEY: "/opt/amnezia/awg/wireguard_server_public_key.key",
+      WG_PSK: "/opt/amnezia/awg/wireguard_psk.key",
     } as const,
 
     // Значения по умолчанию
