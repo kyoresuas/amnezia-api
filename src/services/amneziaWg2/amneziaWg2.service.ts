@@ -418,14 +418,23 @@ export class AmneziaWg2Service {
     // Параметры AWG
     const getVal = (key: string) => {
       const direct =
-        config.match(new RegExp(`^\\s*${key}\\s*=\\s*([^\\s]+)`, "mi"))?.[1] ||
+        config.match(new RegExp(`^\\s*${key}\\s*=\\s*(.*?)\\s*$`, "mi"))?.[1] ||
         "";
       if (direct) return direct;
 
       const commented =
         config.match(
-          new RegExp(`^\\s*#\\s*${key}\\s*=\\s*([^\\s]+)`, "mi")
+          new RegExp(`^\\s*#\\s*${key}\\s*=\\s*(.*?)\\s*$`, "mi")
         )?.[1] || "";
+
+      // Дефолты. Нужны на случай, если серверный конфиг
+      // содержит пустые/неинициализированные значения
+      if (!commented) {
+        if (key === "S3") return "20";
+        if (key === "S4") return "23";
+        if (key === "I1")
+          return "<r 2><b 0x858000010001000000000669636c6f756403636f6d0000010001c00c000100010000105a00044d583737>";
+      }
 
       return commented;
     };
