@@ -11,16 +11,16 @@ import { AppContract } from "@/contracts/app";
 import { ClientTableEntry } from "@/types/amnezia";
 import { AmneziaBackupData } from "@/types/server";
 import { ClientErrorCode, Protocol } from "@/types/shared";
-import { AmneziaConnection } from "@/helpers/amneziaConnection";
+import { AmneziaWg2Connection } from "@/helpers/amneziaWg2Connection";
 
 /**
- * Сервис для работы с AmneziaWG
+ * Сервис для работы с AmneziaWG 2.0
  */
-export class AmneziaService {
-  static key = "amneziaService";
+export class AmneziaWg2Service {
+  static key = "amneziaWg2Service";
 
   // Шаблон клиентского конфига AmneziaWG
-  private static readonly AMNEZIAWG_CLIENT_TEMPLATE =
+  private static readonly AMNEZIAWG2_CLIENT_TEMPLATE =
     `[Interface]\n` +
     `Address = $CLIENT_ADDRESS/32\n` +
     `DNS = $PRIMARY_DNS, $SECONDARY_DNS\n` +
@@ -30,10 +30,17 @@ export class AmneziaService {
     `Jmax = $JMAX\n` +
     `S1 = $S1\n` +
     `S2 = $S2\n` +
+    `S3 = $S3\n` +
+    `S4 = $S4\n` +
     `H1 = $H1\n` +
     `H2 = $H2\n` +
     `H3 = $H3\n` +
     `H4 = $H4\n\n` +
+    `I1 = $I1\n` +
+    `I2 = $I2\n` +
+    `I3 = $I3\n` +
+    `I4 = $I4\n` +
+    `I5 = $I5\n\n` +
     `[Peer]\n` +
     `PublicKey = $SERVER_PUBLIC_KEY\n` +
     `PresharedKey = $PRESHARED_KEY\n` +
@@ -41,7 +48,7 @@ export class AmneziaService {
     `$ENDPOINT_LINE` +
     `PersistentKeepalive = $KEEPALIVE\n`;
 
-  constructor(private amnezia: AmneziaConnection) {}
+  constructor(private amneziaWg2: AmneziaWg2Connection) {}
 
   /**
    * Получить AllowedIPs для peer'а
@@ -109,10 +116,12 @@ export class AmneziaService {
   async exportBackup(): Promise<AmneziaBackupData> {
     const [wgConfig, clients, serverPublicKeyRaw, presharedKeyRaw] =
       await Promise.all([
-        this.amnezia.readWgConfig(),
-        this.amnezia.readClientsTable(),
-        this.amnezia.readFile(AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY),
-        this.amnezia.readFile(AppContract.Amnezia.PATHS.WG_PSK),
+        this.amneziaWg2.readWgConfig(),
+        this.amneziaWg2.readClientsTable(),
+        this.amneziaWg2.readFile(
+          AppContract.AmneziaWG2.PATHS.SERVER_PUBLIC_KEY
+        ),
+        this.amneziaWg2.readFile(AppContract.AmneziaWG2.PATHS.WG_PSK),
       ]);
 
     return {
@@ -127,24 +136,24 @@ export class AmneziaService {
    * Импортировать данные AmneziaWG из резервной копии
    */
   async importBackup(data: AmneziaBackupData): Promise<void> {
-    await this.amnezia.writeWgConfig(data.wgConfig);
-    await this.amnezia.writeClientsTable(data.clients);
-    await this.amnezia.writeFile(
-      AppContract.Amnezia.PATHS.WG_PSK,
+    await this.amneziaWg2.writeWgConfig(data.wgConfig);
+    await this.amneziaWg2.writeClientsTable(data.clients);
+    await this.amneziaWg2.writeFile(
+      AppContract.AmneziaWG2.PATHS.WG_PSK,
       `${data.presharedKey.trim()}\n`
     );
-    await this.amnezia.writeFile(
-      AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY,
+    await this.amneziaWg2.writeFile(
+      AppContract.AmneziaWG2.PATHS.SERVER_PUBLIC_KEY,
       `${data.serverPublicKey.trim()}\n`
     );
-    await this.amnezia.syncWgConfig();
+    await this.amneziaWg2.syncWgConfig();
   }
 
   /**
    * Получить список клиентов из wg dump
    */
   async getClients(): Promise<ClientRecord[]> {
-    const dump = await this.amnezia.getWgDump();
+    const dump = await this.amneziaWg2.getWgDump();
 
     if (!dump) return [];
 
@@ -172,7 +181,7 @@ export class AmneziaService {
     > = {};
 
     // Считываем clientsTable
-    const clientsTable = await this.amnezia.readClientsTable();
+    const clientsTable = await this.amneziaWg2.readClientsTable();
 
     // Проходим по всем клиентам в clientsTable
     for (const client of clientsTable) {
@@ -263,7 +272,7 @@ export class AmneziaService {
           online,
           expiresAt,
           status,
-          protocol: Protocol.AMNEZIAWG,
+          protocol: Protocol.AMNEZIAWG2,
         };
       }
     );
@@ -311,16 +320,16 @@ export class AmneziaService {
 
     // Сгенерировать приватный ключ
     const clientPrivateKey = (
-      await this.amnezia.run(`wg genkey`)
+      await this.amneziaWg2.run(`awg genkey`)
     ).stdout.trim();
 
     // Сгенерировать публичный ключ
     const clientId = (
-      await this.amnezia.run(`echo '${clientPrivateKey}' | wg pubkey`)
+      await this.amneziaWg2.run(`echo '${clientPrivateKey}' | awg pubkey`)
     ).stdout.trim();
 
     // Считать конфиг
-    const config = await this.amnezia.readWgConfig();
+    const config = await this.amneziaWg2.readWgConfig();
 
     // Выбор свободного IP
     const assignedIp = (() => {
@@ -352,8 +361,8 @@ export class AmneziaService {
 
     // Считать PSK
     const psk = (
-      await this.amnezia.run(
-        `cat ${AppContract.Amnezia.PATHS.WG_PSK} 2>/dev/null || true`
+      await this.amneziaWg2.run(
+        `cat ${AppContract.AmneziaWG2.PATHS.WG_PSK} 2>/dev/null || true`
       )
     ).stdout.trim();
 
@@ -365,11 +374,11 @@ export class AmneziaService {
     const newConfig =
       (config.endsWith("\n") ? config : config + "\n") + peerSection;
 
-    await this.amnezia.writeWgConfig(newConfig);
-    await this.amnezia.syncWgConfig();
+    await this.amneziaWg2.writeWgConfig(newConfig);
+    await this.amneziaWg2.syncWgConfig();
 
     // Добавляем клиента в clientsTable
-    const table = await this.amnezia.readClientsTable();
+    const table = await this.amneziaWg2.readClientsTable();
 
     // Добавляем дату создания
     const creationDate = new Date().toString();
@@ -386,12 +395,12 @@ export class AmneziaService {
     }
 
     table.push({ clientId, userData });
-    await this.amnezia.writeClientsTable(table);
+    await this.amneziaWg2.writeClientsTable(table);
 
     // Получаем публичный ключ сервера
     const serverPublicKey = (
-      await this.amnezia.run(
-        `cat ${AppContract.Amnezia.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`
+      await this.amneziaWg2.run(
+        `cat ${AppContract.AmneziaWG2.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`
       )
     ).stdout.trim();
 
@@ -403,13 +412,32 @@ export class AmneziaService {
     const endpointHost = appConfig.SERVER_PUBLIC_HOST || "";
 
     // Получаем MTU
-    const mtu = AppContract.Amnezia.DEFAULTS.MTU;
-    const keepAlive = AppContract.Amnezia.DEFAULTS.KEEPALIVE;
+    const mtu = AppContract.AmneziaWG2.DEFAULTS.MTU;
+    const keepAlive = AppContract.AmneziaWG2.DEFAULTS.KEEPALIVE;
 
     // Параметры AWG
-    const getVal = (key: string) =>
-      config.match(new RegExp(`^\\s*${key}\\s*=\\s*([^\\s]+)`, "mi"))?.[1] ||
-      "";
+    const getVal = (key: string) => {
+      const direct =
+        config.match(new RegExp(`^\\s*${key}\\s*=\\s*(.*?)\\s*$`, "mi"))?.[1] ||
+        "";
+      if (direct) return direct;
+
+      const commented =
+        config.match(
+          new RegExp(`^\\s*#\\s*${key}\\s*=\\s*(.*?)\\s*$`, "mi")
+        )?.[1] || "";
+
+      // Дефолты. Нужны на случай, если серверный конфиг
+      // содержит пустые/неинициализированные значения
+      if (!commented) {
+        if (key === "S3") return "20";
+        if (key === "S4") return "23";
+        if (key === "I1")
+          return "<r 2><b 0x858000010001000000000669636c6f756403636f6d0000010001c00c000100010000105a00044d583737>";
+      }
+
+      return commented;
+    };
 
     const awgParams = {
       Jc: getVal("Jc"),
@@ -417,14 +445,21 @@ export class AmneziaService {
       Jmax: getVal("Jmax"),
       S1: getVal("S1"),
       S2: getVal("S2"),
+      S3: getVal("S3"),
+      S4: getVal("S4"),
       H1: getVal("H1"),
       H2: getVal("H2"),
       H3: getVal("H3"),
       H4: getVal("H4"),
+      I1: getVal("I1"),
+      I2: getVal("I2"),
+      I3: getVal("I3"),
+      I4: getVal("I4"),
+      I5: getVal("I5"),
     } as const;
 
     // Текстовый конфиг
-    const configText = AmneziaService.AMNEZIAWG_CLIENT_TEMPLATE.replace(
+    const configText = AmneziaWg2Service.AMNEZIAWG2_CLIENT_TEMPLATE.replace(
       /\$CLIENT_ADDRESS/g,
       assignedIp
     )
@@ -434,10 +469,17 @@ export class AmneziaService {
       .replace(/\$JMAX/g, awgParams.Jmax)
       .replace(/\$S1/g, awgParams.S1)
       .replace(/\$S2/g, awgParams.S2)
+      .replace(/\$S3/g, awgParams.S3)
+      .replace(/\$S4/g, awgParams.S4)
       .replace(/\$H1/g, awgParams.H1)
       .replace(/\$H2/g, awgParams.H2)
       .replace(/\$H3/g, awgParams.H3)
       .replace(/\$H4/g, awgParams.H4)
+      .replace(/\$I1/g, awgParams.I1)
+      .replace(/\$I2/g, awgParams.I2)
+      .replace(/\$I3/g, awgParams.I3)
+      .replace(/\$I4/g, awgParams.I4)
+      .replace(/\$I5/g, awgParams.I5)
       .replace(/\$SERVER_PUBLIC_KEY/g, serverPublicKey)
       .replace(/\$PRESHARED_KEY/g, psk)
       .replace(
@@ -468,16 +510,17 @@ export class AmneziaService {
     // AWG
     const awg = {
       ...awgParams,
+      protocol_version: "2",
       last_config: JSON.stringify(lastConfig, null, 2),
       port: String(listenPort || ""),
-      transport_proto: AppContract.Amnezia.DEFAULTS.TRANSPORT,
+      transport_proto: AppContract.AmneziaWG2.DEFAULTS.TRANSPORT,
     };
 
     // Поддерживаемые плейсхолдеры в appConfig.SERVER_NAME:
     // {protocol} — протокол подключения (например, "AmneziaWG")
     // {username} — имя клиента (clientName)
     const baseServerName = appConfig.SERVER_NAME || "";
-    const protocolName = "AmneziaWG";
+    const protocolName = "AmneziaWG2";
     let description = baseServerName;
 
     if (/\{protocol\}|\{username\}/i.test(baseServerName)) {
@@ -493,20 +536,20 @@ export class AmneziaService {
       containers: [
         {
           awg,
-          container: AppContract.Amnezia.DOCKER_CONTAINER,
+          container: AppContract.AmneziaWG2.DOCKER_CONTAINER,
         },
       ],
-      defaultContainer: AppContract.Amnezia.DOCKER_CONTAINER,
+      defaultContainer: AppContract.AmneziaWG2.DOCKER_CONTAINER,
       description,
       dns1:
         (
-          await this.amnezia.run(
+          await this.amneziaWg2.run(
             `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`
           )
         ).stdout.trim() || "1.1.1.1",
       dns2:
         (
-          await this.amnezia.run(
+          await this.amneziaWg2.run(
             `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`
           )
         ).stdout.trim() || "1.0.0.1",
@@ -535,7 +578,11 @@ export class AmneziaService {
 
     const clientConfig = `vpn://${base64String}`;
 
-    return { id: clientId, config: clientConfig, protocol: Protocol.AMNEZIAWG };
+    return {
+      id: clientId,
+      config: clientConfig,
+      protocol: Protocol.AMNEZIAWG2,
+    };
   }
 
   /**
@@ -545,7 +592,7 @@ export class AmneziaService {
     clientId: string,
     options: { expiresAt?: number | null; status?: PeerStatus }
   ): Promise<boolean> {
-    const table = await this.amnezia.readClientsTable();
+    const table = await this.amneziaWg2.readClientsTable();
 
     const entry = table.find(
       (x) => ((x && (x.clientId || x.publicKey)) || "") === clientId
@@ -565,9 +612,9 @@ export class AmneziaService {
     }
 
     entry.userData = userData;
-    await this.amnezia.writeClientsTable(table);
+    await this.amneziaWg2.writeClientsTable(table);
 
-    const config = await this.amnezia.readWgConfig();
+    const config = await this.amneziaWg2.readWgConfig();
     if (config) {
       const currentAllowedIps = this.getPeerAllowedIps(config, clientId);
 
@@ -581,7 +628,7 @@ export class AmneziaService {
           ? firstIp.split("/")[0]
           : firstIp;
         entry.userData = userData;
-        await this.amnezia.writeClientsTable(table);
+        await this.amneziaWg2.writeClientsTable(table);
       }
 
       const isExpired =
@@ -613,8 +660,8 @@ export class AmneziaService {
         );
 
         if (newConfig !== config) {
-          await this.amnezia.writeWgConfig(newConfig);
-          await this.amnezia.syncWgConfig();
+          await this.amneziaWg2.writeWgConfig(newConfig);
+          await this.amneziaWg2.syncWgConfig();
         }
       }
     }
@@ -626,7 +673,7 @@ export class AmneziaService {
    * Удалить клиента
    */
   async deleteClient(clientId: string): Promise<boolean> {
-    let table = await this.amnezia.readClientsTable();
+    let table = await this.amneziaWg2.readClientsTable();
 
     // Сохраняем длину таблицы
     const before = table.length;
@@ -640,10 +687,10 @@ export class AmneziaService {
     if (!(table.length < before)) return false;
 
     // Записываем обратно
-    await this.amnezia.writeClientsTable(table);
+    await this.amneziaWg2.writeClientsTable(table);
 
     // Считываем конфиг
-    const config = await this.amnezia.readWgConfig();
+    const config = await this.amneziaWg2.readWgConfig();
 
     if (config) {
       // Разбиваем конфиг на секции
@@ -665,10 +712,10 @@ export class AmneziaService {
 
       // Собираем секции обратно в конфиг
       const newConfig = sectionsToKeep.join("[Peer]");
-      await this.amnezia.writeWgConfig(newConfig);
+      await this.amneziaWg2.writeWgConfig(newConfig);
 
       // Применяем
-      await this.amnezia.syncWgConfig();
+      await this.amneziaWg2.syncWgConfig();
     }
 
     return true;
@@ -680,7 +727,7 @@ export class AmneziaService {
   async cleanupExpiredClients(): Promise<number> {
     const now = Math.floor(Date.now() / 1000);
 
-    const table = await this.amnezia.readClientsTable();
+    const table = await this.amneziaWg2.readClientsTable();
 
     const expired = table.filter((entry) => {
       const expiresAt = entry?.userData?.expiresAt;
@@ -689,7 +736,7 @@ export class AmneziaService {
 
     if (!expired.length) return 0;
 
-    const config = await this.amnezia.readWgConfig();
+    const config = await this.amneziaWg2.readWgConfig();
     let updatedConfig = config;
     let updatedTable = false;
 
@@ -723,12 +770,12 @@ export class AmneziaService {
     }
 
     if (updatedTable) {
-      await this.amnezia.writeClientsTable(table);
+      await this.amneziaWg2.writeClientsTable(table);
     }
 
     if (config && updatedConfig !== config) {
-      await this.amnezia.writeWgConfig(updatedConfig);
-      await this.amnezia.syncWgConfig();
+      await this.amneziaWg2.writeWgConfig(updatedConfig);
+      await this.amneziaWg2.syncWgConfig();
     }
 
     return expired.length;

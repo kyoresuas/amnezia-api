@@ -1,5 +1,6 @@
 import i18next from "i18next";
 import { APIError } from "@/utils/APIError";
+import { appLogger } from "@/config/winstonLogger";
 import { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 
 /**
@@ -50,6 +51,10 @@ export const fastifyErrorHandler = (
   }
 
   // Неизвестная ошибка
+  appLogger.error(
+    `Необработанная ошибка в ${req.method} ${req.url}: ${error.message}`
+  );
+
   reply.code(500).send({
     message: i18n.t("swagger.errors.UNKNOWN"),
   });

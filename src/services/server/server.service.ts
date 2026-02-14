@@ -12,8 +12,9 @@ import { XrayService } from "@/services/xray";
 import { AppContract } from "@/contracts/app";
 import { isNotNull } from "@/utils/primitive";
 import { appLogger } from "@/config/winstonLogger";
-import { AmneziaService } from "@/services/amnezia";
 import { ClientsService } from "@/services/clients";
+import { AmneziaWgService } from "@/services/amneziaWg";
+import { AmneziaWg2Service } from "@/services/amneziaWg2";
 import { isDockerContainerRunning } from "@/helpers/docker";
 import { ServerConnection } from "@/helpers/serverConnection";
 import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
@@ -30,7 +31,8 @@ export class ServerService {
   constructor(
     private readonly xrayService: XrayService,
     private readonly clientsService: ClientsService,
-    private readonly amneziaService: AmneziaService
+    private readonly amneziaWgService: AmneziaWgService,
+    private readonly amneziaWg2Service: AmneziaWg2Service
   ) {
     this.server = new ServerConnection();
   }
@@ -71,7 +73,11 @@ export class ServerService {
     };
 
     if (protocols.includes(Protocol.AMNEZIAWG)) {
-      payload.amnezia = await this.amneziaService.exportBackup();
+      payload.amnezia = await this.amneziaWgService.exportBackup();
+    }
+
+    if (protocols.includes(Protocol.AMNEZIAWG2)) {
+      payload.amneziaWg2 = await this.amneziaWg2Service.exportBackup();
     }
 
     if (protocols.includes(Protocol.XRAY)) {
@@ -168,7 +174,8 @@ export class ServerService {
     // Docker (опционально)
     const docker = await (async () => {
       const containers = [
-        AppContract.Amnezia.DOCKER_CONTAINER,
+        AppContract.AmneziaWG.DOCKER_CONTAINER,
+        AppContract.AmneziaWG2.DOCKER_CONTAINER,
         AppContract.Xray.DOCKER_CONTAINER,
       ].filter(Boolean);
 
@@ -332,7 +339,15 @@ export class ServerService {
         throw new APIError(ClientErrorCode.BAD_REQUEST);
       }
 
-      await this.amneziaService.importBackup(payload.amnezia);
+      await this.amneziaWgService.importBackup(payload.amnezia);
+    }
+
+    if (protocols.includes(Protocol.AMNEZIAWG2)) {
+      if (!payload.amneziaWg2) {
+        throw new APIError(ClientErrorCode.BAD_REQUEST);
+      }
+
+      await this.amneziaWg2Service.importBackup(payload.amneziaWg2);
     }
 
     if (protocols.includes(Protocol.XRAY)) {

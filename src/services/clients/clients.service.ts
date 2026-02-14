@@ -10,7 +10,8 @@ import { APIError } from "@/utils/APIError";
 import { XrayService } from "@/services/xray";
 import appConfig from "@/constants/appConfig";
 import { appLogger } from "@/config/winstonLogger";
-import { AmneziaService } from "@/services/amnezia";
+import { AmneziaWgService } from "@/services/amneziaWg";
+import { AmneziaWg2Service } from "@/services/amneziaWg2";
 import { ClientErrorCode, ServerErrorCode } from "@/types/shared";
 import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
 
@@ -21,8 +22,9 @@ export class ClientsService {
   static key = "clientsService";
 
   constructor(
-    private amneziaService: AmneziaService,
-    private xrayService: XrayService
+    private xrayService: XrayService,
+    private amneziaWgService: AmneziaWgService,
+    private amneziaWg2Service: AmneziaWg2Service
   ) {}
 
   /**
@@ -60,10 +62,12 @@ export class ClientsService {
    */
   private getServiceByProtocol(
     protocol: Protocol
-  ): AmneziaService | XrayService {
+  ): AmneziaWgService | AmneziaWg2Service | XrayService {
     switch (protocol) {
       case Protocol.AMNEZIAWG:
-        return this.amneziaService;
+        return this.amneziaWgService;
+      case Protocol.AMNEZIAWG2:
+        return this.amneziaWg2Service;
       case Protocol.XRAY:
         return this.xrayService;
       default:
@@ -171,10 +175,20 @@ export class ClientsService {
 
     if (enabled.includes(Protocol.AMNEZIAWG)) {
       try {
-        removed += await this.amneziaService.cleanupExpiredClients();
+        removed += await this.amneziaWgService.cleanupExpiredClients();
       } catch {
         appLogger.warn(
           `AmneziaWG недоступен, пропускаем очистку просроченных клиентов`
+        );
+      }
+    }
+
+    if (enabled.includes(Protocol.AMNEZIAWG2)) {
+      try {
+        removed += await this.amneziaWg2Service.cleanupExpiredClients();
+      } catch {
+        appLogger.warn(
+          `AmneziaWG 2.0 недоступен, пропускаем очистку просроченных клиентов`
         );
       }
     }

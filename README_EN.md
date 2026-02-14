@@ -11,6 +11,7 @@ This API is designed for remote management of Amnezia and to simplify programmat
 ## Supported protocols
 
 - **AmneziaWG**
+- **AmneziaWG 2.0**
 - **Xray**
 
 ## Quick start
