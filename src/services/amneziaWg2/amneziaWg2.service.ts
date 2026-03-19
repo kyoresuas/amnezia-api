@@ -416,16 +416,30 @@ export class AmneziaWg2Service {
     const keepAlive = AppContract.AmneziaWG2.DEFAULTS.KEEPALIVE;
 
     // Параметры AWG
+    const isValidI2I5 = (val: string) =>
+      val &&
+      !val.includes("#") &&
+      !val.includes("[Peer]") &&
+      !/^\s*$/.test(val);
+
     const getVal = (key: string) => {
       const direct =
         config.match(new RegExp(`^\\s*${key}\\s*=\\s*(.*?)\\s*$`, "mi"))?.[1] ||
         "";
-      if (direct) return direct;
+      if (direct) {
+        if (["I2", "I3", "I4", "I5"].includes(key) && !isValidI2I5(direct))
+          return "";
+        return direct;
+      }
 
       const commented =
         config.match(
           new RegExp(`^\\s*#\\s*${key}\\s*=\\s*(.*?)\\s*$`, "mi")
-        )?.[1] || "";
+        )?.[1]
+          ?.trim() || "";
+
+      if (["I2", "I3", "I4", "I5"].includes(key) && !isValidI2I5(commented))
+        return "";
 
       // Дефолты. Нужны на случай, если серверный конфиг
       // содержит пустые/неинициализированные значения
