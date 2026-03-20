@@ -423,11 +423,26 @@ export class AmneziaWgService {
       H4: getVal("H4"),
     } as const;
 
+    const primaryDns =
+      (
+        await this.amneziaWg.run(
+          `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`
+        )
+      ).stdout.trim() || "1.1.1.1";
+    const secondaryDns =
+      (
+        await this.amneziaWg.run(
+          `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`
+        )
+      ).stdout.trim() || "1.0.0.1";
+
     // Текстовый конфиг
     const configText = AmneziaWgService.AMNEZIAWG_CLIENT_TEMPLATE.replace(
       /\$CLIENT_ADDRESS/g,
       assignedIp
     )
+      .replace(/\$PRIMARY_DNS/g, primaryDns)
+      .replace(/\$SECONDARY_DNS/g, secondaryDns)
       .replace(/\$CLIENT_PRIVATE_KEY/g, clientPrivateKey)
       .replace(/\$JC/g, awgParams.Jc)
       .replace(/\$JMIN/g, awgParams.Jmin)
@@ -498,18 +513,8 @@ export class AmneziaWgService {
       ],
       defaultContainer: AppContract.AmneziaWG.DOCKER_CONTAINER,
       description,
-      dns1:
-        (
-          await this.amneziaWg.run(
-            `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`
-          )
-        ).stdout.trim() || "1.1.1.1",
-      dns2:
-        (
-          await this.amneziaWg.run(
-            `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`
-          )
-        ).stdout.trim() || "1.0.0.1",
+      dns1: primaryDns,
+      dns2: secondaryDns,
       hostName: endpointHost,
     };
 
