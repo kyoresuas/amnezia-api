@@ -16,13 +16,13 @@ export const createClientSchema = {
       },
       protocol: {
         ...protocolSchema,
-        default: Protocol.AMNEZIAWG,
+        default: Protocol.AMNEZIAWG2,
       },
       expiresAt: {
         type: "integer",
         nullable: true,
         description: "Дата окончания доступа",
-        example: 1735689600,
+        example: null,
       },
     },
   },
