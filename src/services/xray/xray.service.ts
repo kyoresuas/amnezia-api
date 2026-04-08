@@ -97,15 +97,15 @@ export class XrayService {
       this.xray.writeFile(AppContract.Xray.PATHS.UUID, `${data.uuid.trim()}\n`),
       this.xray.writeFile(
         AppContract.Xray.PATHS.PUBLIC_KEY,
-        `${data.publicKey.trim()}\n`
+        `${data.publicKey.trim()}\n`,
       ),
       this.xray.writeFile(
         AppContract.Xray.PATHS.PRIVATE_KEY,
-        `${data.privateKey.trim()}\n`
+        `${data.privateKey.trim()}\n`,
       ),
       this.xray.writeFile(
         AppContract.Xray.PATHS.SHORT_ID,
-        `${data.shortId.trim()}\n`
+        `${data.shortId.trim()}\n`,
       ),
     ]);
 
@@ -216,7 +216,7 @@ export class XrayService {
           status,
           protocol: Protocol.XRAY,
         };
-      })
+      }),
     );
 
     const disabledEntries: (ClientPeer & { username: string })[] =
@@ -262,7 +262,7 @@ export class XrayService {
    */
   async createClient(
     clientName: string,
-    options?: { expiresAt?: number | null }
+    options?: { expiresAt?: number | null },
   ): Promise<CreateClientResult> {
     const clientId = randomUUID();
 
@@ -335,14 +335,16 @@ export class XrayService {
         : Number(AppContract.Xray.DEFAULTS.PORT);
 
     // Название сайта
-    const siteName = AppContract.Xray.DEFAULTS.SITE;
+    const siteName =
+      serverConfig?.inbounds?.[0]?.streamSettings?.realitySettings
+        ?.serverNames?.[0] ?? AppContract.Xray.DEFAULTS.SITE;
 
     // Публичный ключ
     const publicKey = (
       await this.xray.readFile(AppContract.Xray.PATHS.PUBLIC_KEY)
     ).trim();
 
-    // ID
+    // Short ID
     const shortId = (
       await this.xray.readFile(AppContract.Xray.PATHS.SHORT_ID)
     ).trim();
@@ -355,7 +357,7 @@ export class XrayService {
     // Шаблон клиентского конфига
     const template = XrayService.XRAY_CLIENT_TEMPLATE.replace(
       /\$SERVER_IP_ADDRESS/g,
-      serverHost || AppContract.Xray.DEFAULTS.SITE
+      serverHost || AppContract.Xray.DEFAULTS.SITE,
     )
       .replace(/\$XRAY_SERVER_PORT/g, String(xrayPort))
       .replace(/\$XRAY_CLIENT_ID/g, clientId)
@@ -378,14 +380,14 @@ export class XrayService {
     const dns1 =
       (
         await this.xray.run(
-          `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`
+          `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`,
         )
       ).stdout.trim() || "1.1.1.1";
 
     const dns2 =
       (
         await this.xray.run(
-          `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`
+          `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`,
         )
       ).stdout.trim() || "1.0.0.1";
 
@@ -396,8 +398,6 @@ export class XrayService {
         last_config: xrayConfigString,
         port: xrayPort,
         site: siteName,
-        public_key: publicKey,
-        short_id: shortId,
         transport_proto: "tcp",
       },
     };
@@ -462,7 +462,7 @@ export class XrayService {
    */
   async updateClient(
     clientId: string,
-    options: { expiresAt?: number | null; status?: PeerStatus }
+    options: { expiresAt?: number | null; status?: PeerStatus },
   ): Promise<boolean> {
     const rawConfig = await this.xray.readServerConfig();
 
@@ -504,10 +504,10 @@ export class XrayService {
         : null);
 
     const activeIndex = clients.findIndex(
-      (client: { id?: string }) => client?.id === clientId
+      (client: { id?: string }) => client?.id === clientId,
     );
     const disabledIndex = clientsDisabled.findIndex(
-      (client: { id?: string }) => client?.id === clientId
+      (client: { id?: string }) => client?.id === clientId,
     );
 
     if (activeIndex < 0 && disabledIndex < 0) return false;
@@ -594,7 +594,7 @@ export class XrayService {
 
     // Удаляем клиента
     settings.clients = settings.clients.filter(
-      (client: { id?: string }) => client?.id !== clientId
+      (client: { id?: string }) => client?.id !== clientId,
     );
 
     // Если клиенты не изменились, то ошибка
