@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./src/*"]
     },
@@ -20,6 +19,7 @@
     "noErrorTruncation": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "noStrictGenericChecks": false,
