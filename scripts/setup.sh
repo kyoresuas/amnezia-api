@@ -712,8 +712,9 @@ main() {
 
   if [ "${IS_UPDATE:-0}" -eq 0 ]; then
     setup_xray_stats
-    setup_nginx
   fi
+
+  setup_nginx
 
   show_completion
 }
