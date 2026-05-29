@@ -1,15 +1,18 @@
 import {
   GetClientsType,
+  GetClientQrType,
   CreateClientType,
   DeleteClientType,
-  UpdateClientType,
   getClientsSchema,
-  deleteClientSchema,
+  UpdateClientType,
+  getClientQrSchema,
   createClientSchema,
+  deleteClientSchema,
   updateClientSchema,
 } from "@/schemas";
 import {
   getClientsHandler,
+  getClientQrHandler,
   createClientHandler,
   deleteClientHandler,
   updateClientHandler,
@@ -48,6 +51,17 @@ export const updateClientController: AppFastifyRoute<UpdateClientType> = {
   schema: updateClientSchema,
   preHandler: authPreHandler(),
   handler: updateClientHandler,
+};
+
+/**
+ * Сгенерировать QR-коды для конфига клиента
+ */
+export const getClientQrController: AppFastifyRoute<GetClientQrType> = {
+  url: "/clients/qr",
+  method: "POST",
+  schema: getClientQrSchema,
+  preHandler: authPreHandler(),
+  handler: getClientQrHandler,
 };
 
 /**

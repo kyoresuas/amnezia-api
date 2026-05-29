@@ -12,6 +12,7 @@
     "rootDir": "./src",
     "incremental": true,
     "declaration": false,
+    "skipLibCheck": true,
     "module": "commonjs",
     "lib": ["es5", "es6"],
     "removeComments": true,

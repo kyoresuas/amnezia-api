@@ -69,4 +69,16 @@ export const AppContract = {
       API_PORT: "10085",
     } as const,
   },
+
+  // Константы для генерации QR
+  QR: {
+    // Магическое число для чанков QR
+    MAGIC_CODE: 1984,
+
+    // Максимальный размер полезных данных в одном чанке (байты)
+    CHUNK_SIZE: 850,
+
+    // Уровень коррекции ошибок QR
+    ERROR_CORRECTION_LEVEL: "L",
+  } as const,
 } as const;

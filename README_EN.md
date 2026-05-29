@@ -16,6 +16,8 @@ Great for building your own infrastructure on top of Amnezia: an admin panel, a 
 
 - **Three protocols, one API** — AmneziaWG, AmneziaWG 2.0 and Xray via a single set of routes.
 - **Client management** — create, list, update and delete peers; ready-to-import config string.
+- **Pause users** — temporarily revoke access (`status: disabled`) without deleting the key, then resume it (`status: active`). The user doesn't have to regenerate their config.
+- **Config QR codes** — generate a QR series (`POST /clients/qr`) in the same format as the Amnezia client: large configs are split into several codes that the Amnezia app scans and imports.
 - **Access expiration** — `expiresAt` field per client and a background cron task that auto-disables expired clients.
 - **Per-peer stats** — traffic (sent/received), last handshake, online status, endpoint and allowed IPs.
 - **Server metrics** — CPU, RAM, disk, network, load average, uptime and Docker container stats for the VPN.
@@ -86,6 +88,7 @@ x-api-key: <FASTIFY_API_KEY>
 | `GET`    | `/clients`       | List clients with traffic and statuses |
 | `POST`   | `/clients`       | Create a client and get its config     |
 | `PATCH`  | `/clients`       | Update a client (status, expiration)   |
+| `POST`   | `/clients/qr`    | Config QR codes (Amnezia client format)|
 | `DELETE` | `/clients`       | Delete a client                        |
 | `GET`    | `/server`        | Server info and protocols              |
 | `GET`    | `/server/load`   | Load metrics (CPU/RAM/disk/network)    |
@@ -130,7 +133,9 @@ curl "http://<your_server>/clients?skip=0&limit=100" \
   -H "x-api-key: <FASTIFY_API_KEY>"
 ```
 
-### Update a client (disable / set expiration)
+### Pause / resume / set expiration
+
+`status: disabled` revokes access without deleting the key; `status: active` restores it — the user keeps the same config.
 
 ```bash
 curl -X PATCH http://<your_server>/clients \
@@ -142,6 +147,26 @@ curl -X PATCH http://<your_server>/clients \
     "status": "disabled",
     "expiresAt": 1735689600
   }'
+```
+
+### Generate config QR codes
+
+Pass the `config` returned when the client was created. The response is an array of QR images (PNG data URIs); long configs produce several — scan them one by one in the Amnezia app.
+
+```bash
+curl -X POST http://<your_server>/clients/qr \
+  -H "x-api-key: <FASTIFY_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "config": "vpn://3fa85f64-5717-4562-b3fc-2c963f66afa6..."
+  }'
+```
+
+```json
+{
+  "total": 1,
+  "items": ["data:image/png;base64,iVBORw0KGgoAAAANSUhEUg..."]
+}
 ```
 
 ### Delete a client
@@ -198,6 +223,10 @@ There you can review all schemas, parameters, request examples and responses.
 ```
 
 </details>
+
+## Ecosystem
+
+- [amnezia-panel](https://github.com/slowy19/amnezia-panel) — a web management panel built on top of Amnezia API.
 
 ## Contact
 
