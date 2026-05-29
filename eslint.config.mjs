@@ -5,12 +5,12 @@ export default tseslint.config(
   eslint.configs.recommended,
   tseslint.configs.recommended,
   {
-    ignores: ["node_modules", "build", "dist", "scripts"],
+    ignores: ["node_modules", "build", "dist", "scripts", "amnezia-client"],
   },
   {
     rules: {
       "@typescript-eslint/no-namespace": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
     },
-  }
+  },
 );
