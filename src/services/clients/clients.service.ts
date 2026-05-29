@@ -1,8 +1,8 @@
 import {
   ClientRecord,
   CreateClientResult,
-  DeleteClientPayload,
   CreateClientPayload,
+  DeleteClientPayload,
   UpdateClientPayload,
 } from "@/types/clients";
 import { Protocol } from "@/types/shared";
@@ -24,7 +24,7 @@ export class ClientsService {
   constructor(
     private xrayService: XrayService,
     private amneziaWgService: AmneziaWgService,
-    private amneziaWg2Service: AmneziaWg2Service
+    private amneziaWg2Service: AmneziaWg2Service,
   ) {}
 
   /**
@@ -61,7 +61,7 @@ export class ClientsService {
    * Получить сервис по протоколу
    */
   private getServiceByProtocol(
-    protocol: Protocol
+    protocol: Protocol,
   ): AmneziaWgService | AmneziaWg2Service | XrayService {
     switch (protocol) {
       case Protocol.AMNEZIAWG:
@@ -178,7 +178,7 @@ export class ClientsService {
         removed += await this.amneziaWgService.cleanupExpiredClients();
       } catch {
         appLogger.warn(
-          `AmneziaWG недоступен, пропускаем очистку просроченных клиентов`
+          `AmneziaWG недоступен, пропускаем очистку просроченных клиентов`,
         );
       }
     }
@@ -188,7 +188,7 @@ export class ClientsService {
         removed += await this.amneziaWg2Service.cleanupExpiredClients();
       } catch {
         appLogger.warn(
-          `AmneziaWG 2.0 недоступен, пропускаем очистку просроченных клиентов`
+          `AmneziaWG 2.0 недоступен, пропускаем очистку просроченных клиентов`,
         );
       }
     }
@@ -198,7 +198,7 @@ export class ClientsService {
         removed += await this.xrayService.cleanupExpiredClients();
       } catch {
         appLogger.warn(
-          `Xray недоступен, пропускаем очистку просроченных клиентов`
+          `Xray недоступен, пропускаем очистку просроченных клиентов`,
         );
       }
     }

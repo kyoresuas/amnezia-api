@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { IAppConfig, Protocol } from "@/types/shared";
+import { Protocol, IAppConfig } from "@/types/shared";
 
 const {
   ENV,
@@ -36,7 +36,7 @@ const appConfig: IAppConfig = {
     ? PROTOCOLS_ENABLED.split(",")
         .map((protocol) => protocol.trim().toLowerCase())
         .filter((protocol): protocol is Protocol =>
-          Object.values(Protocol).includes(protocol as Protocol)
+          Object.values(Protocol).includes(protocol as Protocol),
         )
     : undefined,
 };

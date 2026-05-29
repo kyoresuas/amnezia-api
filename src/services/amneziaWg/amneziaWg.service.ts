@@ -10,7 +10,7 @@ import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { ClientTableEntry } from "@/types/amnezia";
 import { AmneziaBackupData } from "@/types/server";
-import { ClientErrorCode, Protocol } from "@/types/shared";
+import { Protocol, ClientErrorCode } from "@/types/shared";
 import { AmneziaWgConnection } from "@/helpers/amneziaWgConnection";
 
 /**
@@ -71,7 +71,7 @@ export class AmneziaWgService {
   private updatePeerAllowedIps(
     config: string,
     clientId: string,
-    allowedIps: string
+    allowedIps: string,
   ): string {
     const sections = config.split("[Peer]");
     let changed = false;
@@ -90,13 +90,13 @@ export class AmneziaWgService {
       if (/AllowedIPs\s*=/i.test(section)) {
         return section.replace(
           /AllowedIPs\s*=\s*([^\n]+)/i,
-          `AllowedIPs = ${allowedIps}`
+          `AllowedIPs = ${allowedIps}`,
         );
       }
 
       return section.replace(
         /PublicKey\s*=\s*([^\n]+)/i,
-        (line) => `${line}\nAllowedIPs = ${allowedIps}`
+        (line) => `${line}\nAllowedIPs = ${allowedIps}`,
       );
     });
 
@@ -131,11 +131,11 @@ export class AmneziaWgService {
     await this.amneziaWg.writeClientsTable(data.clients);
     await this.amneziaWg.writeFile(
       AppContract.AmneziaWG.PATHS.WG_PSK,
-      `${data.presharedKey.trim()}\n`
+      `${data.presharedKey.trim()}\n`,
     );
     await this.amneziaWg.writeFile(
       AppContract.AmneziaWG.PATHS.SERVER_PUBLIC_KEY,
-      `${data.serverPublicKey.trim()}\n`
+      `${data.serverPublicKey.trim()}\n`,
     );
     await this.amneziaWg.syncWgConfig();
   }
@@ -265,7 +265,7 @@ export class AmneziaWgService {
           status,
           protocol: Protocol.AMNEZIAWG,
         };
-      }
+      },
     );
 
     // Группируем по username
@@ -292,7 +292,7 @@ export class AmneziaWgService {
    */
   async createClient(
     clientName: string,
-    options?: { expiresAt?: number | null }
+    options?: { expiresAt?: number | null },
   ): Promise<CreateClientResult> {
     // Проверка лимита максимального числа peer'ов
     const maxPeers = appConfig.SERVER_MAX_PEERS;
@@ -301,7 +301,7 @@ export class AmneziaWgService {
 
       const currentPeers = clients.reduce(
         (acc, client) => acc + client.peers.length,
-        0
+        0,
       );
 
       if (currentPeers >= maxPeers) {
@@ -333,7 +333,7 @@ export class AmneziaWgService {
 
       // Получаем используемые IP
       const matches = config.matchAll(
-        /AllowedIPs\s*=\s*[0-9]+\.[0-9]+\.[0-9]+\.([0-9]+)\s*\/32/gi
+        /AllowedIPs\s*=\s*[0-9]+\.[0-9]+\.[0-9]+\.([0-9]+)\s*\/32/gi,
       );
 
       for (const match of matches) {
@@ -353,7 +353,7 @@ export class AmneziaWgService {
     // Считать PSK
     const psk = (
       await this.amneziaWg.run(
-        `cat ${AppContract.AmneziaWG.PATHS.WG_PSK} 2>/dev/null || true`
+        `cat ${AppContract.AmneziaWG.PATHS.WG_PSK} 2>/dev/null || true`,
       )
     ).stdout.trim();
 
@@ -391,7 +391,7 @@ export class AmneziaWgService {
     // Получаем публичный ключ сервера
     const serverPublicKey = (
       await this.amneziaWg.run(
-        `cat ${AppContract.AmneziaWG.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`
+        `cat ${AppContract.AmneziaWG.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`,
       )
     ).stdout.trim();
 
@@ -426,20 +426,20 @@ export class AmneziaWgService {
     const primaryDns =
       (
         await this.amneziaWg.run(
-          `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`
+          `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`,
         )
       ).stdout.trim() || "1.1.1.1";
     const secondaryDns =
       (
         await this.amneziaWg.run(
-          `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`
+          `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`,
         )
       ).stdout.trim() || "1.0.0.1";
 
     // Текстовый конфиг
     const configText = AmneziaWgService.AMNEZIAWG_CLIENT_TEMPLATE.replace(
       /\$CLIENT_ADDRESS/g,
-      assignedIp
+      assignedIp,
     )
       .replace(/\$PRIMARY_DNS/g, primaryDns)
       .replace(/\$SECONDARY_DNS/g, secondaryDns)
@@ -459,7 +459,7 @@ export class AmneziaWgService {
         /\$ENDPOINT_LINE/g,
         endpointHost && listenPort
           ? `Endpoint = ${endpointHost}:${listenPort}\n`
-          : ""
+          : "",
       )
       .replace(/\$KEEPALIVE/g, String(keepAlive));
 
@@ -548,12 +548,12 @@ export class AmneziaWgService {
    */
   async updateClient(
     clientId: string,
-    options: { expiresAt?: number | null; status?: PeerStatus }
+    options: { expiresAt?: number | null; status?: PeerStatus },
   ): Promise<boolean> {
     const table = await this.amneziaWg.readClientsTable();
 
     const entry = table.find(
-      (x) => ((x && (x.clientId || x.publicKey)) || "") === clientId
+      (x) => ((x && (x.clientId || x.publicKey)) || "") === clientId,
     );
 
     if (!entry) return false;
@@ -603,18 +603,18 @@ export class AmneziaWgService {
         targetStatus === PeerStatus.Disabled
           ? "0.0.0.0/32"
           : targetStatus === PeerStatus.Active
-          ? userData.allowedIp
-            ? userData.allowedIp.includes("/")
-              ? userData.allowedIp
-              : `${userData.allowedIp}/32`
-            : null
-          : null;
+            ? userData.allowedIp
+              ? userData.allowedIp.includes("/")
+                ? userData.allowedIp
+                : `${userData.allowedIp}/32`
+              : null
+            : null;
 
       if (targetAllowedIps && currentAllowedIps !== targetAllowedIps) {
         const newConfig = this.updatePeerAllowedIps(
           config,
           clientId,
-          targetAllowedIps
+          targetAllowedIps,
         );
 
         if (newConfig !== config) {
@@ -638,7 +638,7 @@ export class AmneziaWgService {
 
     // Удаляем клиента
     table = table.filter(
-      (x) => ((x && (x.clientId || x.publicKey)) || "") !== clientId
+      (x) => ((x && (x.clientId || x.publicKey)) || "") !== clientId,
     );
 
     // Проверяем, что клиент был удален
@@ -722,7 +722,7 @@ export class AmneziaWgService {
         updatedConfig = this.updatePeerAllowedIps(
           updatedConfig,
           clientId,
-          "0.0.0.0/32"
+          "0.0.0.0/32",
         );
       }
     }

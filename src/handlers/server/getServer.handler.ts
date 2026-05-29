@@ -5,7 +5,7 @@ import { AppFastifyHandler } from "@/types/shared";
 
 export const getServerHandler: AppFastifyHandler<GetServerType> = async (
   req,
-  reply
+  reply,
 ) => {
   const serverService = di.container.resolve<ServerService>(ServerService.key);
   const status = await serverService.getServerStatus();

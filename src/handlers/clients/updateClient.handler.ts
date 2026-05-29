@@ -6,12 +6,12 @@ import { ClientsService } from "@/services/clients";
 
 export const updateClientHandler: AppFastifyHandler<UpdateClientType> = async (
   req,
-  reply
+  reply,
 ) => {
   const { clientId, expiresAt, protocol, status } = req.body;
 
   const clientsService = di.container.resolve<ClientsService>(
-    ClientsService.key
+    ClientsService.key,
   );
 
   await clientsService.updateClient({

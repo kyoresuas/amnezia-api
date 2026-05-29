@@ -17,7 +17,7 @@ export class ServerConnection {
       exec(cmd, { timeout, maxBuffer }, (error, stdout, stderr) => {
         if (error) {
           return reject(
-            new Error(`Ошибка выполнения команды ${cmd}: ${error}`)
+            new Error(`Ошибка выполнения команды ${cmd}: ${error}`),
           );
         }
 

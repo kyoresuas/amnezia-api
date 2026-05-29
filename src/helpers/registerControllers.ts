@@ -10,7 +10,7 @@ import {
 export const registerControllers = (
   fastify: AppFastifyInstance,
   controllers: { [x: string]: AppFastifyRoute<any> },
-  commonPreHandlers: AppFastifyPreHandler<any>[] = []
+  commonPreHandlers: AppFastifyPreHandler<any>[] = [],
 ): void => {
   for (const key in controllers) {
     if (!controllers[key].preHandler) {

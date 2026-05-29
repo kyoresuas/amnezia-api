@@ -6,7 +6,7 @@ import { AppFastifyHandler } from "@/types/shared";
 
 export const rebootServerHandler: AppFastifyHandler<RebootServerType> = async (
   req,
-  reply
+  reply,
 ) => {
   const serverService = di.container.resolve<ServerService>(ServerService.key);
 

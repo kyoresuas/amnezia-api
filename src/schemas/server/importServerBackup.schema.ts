@@ -1,6 +1,6 @@
 import { getServerSchema } from "./getServer.schema";
 import { SwaggerContract } from "@/contracts/swagger";
-import { AppFastifySchema, Protocol, CustomFormat } from "@/types/shared";
+import { Protocol, CustomFormat, AppFastifySchema } from "@/types/shared";
 
 const amneziaPayloadSchema = {
   type: "object",

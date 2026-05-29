@@ -1,5 +1,5 @@
 import { SwaggerContract } from "@/contracts/swagger";
-import { AppJSONSchema, Protocol } from "@/types/shared";
+import { Protocol, AppJSONSchema } from "@/types/shared";
 
 export const clientIdSchema = {
   type: "string",

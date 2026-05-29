@@ -1,6 +1,6 @@
 import { PeerStatus } from "@/types/clients";
 import { SwaggerContract } from "@/contracts/swagger";
-import { AppFastifySchema, Protocol } from "@/types/shared";
+import { Protocol, AppFastifySchema } from "@/types/shared";
 import { clientIdSchema, protocolSchema } from "./common.schema";
 
 export const updateClientSchema = {

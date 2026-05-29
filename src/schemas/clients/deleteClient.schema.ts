@@ -1,5 +1,5 @@
 import { SwaggerContract } from "@/contracts/swagger";
-import { AppFastifySchema, Protocol } from "@/types/shared";
+import { Protocol, AppFastifySchema } from "@/types/shared";
 import { clientIdSchema, protocolSchema } from "./common.schema";
 
 export const deleteClientSchema = {

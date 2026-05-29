@@ -12,7 +12,7 @@ export class APIError extends Error {
 
   constructor(
     statusCode: StatusCodes,
-    { msg, args }: { msg?: I18n; args?: I18nArgs } = {}
+    { msg, args }: { msg?: I18n; args?: I18nArgs } = {},
   ) {
     super(msg || SwaggerContract.CodeDescriptions[statusCode]);
 

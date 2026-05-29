@@ -2,7 +2,7 @@ import chalk from "chalk";
 import cron from "node-cron";
 import { APIError } from "@/utils/APIError";
 import { appLogger } from "@/config/winstonLogger";
-import { ITask, ITaskInQueue, TaskContext } from "@/types/cron";
+import { ITask, TaskContext, ITaskInQueue } from "@/types/cron";
 
 /**
  * Сервис для управления отложенными задачами

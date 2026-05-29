@@ -1,5 +1,5 @@
 import { AwilixManager } from "awilix-manager";
-import { AwilixContainer, InjectionMode, createContainer } from "awilix";
+import { InjectionMode, AwilixContainer, createContainer } from "awilix";
 
 class DI {
   static instance: DI;

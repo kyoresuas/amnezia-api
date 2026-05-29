@@ -1,5 +1,4 @@
 import "@/config/setupMultilingualism";
-
 import { setupFastify } from "@/config/fastify";
 import { appLogger } from "@/config/winstonLogger";
 import { setupDIContainer } from "@/config/DIContainer";

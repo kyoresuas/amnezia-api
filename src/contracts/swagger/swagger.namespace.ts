@@ -3,8 +3,8 @@ import {
   StatusCodes,
   SuccessCode,
   AppJSONSchema,
-  RedirectionCode,
   ClientErrorCode,
+  RedirectionCode,
   ServerErrorCode,
   InformationalCode,
 } from "@/types/shared";
@@ -237,7 +237,7 @@ export namespace SwaggerContract {
    * Получить схему для ответа с ошибкой
    */
   export const ClientErrorResponseFactory = (
-    clientErrorCode: ClientErrorCode
+    clientErrorCode: ClientErrorCode,
   ) => {
     return {
       type: ActionResponseSchema.type,

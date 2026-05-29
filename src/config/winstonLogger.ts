@@ -3,14 +3,14 @@ import i18next from "i18next";
 import { locale } from "moment";
 import { I18n } from "@/types/shared";
 import { IRequestLog } from "@/types/shared";
-import { format, transports, createLogger, Logger } from "winston";
+import { format, Logger, transports, createLogger } from "winston";
 
 locale("ru");
 
 export const commonFormat = format.combine(
   format.timestamp({ format: "DD.MM.YYYY HH:mm:ss" }),
   format.colorize({ all: true }),
-  format.printf((info) => `[${info.timestamp}] ${info.message}`)
+  format.printf((info) => `[${info.timestamp}] ${info.message}`),
 );
 
 export class AppLogger {
@@ -53,8 +53,8 @@ export class AppLogger {
     this.logger.error(
       chalk.bgRedBright(
         "FATAL:",
-        translate ? i18next.t(message as I18n) : message
-      )
+        translate ? i18next.t(message as I18n) : message,
+      ),
     );
   }
 
@@ -146,7 +146,7 @@ export class AppLogger {
   taskInfo(name: string, progress: number): void {
     const coloredName: string = chalk.bold(chalk.greenBright(name));
     const coloredProgress: string = chalk.bold(
-      chalk.greenBright(progress.toFixed(2) + "%")
+      chalk.greenBright(progress.toFixed(2) + "%"),
     );
 
     this.logger.info(`Прогресс задачи ${coloredName}: ${coloredProgress}`);

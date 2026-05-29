@@ -1,7 +1,7 @@
 import Ajv from "ajv";
 import ajvErrors from "ajv-errors";
 import { validate as isValidUUID } from "uuid";
-import { AppFastifyInstance, CustomFormat } from "@/types/shared";
+import { CustomFormat, AppFastifyInstance } from "@/types/shared";
 
 /**
  * Валидатор данных для Fastify

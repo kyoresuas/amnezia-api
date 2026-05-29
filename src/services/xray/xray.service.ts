@@ -6,8 +6,8 @@ import { AppContract } from "@/contracts/app";
 import { XrayBackupData } from "@/types/server";
 import { XrayConnection } from "@/helpers/xrayConnection";
 import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
-import { CreateClientResult, TrafficStats } from "@/types/clients";
-import { ClientRecord, ClientPeer, PeerStatus } from "@/types/clients";
+import { TrafficStats, CreateClientResult } from "@/types/clients";
+import { ClientPeer, PeerStatus, ClientRecord } from "@/types/clients";
 import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
 
 /**

@@ -2,16 +2,16 @@ import i18next from "i18next";
 import { di } from "@/config/DIContainer";
 import { CreateClientType } from "@/schemas";
 import { ClientsService } from "@/services/clients";
-import { AppFastifyHandler, Protocol } from "@/types/shared";
+import { Protocol, AppFastifyHandler } from "@/types/shared";
 
 export const createClientHandler: AppFastifyHandler<CreateClientType> = async (
   req,
-  reply
+  reply,
 ) => {
   const { clientName, expiresAt, protocol = Protocol.AMNEZIAWG } = req.body;
 
   const clientsService = di.container.resolve<ClientsService>(
-    ClientsService.key
+    ClientsService.key,
   );
 
   const {

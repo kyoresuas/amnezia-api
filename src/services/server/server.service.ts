@@ -1,8 +1,8 @@
 import os from "os";
 import {
   ServerLoadPayload,
-  ServerStatusPayload,
   ServerBackupPayload,
+  ServerStatusPayload,
   ServerLoadDockerContainerStats,
 } from "@/types/server";
 import fs from "fs/promises";
@@ -18,7 +18,7 @@ import { AmneziaWg2Service } from "@/services/amneziaWg2";
 import { isDockerContainerRunning } from "@/helpers/docker";
 import { ServerConnection } from "@/helpers/serverConnection";
 import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
-import { ClientErrorCode, Protocol, ServerErrorCode } from "@/types/shared";
+import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
 
 /**
  * Сервис управления сервером
@@ -32,7 +32,7 @@ export class ServerService {
     private readonly xrayService: XrayService,
     private readonly clientsService: ClientsService,
     private readonly amneziaWgService: AmneziaWgService,
-    private readonly amneziaWg2Service: AmneziaWg2Service
+    private readonly amneziaWg2Service: AmneziaWg2Service,
   ) {
     this.server = new ServerConnection();
   }
@@ -185,7 +185,7 @@ export class ServerService {
         containers.map(async (name) => ({
           name,
           running: await isDockerContainerRunning(name),
-        }))
+        })),
       );
 
       const targets = running.filter((x) => x.running).map((x) => x.name);
@@ -229,7 +229,7 @@ export class ServerService {
 
       // Парсим использование памяти
       const parseMemUsage = (
-        mem: string
+        mem: string,
       ): { usage: number | null; limit: number | null } => {
         const [left, right] = (mem || "").split("/").map((x) => x.trim());
         return {
@@ -240,7 +240,7 @@ export class ServerService {
 
       // Парсим сетевой ввод-вывод
       const parseNetIo = (
-        net: string
+        net: string,
       ): { rx: number | null; tx: number | null } => {
         const [left, right] = (net || "").split("/").map((x) => x.trim());
         return {
@@ -251,7 +251,7 @@ export class ServerService {
 
       // Читаем статистику контейнера
       const readStats = async (
-        name: string
+        name: string,
       ): Promise<ServerLoadDockerContainerStats | null> => {
         // табулированные: Name, CPUPerc, MemUsage, NetIO, PIDs
         const cmd = `docker stats --no-stream --format "{{.Name}}\\t{{.CPUPerc}}\\t{{.MemUsage}}\\t{{.NetIO}}\\t{{.PIDs}}" ${name}`;
@@ -301,7 +301,7 @@ export class ServerService {
             } catch {
               return null;
             }
-          })
+          }),
         )
       ).filter(isNotNull);
 

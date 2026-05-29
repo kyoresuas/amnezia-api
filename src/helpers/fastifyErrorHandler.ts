@@ -9,7 +9,7 @@ import { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 export const fastifyErrorHandler = (
   error: FastifyError,
   req: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ): void => {
   const i18n = req.i18n || i18next;
 
@@ -52,7 +52,7 @@ export const fastifyErrorHandler = (
 
   // Неизвестная ошибка
   appLogger.error(
-    `Необработанная ошибка в ${req.method} ${req.url}: ${error.message}`
+    `Необработанная ошибка в ${req.method} ${req.url}: ${error.message}`,
   );
 
   reply.code(500).send({

@@ -41,7 +41,7 @@ export class XrayConnection {
             return reject(
               new APIError(ServerErrorCode.SERVICE_UNAVAILABLE, {
                 msg: "swagger.errors.DOCKER_NOT_AVAILABLE",
-              })
+              }),
             );
           }
 
@@ -49,12 +49,12 @@ export class XrayConnection {
             return reject(
               new APIError(ServerErrorCode.SERVICE_UNAVAILABLE, {
                 msg: "swagger.errors.CONTAINER_NOT_AVAILABLE",
-              })
+              }),
             );
           }
 
           return reject(
-            new Error(`Ошибка выполнения команды ${cmd}: ${error}`)
+            new Error(`Ошибка выполнения команды ${cmd}: ${error}`),
           );
         }
 
@@ -74,7 +74,7 @@ export class XrayConnection {
       exec(cmd, { timeout, maxBuffer }, (error, stdout, stderr) => {
         if (error) {
           return reject(
-            new Error(`Ошибка выполнения команды ${cmd}: ${error}`)
+            new Error(`Ошибка выполнения команды ${cmd}: ${error}`),
           );
         }
 

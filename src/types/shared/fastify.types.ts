@@ -5,13 +5,13 @@ import {
   RawServerDefault,
   FastifyBaseLogger,
   RouteHandlerMethod,
-  RouteGenericInterface,
   preHandlerHookHandler,
+  RouteGenericInterface,
 } from "fastify";
 import { StatusCodes } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
-import { IncomingMessage, ServerResponse } from "http";
-import { FromSchemaDefaultOptions, JSONSchema } from "json-schema-to-ts";
+import { ServerResponse, IncomingMessage } from "http";
+import { JSONSchema, FromSchemaDefaultOptions } from "json-schema-to-ts";
 import { JsonSchemaToTsProvider } from "@fastify/type-provider-json-schema-to-ts";
 
 export type AppFastifyInstance = FastifyInstance<

@@ -6,10 +6,10 @@ import { ClientsService } from "@/services/clients";
 
 export const getClientsHandler: AppFastifyHandler<GetClientsType> = async (
   req,
-  reply
+  reply,
 ) => {
   const clientsService = di.container.resolve<ClientsService>(
-    ClientsService.key
+    ClientsService.key,
   );
 
   const clients = await clientsService.getClients();

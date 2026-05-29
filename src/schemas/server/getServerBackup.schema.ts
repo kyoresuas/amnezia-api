@@ -1,5 +1,5 @@
 import { SwaggerContract } from "@/contracts/swagger";
-import { AppFastifySchema, Protocol, CustomFormat } from "@/types/shared";
+import { Protocol, CustomFormat, AppFastifySchema } from "@/types/shared";
 
 const clientsTableItemSchema = {
   type: "object",

@@ -14,8 +14,8 @@ export type Primitive<T> = {
     | (Date | undefined)
     ? never
     : T[k] extends object | (object | null) | (object | undefined)
-    ? Primitive<T[k]>
-    : T[k];
+      ? Primitive<T[k]>
+      : T[k];
 };
 
 export enum CustomFormat {
