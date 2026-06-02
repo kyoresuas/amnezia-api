@@ -196,8 +196,8 @@ generate_api_key() {
 
 # Получает внешний IP адрес
 get_public_ip() {
-  curl -4 -fsS http://checkip.amazonaws.com 2>/dev/null || \
-  curl -4 -fsS ifconfig.me 2>/dev/null || \
+  curl -4 -fsS --connect-timeout 3 --max-time 5 http://checkip.amazonaws.com 2>/dev/null || \
+  curl -4 -fsS --connect-timeout 3 --max-time 5 ifconfig.me 2>/dev/null || \
   hostname -I 2>/dev/null | awk '{print $1}'
 }
 
@@ -607,14 +607,22 @@ setup_xray_stats() {
 # Настраивает Nginx
 setup_nginx() {
   step "Установка и настройка Nginx"
-  
+
+  local site_avail="/etc/nginx/sites-available/$APP_NAME"
+  local site_enabled="/etc/nginx/sites-enabled/$APP_NAME"
+
+  # На обновлении не трогаем nginx, если он уже настроен и активен
+  if [ "${IS_UPDATE:-0}" -eq 1 ] && [ -f "$site_avail" ] && [ -e "$site_enabled" ] \
+    && command -v nginx >/dev/null 2>&1 \
+    && $SUDO systemctl is-active --quiet nginx 2>/dev/null; then
+    info "Nginx уже настроен"
+    return 0
+  fi
+
   if ! command -v nginx >/dev/null 2>&1; then
     run_quiet "apt update" $SUDO apt-get update -y
     run_quiet "apt install nginx" $SUDO apt-get install -y -qq nginx
   fi
-  
-  local site_avail="/etc/nginx/sites-available/$APP_NAME"
-  local site_enabled="/etc/nginx/sites-enabled/$APP_NAME"
   
   $SUDO tee "$site_avail" >/dev/null <<'NGINX'
 server {
@@ -671,7 +679,8 @@ show_completion() {
   section "Информация для доступа"
   
   local public_ip api_key
-  public_ip=$(get_public_ip)
+  public_ip="$(get_env_var SERVER_PUBLIC_HOST)"
+  [ -z "$public_ip" ] && public_ip=$(get_public_ip)
   api_key="$(get_env_var FASTIFY_API_KEY)"
   
   if [ -n "$public_ip" ]; then
