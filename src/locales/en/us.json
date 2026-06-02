@@ -11,6 +11,7 @@
     "errors": {
       "VALIDATION": "Validation error",
       "UNKNOWN": "Unexpected error",
+      "RATE_LIMIT": "Too many requests, please try again later",
       "INVALID_MEDIA_TYPE": "Invalid content format",
       "FILE_TOO_LARGE": "Upload file too large",
       "DOCKER_NOT_AVAILABLE": "Docker is not available on the server",

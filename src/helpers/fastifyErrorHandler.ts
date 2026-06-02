@@ -41,6 +41,15 @@ export const fastifyErrorHandler = (
     return;
   }
 
+  // Превышен лимит частоты запросов
+  if (error.statusCode === 429 || error.code === "FST_ERR_RATE_LIMIT") {
+    reply.code(429).send({
+      message: i18n.t("swagger.errors.RATE_LIMIT"),
+    });
+
+    return;
+  }
+
   // Ошибка, выброшенная нашим сервисом
   if (error instanceof APIError) {
     reply.code(error.statusCode).send({
