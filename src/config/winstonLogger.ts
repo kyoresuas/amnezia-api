@@ -1,11 +1,8 @@
 import chalk from "chalk";
 import i18next from "i18next";
-import { locale } from "moment";
 import { I18n } from "@/types/shared";
 import { IRequestLog } from "@/types/shared";
 import { format, Logger, transports, createLogger } from "winston";
-
-locale("ru");
 
 export const commonFormat = format.combine(
   format.timestamp({ format: "DD.MM.YYYY HH:mm:ss" }),

@@ -1,14 +1,17 @@
 import Fastify from "fastify";
 import i18next from "i18next";
 import fastifyCors from "@fastify/cors";
+import fastifyHelmet from "@fastify/helmet";
 import fastifyCookie from "@fastify/cookie";
 import { APIError } from "@/utils/APIError";
 import metricsPlugin from "fastify-metrics";
 import { appLogger } from "../winstonLogger";
 import appConfig from "@/constants/appConfig";
+import { AppContract } from "@/contracts/app";
 import fastifySwagger from "@fastify/swagger";
 import fastifyFormbody from "@fastify/formbody";
 import { plugin } from "i18next-http-middleware";
+import fastifyRateLimit from "@fastify/rate-limit";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import { AppFastifyInstance } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
@@ -46,6 +49,15 @@ export const setupFastify = async (): Promise<void> => {
 
   // Установить собственный обработчик ошибок
   fastify.setErrorHandler(fastifyErrorHandler);
+
+  // Заголовки безопасности
+  await fastify.register(fastifyHelmet, { contentSecurityPolicy: false });
+
+  // Ограничение частоты запросов
+  await fastify.register(fastifyRateLimit, {
+    max: AppContract.RATE_LIMIT.MAX,
+    timeWindow: AppContract.RATE_LIMIT.WINDOW_MS,
+  });
 
   // Установить валидатор ошибок
   setupAjvValidator(fastify);

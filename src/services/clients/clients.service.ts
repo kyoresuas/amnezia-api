@@ -5,6 +5,7 @@ import {
   DeleteClientPayload,
   UpdateClientPayload,
 } from "@/types/clients";
+import { Mutex } from "@/utils/mutex";
 import { Protocol } from "@/types/shared";
 import { APIError } from "@/utils/APIError";
 import { XrayService } from "@/services/xray";
@@ -26,6 +27,25 @@ export class ClientsService {
     private amneziaWgService: AmneziaWgService,
     private amneziaWg2Service: AmneziaWg2Service,
   ) {}
+
+  // Мьютексы на запись по протоколам. сериализуют read-modify-write
+  // над wg0.conf / clientsTable / server.json, чтобы параллельные
+  // create/update/delete/disable не затирали друг друга и не выбирали один IP
+  private readonly writeLocks = new Map<Protocol, Mutex>();
+
+  /**
+   * Получить мьютекс записи для протокола
+   */
+  private lockFor(protocol: Protocol): Mutex {
+    let mutex = this.writeLocks.get(protocol);
+
+    if (!mutex) {
+      mutex = new Mutex();
+      this.writeLocks.set(protocol, mutex);
+    }
+
+    return mutex;
+  }
 
   /**
    * Получить список включенных протоколов
@@ -121,7 +141,9 @@ export class ClientsService {
 
     const service = this.getServiceByProtocol(protocol);
 
-    return service.createClient(clientName, { expiresAt });
+    return this.lockFor(protocol).runExclusive(() =>
+      service.createClient(clientName, { expiresAt }),
+    );
   }
 
   /**
@@ -135,7 +157,9 @@ export class ClientsService {
 
     const service = this.getServiceByProtocol(protocol);
 
-    const ok = await service.deleteClient(clientId);
+    const ok = await this.lockFor(protocol).runExclusive(() =>
+      service.deleteClient(clientId),
+    );
 
     if (!ok) {
       throw new APIError(ClientErrorCode.NOT_FOUND);
@@ -155,10 +179,12 @@ export class ClientsService {
 
     const service = this.getServiceByProtocol(protocol);
 
-    const ok = await service.updateClient(clientId, {
-      expiresAt,
-      status,
-    });
+    const ok = await this.lockFor(protocol).runExclusive(() =>
+      service.updateClient(clientId, {
+        expiresAt,
+        status,
+      }),
+    );
 
     if (!ok) {
       throw new APIError(ClientErrorCode.NOT_FOUND);
@@ -166,43 +192,50 @@ export class ClientsService {
   }
 
   /**
-   * Удалить всех клиентов с истекшим сроком действия
+   * Заблокировать (отключить) всех клиентов с истекшим сроком действия
+   * Записи не удаляются, клиентам блокируется доступ
    */
-  async cleanupExpiredClients(): Promise<number> {
+  async disableExpiredClients(): Promise<number> {
     const enabled = await this.getEnabledProtocols();
 
-    let removed = 0;
+    let disabled = 0;
 
     if (enabled.includes(Protocol.AMNEZIAWG)) {
       try {
-        removed += await this.amneziaWgService.cleanupExpiredClients();
+        disabled += await this.lockFor(Protocol.AMNEZIAWG).runExclusive(() =>
+          this.amneziaWgService.disableExpiredClients(),
+        );
       } catch {
         appLogger.warn(
-          `AmneziaWG недоступен, пропускаем очистку просроченных клиентов`,
+          `AmneziaWG недоступен, пропускаем блокировку просроченных клиентов`,
         );
       }
     }
 
     if (enabled.includes(Protocol.AMNEZIAWG2)) {
       try {
-        removed += await this.amneziaWg2Service.cleanupExpiredClients();
+        disabled += await this.lockFor(Protocol.AMNEZIAWG2).runExclusive(() =>
+          this.amneziaWg2Service.disableExpiredClients(),
+        );
       } catch {
         appLogger.warn(
-          `AmneziaWG 2.0 недоступен, пропускаем очистку просроченных клиентов`,
+          `AmneziaWG 2.0 недоступен, пропускаем блокировку просроченных клиентов`,
         );
       }
     }
 
     if (enabled.includes(Protocol.XRAY)) {
       try {
-        removed += await this.xrayService.cleanupExpiredClients();
+        disabled += await this.lockFor(Protocol.XRAY).runExclusive(() =>
+          this.xrayService.disableExpiredClients(),
+        );
       } catch {
         appLogger.warn(
-          `Xray недоступен, пропускаем очистку просроченных клиентов`,
+          `Xray недоступен, пропускаем блокировку просроченных клиентов`,
         );
       }
     }
 
-    return removed;
+    return disabled;
   }
 }

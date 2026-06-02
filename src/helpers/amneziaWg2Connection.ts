@@ -9,6 +9,7 @@ import { AppContract } from "@/contracts/app";
 import { CommandResult } from "@/types/shared";
 import { ServerErrorCode } from "@/types/shared";
 import { ClientTableEntry } from "@/types/amnezia";
+import { buildWriteFileCommand } from "@/utils/shellWrite";
 
 /**
  * Создать соединение с AmneziaWG 2.0
@@ -77,9 +78,7 @@ export class AmneziaWg2Connection {
    * Записать файл
    */
   async writeFile(path: string, content: string): Promise<void> {
-    const heredoc = `cat > ${path} <<"EOF"\n${content}\nEOF`;
-
-    await this.run(heredoc);
+    await this.run(buildWriteFileCommand(path, content));
   }
 
   /**
@@ -97,9 +96,9 @@ export class AmneziaWg2Connection {
    * Записать wg0.conf
    */
   async writeWgConfig(content: string): Promise<void> {
-    const heredoc = `cat > ${AppContract.AmneziaWG2.PATHS.WG_CONF} <<"EOF"\n${content}\nEOF`;
-
-    await this.run(heredoc);
+    await this.run(
+      buildWriteFileCommand(AppContract.AmneziaWG2.PATHS.WG_CONF, content),
+    );
   }
 
   /**
@@ -132,17 +131,6 @@ export class AmneziaWg2Connection {
   async getServerPublicKey(): Promise<string> {
     const { stdout } = await this.run(
       `cat ${AppContract.AmneziaWG2.PATHS.SERVER_PUBLIC_KEY} 2>/dev/null || true`,
-    );
-
-    return stdout;
-  }
-
-  /**
-   * Получить порт
-   */
-  async getListenPort(): Promise<string> {
-    const { stdout } = await this.run(
-      `cat ${AppContract.AmneziaWG2.PATHS.WG_CONF} 2>/dev/null || true`,
     );
 
     return stdout;

@@ -377,19 +377,8 @@ export class XrayService {
     const xrayConfigString = JSON.stringify(xrayConfigData, null, 2);
 
     // DNS сервера
-    const dns1 =
-      (
-        await this.xray.run(
-          `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`,
-        )
-      ).stdout.trim() || "1.1.1.1";
-
-    const dns2 =
-      (
-        await this.xray.run(
-          `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`,
-        )
-      ).stdout.trim() || "1.0.0.1";
+    const dns1 = AppContract.DNS.PRIMARY;
+    const dns2 = AppContract.DNS.SECONDARY;
 
     // Конфиг контейнера Xray
     const xrayContainerConfig = {
@@ -618,9 +607,10 @@ export class XrayService {
   }
 
   /**
-   * Удалить всех клиентов с истекшим сроком действия
+   * Заблокировать (отключить) всех клиентов с истекшим сроком действия
+   * Записи не удаляются: клиенты переносятся в clientsDisabled
    */
-  async cleanupExpiredClients(): Promise<number> {
+  async disableExpiredClients(): Promise<number> {
     const now = Math.floor(Date.now() / 1000);
 
     const rawConfig = await this.xray.readServerConfig();

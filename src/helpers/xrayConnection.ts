@@ -8,6 +8,7 @@ import { RunOptions } from "@/types/amnezia";
 import { AppContract } from "@/contracts/app";
 import { CommandResult } from "@/types/shared";
 import { ServerErrorCode } from "@/types/shared";
+import { buildWriteFileCommand } from "@/utils/shellWrite";
 
 /**
  * Создать соединение с Xray
@@ -96,9 +97,7 @@ export class XrayConnection {
    * Записать файл
    */
   async writeFile(path: string, content: string): Promise<void> {
-    const heredoc = `cat > ${path} <<"EOF"\n${content}\nEOF`;
-
-    await this.run(heredoc);
+    await this.run(buildWriteFileCommand(path, content));
   }
 
   /**

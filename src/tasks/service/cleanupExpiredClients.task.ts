@@ -8,11 +8,11 @@ export const cleanupExpiredClientsTask: TaskHandler = async () => {
     ClientsService.key,
   );
 
-  const removed = await clientsService.cleanupExpiredClients();
+  const disabled = await clientsService.disableExpiredClients();
 
-  if (removed === 0) {
+  if (disabled === 0) {
     appLogger.info("Просроченных клиентов не найдено");
   } else {
-    appLogger.info(`Было заблокировано ${removed} просроченных клиентов`);
+    appLogger.info(`Было заблокировано ${disabled} просроченных клиентов`);
   }
 };

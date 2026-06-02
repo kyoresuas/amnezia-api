@@ -423,18 +423,8 @@ export class AmneziaWgService {
       H4: getVal("H4"),
     } as const;
 
-    const primaryDns =
-      (
-        await this.amneziaWg.run(
-          `getent hosts 1.1.1.1 >/dev/null 2>&1 && echo 1.1.1.1 || echo 1.1.1.1`,
-        )
-      ).stdout.trim() || "1.1.1.1";
-    const secondaryDns =
-      (
-        await this.amneziaWg.run(
-          `getent hosts 1.0.0.1 >/dev/null 2>&1 && echo 1.0.0.1 || echo 1.0.0.1`,
-        )
-      ).stdout.trim() || "1.0.0.1";
+    const primaryDns = AppContract.DNS.PRIMARY;
+    const secondaryDns = AppContract.DNS.SECONDARY;
 
     // Текстовый конфиг
     const configText = AmneziaWgService.AMNEZIAWG_CLIENT_TEMPLATE.replace(
@@ -680,9 +670,10 @@ export class AmneziaWgService {
   }
 
   /**
-   * Удалить всех клиентов с истекшим сроком действия
+   * Заблокировать (отключить) всех клиентов с истекшим сроком действия
+   * Записи не удаляются: peer'ам выставляется AllowedIPs = 0.0.0.0/32
    */
-  async cleanupExpiredClients(): Promise<number> {
+  async disableExpiredClients(): Promise<number> {
     const now = Math.floor(Date.now() / 1000);
 
     const table = await this.amneziaWg.readClientsTable();
