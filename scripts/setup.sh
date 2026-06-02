@@ -7,6 +7,7 @@ readonly ENV_EXAMPLE="$ROOT_DIR/.env.example"
 readonly ENV_FILE="$ROOT_DIR/.env"
 IS_UPDATE=0
 INSTALL_MODE="" # pm2 | docker
+STEP_NUM=0 # текущий номер шага
 
 LOG_FILE="$(mktemp /tmp/amnezia-api-setup.XXXXXX.log 2>/dev/null || echo "/tmp/amnezia-api-setup.$$.$RANDOM.log")"
 cleanup() {
@@ -53,8 +54,16 @@ section() {
   printf "\n%b\n" "${C_BOLD}${C_CYAN}$*${C_RESET}"
 }
 
+# Печатает заголовок шага с автоматической нумерацией
 step() {
-  printf "%b\n" "${C_BOLD}${C_BLUE}$*${C_RESET}"
+  STEP_NUM=$((STEP_NUM + 1))
+  printf "\n%b\n" "${C_BOLD}${C_BLUE}[${STEP_NUM}]${C_RESET} ${C_BOLD}$*${C_RESET}"
+}
+
+# Печатает баннер с названием приложения
+banner() {
+  printf "\n%b\n" "${C_BOLD}${C_CYAN}  ${APP_NAME}${C_RESET} ${C_DIM}- установка и обновление${C_RESET}"
+  hr
 }
 
 info() { printf "%b\n" "  ${C_DIM}$*${C_RESET}"; }
@@ -228,7 +237,7 @@ update_repo() {
 
 # Устанавливает Node.js и pm2
 install_dependencies() {
-  step "[1/6] Зависимости (pm2)"
+  step "Зависимости (pm2)"
   
   if ! command -v node >/dev/null 2>&1; then
     if ! command -v curl >/dev/null 2>&1; then
@@ -239,13 +248,13 @@ install_dependencies() {
     hash -r
   fi
   
-  node -v && npm -v && ok "Node.js / npm установлены"
-  
+  ok "Node.js $(node -v 2>/dev/null) / npm $(npm -v 2>/dev/null)"
+
   if ! command -v pm2 >/dev/null 2>&1; then
     run_quiet "npm i -g pm2" npm install -g pm2
   fi
-  
-  pm2 -v && ok "pm2 установлен"
+
+  ok "pm2 $(pm2 -v 2>/dev/null) установлен"
 }
 
 # Установка Docker
@@ -282,7 +291,7 @@ setup_docker_apt_repo() {
 }
 
 install_docker() {
-  step "[1/6] Установка Docker"
+  step "Установка Docker"
 
   if [ "$(uname -s 2>/dev/null || true)" != "Linux" ]; then
     err "Авто-установка Docker поддерживается только на Linux (Debian/Ubuntu)."
@@ -358,7 +367,7 @@ ensure_docker_compose() {
 
 # Настраивает .env файл
 setup_env() {
-  step "[2/6] Подготовка .env"
+  step "Подготовка .env"
   
   if [ -f "$ENV_EXAMPLE" ]; then
     cp -n "$ENV_EXAMPLE" "$ENV_FILE"
@@ -373,7 +382,7 @@ setup_env() {
     upsert_env_var FASTIFY_API_KEY "$(generate_api_key)"
     ok "FASTIFY_API_KEY сгенерирован автоматически"
   else
-    info "FASTIFY_API_KEY уже задан. Пропуск."
+    info "FASTIFY_API_KEY уже задан"
   fi
 
   # Протоколы
@@ -500,14 +509,13 @@ setup_env() {
 
 # Деплоит приложение
 deploy_app() {
-  step "[3/6] Деплой (pm2)"
-  node ./scripts/deploy.js
-  ok "Деплой завершён"
+  step "Деплой (pm2)"
+  run_quiet "Сборка и запуск" node "$ROOT_DIR/scripts/deploy.js"
 }
 
 # Запуск через docker compose
 deploy_docker() {
-  step "[3/6] Запуск (docker)"
+  step "Запуск (docker)"
 
   if ! command -v docker >/dev/null 2>&1; then
     warn "Docker не найден. Пытаюсь установить..."
@@ -543,7 +551,7 @@ deploy_docker() {
 
 # Настраивает автозапуск pm2 после ребута
 setup_pm2_startup() {
-  step "[4/6] Автозапуск pm2"
+  step "Автозапуск pm2"
 
   if ! command -v pm2 >/dev/null 2>&1; then
     warn "pm2 не найден — автозапуск пропущен"
@@ -566,7 +574,7 @@ setup_pm2_startup() {
 
 # Настройка Xray Stats API
 setup_xray_stats() {
-  step "[5/6] Настройка Xray Stats API"
+  step "Настройка Xray Stats API"
 
   if ! command -v docker >/dev/null 2>&1; then
     warn "Docker не установлен — Xray Stats API пропущен"
@@ -579,32 +587,30 @@ setup_xray_stats() {
   fi
 
   if ! command -v python3 >/dev/null 2>&1; then
-    warn "python3 не найден. Устанавливаю..."
-    $SUDO apt-get update -y
-    $SUDO apt-get install -y python3
+    run_quiet "apt update" $SUDO apt-get update -y
+    run_quiet "apt install python3" $SUDO apt-get install -y -qq python3
   fi
 
   tmp_json="$(mktemp)"
 
-  $SUDO docker exec amnezia-xray sh -lc 'cat /opt/amnezia/xray/server.json 2>/dev/null || echo "{}"' > "$tmp_json"
+  $SUDO docker exec amnezia-xray sh -lc 'cat /opt/amnezia/xray/server.json 2>/dev/null || echo "{}"' > "$tmp_json" 2>>"$LOG_FILE"
 
-  python3 "$ROOT_DIR/scripts/xray/setup_xray_stats.py" "$tmp_json"
+  python3 "$ROOT_DIR/scripts/xray/setup_xray_stats.py" "$tmp_json" >>"$LOG_FILE" 2>&1
 
-  $SUDO docker cp "$tmp_json" amnezia-xray:/opt/amnezia/xray/server.json
+  $SUDO docker cp "$tmp_json" amnezia-xray:/opt/amnezia/xray/server.json >>"$LOG_FILE" 2>&1
   rm -f "$tmp_json"
 
-  info "Перезапуск контейнера amnezia-xray..."
-  $SUDO docker restart amnezia-xray >/dev/null 2>&1 || true
+  run_quiet "Перезапуск контейнера amnezia-xray" $SUDO docker restart amnezia-xray
   ok "Xray Stats API настроен"
 }
 
 # Настраивает Nginx
 setup_nginx() {
-  step "[6/6] Установка и настройка Nginx"
+  step "Установка и настройка Nginx"
   
   if ! command -v nginx >/dev/null 2>&1; then
-    $SUDO apt-get update -y
-    $SUDO apt-get install -y nginx
+    run_quiet "apt update" $SUDO apt-get update -y
+    run_quiet "apt install nginx" $SUDO apt-get install -y -qq nginx
   fi
   
   local site_avail="/etc/nginx/sites-available/$APP_NAME"
@@ -630,14 +636,12 @@ NGINX
   [ ! -e "$site_enabled" ] && $SUDO ln -sfn "$site_avail" "$site_enabled"
   [ -e /etc/nginx/sites-enabled/default ] && $SUDO rm -f /etc/nginx/sites-enabled/default
   
-  $SUDO nginx -t
+  run_quiet "Проверка конфигурации nginx" $SUDO nginx -t
   $SUDO systemctl enable nginx >/dev/null 2>&1 || true
-  $SUDO systemctl restart nginx || $SUDO systemctl reload nginx
-  
-  command -v ufw >/dev/null 2>&1 && $SUDO ufw allow 80/tcp || true
-  
-  local public_ip
-  public_ip=$(get_public_ip)
+  run_quiet "Перезапуск nginx" bash -c "$SUDO systemctl restart nginx || $SUDO systemctl reload nginx"
+
+  command -v ufw >/dev/null 2>&1 && $SUDO ufw allow 80/tcp >>"$LOG_FILE" 2>&1 || true
+
   ok "Nginx настроен"
 }
 
@@ -693,6 +697,7 @@ main() {
     IS_UPDATE=0
   fi
 
+  banner
   update_repo
   choose_install_mode
 
