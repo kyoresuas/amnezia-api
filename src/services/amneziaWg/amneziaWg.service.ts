@@ -4,13 +4,13 @@ import {
   ClientRecord,
   CreateClientResult,
 } from "@/types/clients";
-import { deflateSync } from "zlib";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { ClientTableEntry } from "@/types/amnezia";
 import { AmneziaBackupData } from "@/types/server";
 import { Protocol, ClientErrorCode } from "@/types/shared";
+import { encodeVpnConfig } from "@/helpers/encodeVpnConfig";
 import { AmneziaWgConnection } from "@/helpers/amneziaWgConnection";
 
 /**
@@ -44,17 +44,20 @@ export class AmneziaWgService {
   constructor(private amneziaWg: AmneziaWgConnection) {}
 
   /**
+   * Проверить, что секция [Peer] принадлежит клиенту с данным publicKey.
+   */
+  private isPeerSection(section: string, clientId: string): boolean {
+    return section.match(/PublicKey\s*=\s*([^\s]+)/i)?.[1] === clientId;
+  }
+
+  /**
    * Получить AllowedIPs для peer'а
    */
   private getPeerAllowedIps(config: string, clientId: string): string | null {
     const sections = config.split("[Peer]");
 
     for (const section of sections) {
-      if (
-        !section.trim() ||
-        !section.includes("PublicKey") ||
-        !section.includes(clientId)
-      ) {
+      if (!this.isPeerSection(section, clientId)) {
         continue;
       }
 
@@ -77,11 +80,7 @@ export class AmneziaWgService {
     let changed = false;
 
     const updatedSections = sections.map((section) => {
-      if (
-        !section.trim() ||
-        !section.includes("PublicKey") ||
-        !section.includes(clientId)
-      ) {
+      if (!this.isPeerSection(section, clientId)) {
         return section;
       }
 
@@ -347,7 +346,9 @@ export class AmneziaWgService {
         }
       }
 
-      throw new Error("Нет свободных IP");
+      throw new APIError(ClientErrorCode.CONFLICT, {
+        msg: "swagger.errors.NO_FREE_IP",
+      });
     })();
 
     // Считать PSK
@@ -508,27 +509,8 @@ export class AmneziaWgService {
       hostName: endpointHost,
     };
 
-    // Генерируем clientConfig
-    const rawData = Buffer.from(JSON.stringify(serverJson), "utf-8");
-
-    // Создаем заголовок с размером данных
-    const header = Buffer.alloc(4);
-    header.writeUInt32BE(rawData.length, 0);
-
-    // Сжимаем данные
-    const compressedData = deflateSync(rawData, { level: 8 });
-
-    // Объединяем заголовок и сжатые данные
-    const finalBuffer = Buffer.concat([header, compressedData]);
-
-    // Конвертируем в base64 и делаем URL-safe
-    const base64String = finalBuffer
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
-
-    const clientConfig = `vpn://${base64String}`;
+    // Кодируем конфиг в формат vpn:// для импорта в приложение
+    const clientConfig = encodeVpnConfig(serverJson);
 
     return { id: clientId, config: clientConfig, protocol: Protocol.AMNEZIAWG };
   }
@@ -648,11 +630,7 @@ export class AmneziaWgService {
       const sectionsToKeep: string[] = [];
 
       for (const section of sections) {
-        if (
-          !section.trim() ||
-          !section.includes("PublicKey") ||
-          !section.includes(clientId)
-        ) {
+        if (!this.isPeerSection(section, clientId)) {
           sectionsToKeep.push(section);
           continue;
         }

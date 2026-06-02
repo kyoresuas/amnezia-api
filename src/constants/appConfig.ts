@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { toInt } from "@/utils/primitive";
 import { Protocol, IAppConfig } from "@/types/shared";
 
 const {
@@ -29,8 +30,8 @@ const appConfig: IAppConfig = {
   SERVER_ID,
   SERVER_NAME,
   SERVER_REGION,
-  SERVER_WEIGHT: Number(SERVER_WEIGHT),
-  SERVER_MAX_PEERS: Number(SERVER_MAX_PEERS),
+  SERVER_WEIGHT: toInt(SERVER_WEIGHT),
+  SERVER_MAX_PEERS: toInt(SERVER_MAX_PEERS),
   SERVER_PUBLIC_HOST,
   PROTOCOLS_ENABLED: PROTOCOLS_ENABLED
     ? PROTOCOLS_ENABLED.split(",")

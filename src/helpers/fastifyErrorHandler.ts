@@ -52,6 +52,12 @@ export const fastifyErrorHandler = (
 
   // Ошибка, выброшенная нашим сервисом
   if (error instanceof APIError) {
+    if (error.statusCode >= 500) {
+      appLogger.error(
+        `APIError ${error.statusCode} в ${req.method} ${req.url}: ${error.message}`,
+      );
+    }
+
     reply.code(error.statusCode).send({
       message: i18n.t(error.message),
     });

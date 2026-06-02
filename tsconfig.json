@@ -7,6 +7,7 @@
     "allowJs": true,
     "baseUrl": "./",
     "sourceMap": true,
+    "lib": ["ES2021"],
     "target": "ES2021",
     "outDir": "./build",
     "rootDir": "./src",
@@ -14,8 +15,8 @@
     "declaration": false,
     "skipLibCheck": true,
     "module": "commonjs",
-    "lib": ["es5", "es6"],
     "removeComments": true,
+    "noUnusedLocals": true,
     "esModuleInterop": true,
     "noErrorTruncation": true,
     "resolveJsonModule": true,
@@ -26,7 +27,7 @@
     "noStrictGenericChecks": false,
     "noFallthroughCasesInSwitch": false,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": false
+    "forceConsistentCasingInFileNames": true
   },
   "exclude": [
     "dist",

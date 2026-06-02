@@ -1,10 +1,10 @@
-import { deflateSync } from "zlib";
 import { randomUUID } from "crypto";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { XrayBackupData } from "@/types/server";
 import { XrayConnection } from "@/helpers/xrayConnection";
+import { encodeVpnConfig } from "@/helpers/encodeVpnConfig";
 import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
 import { TrafficStats, CreateClientResult } from "@/types/clients";
 import { ClientPeer, PeerStatus, ClientRecord } from "@/types/clients";
@@ -113,34 +113,40 @@ export class XrayService {
   }
 
   /**
-   * Получить статистику трафика пользователя из Xray Stats API
+   * Получить статистику трафика всех пользователей одним запросом к Xray Stats API
    */
-  private async getUserTrafficStats(id: string): Promise<TrafficStats | null> {
+  private async getAllTrafficStats(): Promise<Map<string, TrafficStats>> {
     const serverAddr = `127.0.0.1:${AppContract.Xray.DEFAULTS.API_PORT}`;
+    const cmd = `xray api statsquery -server=${serverAddr} -pattern "user>>>" || true`;
 
-    const parseValue = (output: string): number => {
-      const match = output.match(/"value"\s*:\s*"?(\d+)"?/);
-      return match ? Number(match[1]) : 0;
-    };
-
-    const escapedId = id.replace(/"/g, '\\"');
-
-    const uplinkCmd = `xray api stats -server=${serverAddr} -name "user>>>${escapedId}>>>traffic>>>uplink" -reset=false || true`;
-    const downlinkCmd = `xray api stats -server=${serverAddr} -name "user>>>${escapedId}>>>traffic>>>downlink" -reset=false || true`;
+    const stats = new Map<string, TrafficStats>();
 
     try {
-      const [up, down] = await Promise.all([
-        this.xray.run(uplinkCmd, { timeout: 2000 }),
-        this.xray.run(downlinkCmd, { timeout: 2000 }),
-      ]);
+      const { stdout } = await this.xray.run(cmd, { timeout: 3000 });
 
-      return {
-        sent: parseValue(up.stdout),
-        received: parseValue(down.stdout),
+      const parsed = JSON.parse(stdout || "{}") as {
+        stat?: { name?: string; value?: string }[];
       };
+
+      for (const item of parsed.stat ?? []) {
+        const match = (item?.name ?? "").match(
+          /^user>>>(.+)>>>traffic>>>(uplink|downlink)$/,
+        );
+        if (!match) continue;
+
+        const [, id, direction] = match;
+        const value = Number(item?.value ?? 0) || 0;
+
+        const entry = stats.get(id) ?? { sent: 0, received: 0 };
+        if (direction === "uplink") entry.sent = value;
+        else entry.received = value;
+        stats.set(id, entry);
+      }
     } catch {
-      return null;
+      // Статистика недоступна
     }
+
+    return stats;
   }
 
   /**
@@ -184,8 +190,11 @@ export class XrayService {
       ? inbound.settings?.clientsDisabled
       : [];
 
-    const activeEntries = await Promise.all(
-      clients.map(async (client: XrayClientEntry, index: number) => {
+    // Один запрос статистики на весь список клиентов
+    const trafficById = await this.getAllTrafficStats();
+
+    const activeEntries: (ClientPeer & { username: string })[] = clients.map(
+      (client: XrayClientEntry, index: number) => {
         // id
         const id = (client.id ?? "").trim() || `xray-client-${index + 1}`;
 
@@ -197,8 +206,8 @@ export class XrayService {
           typeof client.expiresAt === "number" ? client.expiresAt : null;
         const status = PeerStatus.Active;
 
-        // Получить статистику трафика
-        const traffic = await this.getUserTrafficStats(id);
+        // Статистика трафика из заранее полученной карты
+        const traffic = trafficById.get(id);
 
         return {
           username,
@@ -216,7 +225,7 @@ export class XrayService {
           status,
           protocol: Protocol.XRAY,
         };
-      }),
+      },
     );
 
     const disabledEntries: (ClientPeer & { username: string })[] =
@@ -416,28 +425,8 @@ export class XrayService {
       hostName: serverHost,
     };
 
-    // Данные для сервера
-    const rawData = Buffer.from(JSON.stringify(serverJson), "utf-8");
-
-    // Заголовок с размером данных
-    const header = Buffer.alloc(4);
-    header.writeUInt32BE(rawData.length, 0);
-
-    // Сжимаем данные
-    const compressedData = deflateSync(rawData, { level: 8 });
-
-    // Объединяем заголовок и сжатые данные
-    const finalBuffer = Buffer.concat([header, compressedData]);
-
-    // Конвертируем в base64 и делаем URL-safe
-    const base64String = finalBuffer
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
-
-    // Конфиг клиента
-    const clientConfig = `vpn://${base64String}`;
+    // Кодируем конфиг в формат vpn:// для импорта в приложение
+    const clientConfig = encodeVpnConfig(serverJson);
 
     return {
       id: clientId,
@@ -599,8 +588,7 @@ export class XrayService {
     // Обновляем конфиг сервера
     await this.xray.writeServerConfig(JSON.stringify(serverConfig, null, 2));
 
-    // Перезапускаем контейнер Xray ???????????????
-    // Узнать, нужно ли это
+    // Перезапускаем контейнер
     await this.xray.restartContainer();
 
     return true;

@@ -11,6 +11,9 @@ export const createClientSchema = {
     properties: {
       clientName: {
         type: "string",
+        minLength: 1,
+        maxLength: 64,
+        pattern: "^[^\\u0000-\\u001f]+$",
         description: "Имя клиента",
         example: "Kyoresuas",
       },

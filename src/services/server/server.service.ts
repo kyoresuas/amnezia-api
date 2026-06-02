@@ -6,6 +6,11 @@ import {
   ServerLoadDockerContainerStats,
 } from "@/types/server";
 import fs from "fs/promises";
+import {
+  parseNetIo,
+  parseMemUsage,
+  parseCpuPercent,
+} from "@/helpers/dockerStats";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { XrayService } from "@/services/xray";
@@ -190,64 +195,6 @@ export class ServerService {
 
       const targets = running.filter((x) => x.running).map((x) => x.name);
       if (!targets.length) return null;
-
-      const parseBytes = (value: string): number | null => {
-        const valueTrimmed = (value || "").trim();
-        const match = valueTrimmed.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?$/);
-        if (!match) return null;
-
-        const number = Number(match[1]);
-        if (!Number.isFinite(number)) return null;
-
-        const unit = (match[2] || "B").toLowerCase();
-        const map: Record<string, number> = {
-          b: 1,
-          bytes: 1,
-          kb: 1000,
-          k: 1000,
-          kib: 1024,
-          mb: 1000 ** 2,
-          mib: 1024 ** 2,
-          gb: 1000 ** 3,
-          gib: 1024 ** 3,
-          tb: 1000 ** 4,
-          tib: 1024 ** 4,
-        };
-
-        const mult = map[unit];
-        if (!mult) return null;
-
-        return Math.round(number * mult);
-      };
-
-      // Парсим процент CPU
-      const parseCpuPercent = (cpu: string): number | null => {
-        const v = (cpu || "").trim().replace("%", "");
-        const n = Number(v);
-        return Number.isFinite(n) ? n : null;
-      };
-
-      // Парсим использование памяти
-      const parseMemUsage = (
-        mem: string,
-      ): { usage: number | null; limit: number | null } => {
-        const [left, right] = (mem || "").split("/").map((x) => x.trim());
-        return {
-          usage: left ? parseBytes(left) : null,
-          limit: right ? parseBytes(right) : null,
-        };
-      };
-
-      // Парсим сетевой ввод-вывод
-      const parseNetIo = (
-        net: string,
-      ): { rx: number | null; tx: number | null } => {
-        const [left, right] = (net || "").split("/").map((x) => x.trim());
-        return {
-          rx: left ? parseBytes(left) : null,
-          tx: right ? parseBytes(right) : null,
-        };
-      };
 
       // Читаем статистику контейнера
       const readStats = async (

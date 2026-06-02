@@ -24,7 +24,7 @@ import { JsonSchemaToTsProvider } from "@fastify/type-provider-json-schema-to-ts
 /**
  * Запуск систем Fastify
  */
-export const setupFastify = async (): Promise<void> => {
+export const setupFastify = async (): Promise<AppFastifyInstance> => {
   const { host, port } = appConfig.FASTIFY_ROUTES!;
 
   if (!host) {
@@ -84,4 +84,6 @@ export const setupFastify = async (): Promise<void> => {
   appLogger.verbose(`Приложение Fastify запущено на '${host}:${port}'`);
 
   console.log(getFastifyRoutes(fastify));
+
+  return fastify;
 };

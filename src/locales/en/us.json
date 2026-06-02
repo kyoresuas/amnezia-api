@@ -17,6 +17,7 @@
       "DOCKER_NOT_AVAILABLE": "Docker is not available on the server",
       "CONTAINER_NOT_AVAILABLE": "Required container is not installed or not running",
       "NO_PROTOCOLS_AVAILABLE": "No available protocols were found on the server",
+      "NO_FREE_IP": "No free IP addresses left in the server pool",
       "INVALID_CONFIG": "Invalid client config"
     },
     "codes": {

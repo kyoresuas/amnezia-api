@@ -1,5 +1,6 @@
 import {
   ClientRecord,
+  IProtocolService,
   CreateClientResult,
   CreateClientPayload,
   DeleteClientPayload,
@@ -22,11 +23,20 @@ import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
 export class ClientsService {
   static key = "clientsService";
 
+  // Маршрутизация протокол -> сервис
+  private readonly servicesByProtocol: Record<Protocol, IProtocolService>;
+
   constructor(
     private xrayService: XrayService,
     private amneziaWgService: AmneziaWgService,
     private amneziaWg2Service: AmneziaWg2Service,
-  ) {}
+  ) {
+    this.servicesByProtocol = {
+      [Protocol.XRAY]: this.xrayService,
+      [Protocol.AMNEZIAWG]: this.amneziaWgService,
+      [Protocol.AMNEZIAWG2]: this.amneziaWg2Service,
+    };
+  }
 
   // Мьютексы на запись по протоколам. сериализуют read-modify-write
   // над wg0.conf / clientsTable / server.json, чтобы параллельные
@@ -80,19 +90,14 @@ export class ClientsService {
   /**
    * Получить сервис по протоколу
    */
-  private getServiceByProtocol(
-    protocol: Protocol,
-  ): AmneziaWgService | AmneziaWg2Service | XrayService {
-    switch (protocol) {
-      case Protocol.AMNEZIAWG:
-        return this.amneziaWgService;
-      case Protocol.AMNEZIAWG2:
-        return this.amneziaWg2Service;
-      case Protocol.XRAY:
-        return this.xrayService;
-      default:
-        throw new APIError(ServerErrorCode.NOT_IMPLEMENTED);
+  private getServiceByProtocol(protocol: Protocol): IProtocolService {
+    const service = this.servicesByProtocol[protocol];
+
+    if (!service) {
+      throw new APIError(ServerErrorCode.NOT_IMPLEMENTED);
     }
+
+    return service;
   }
 
   /**
@@ -200,38 +205,17 @@ export class ClientsService {
 
     let disabled = 0;
 
-    if (enabled.includes(Protocol.AMNEZIAWG)) {
-      try {
-        disabled += await this.lockFor(Protocol.AMNEZIAWG).runExclusive(() =>
-          this.amneziaWgService.disableExpiredClients(),
-        );
-      } catch {
-        appLogger.warn(
-          `AmneziaWG недоступен, пропускаем блокировку просроченных клиентов`,
-        );
-      }
-    }
+    for (const protocol of enabled) {
+      const service = this.servicesByProtocol[protocol];
+      if (!service) continue;
 
-    if (enabled.includes(Protocol.AMNEZIAWG2)) {
       try {
-        disabled += await this.lockFor(Protocol.AMNEZIAWG2).runExclusive(() =>
-          this.amneziaWg2Service.disableExpiredClients(),
+        disabled += await this.lockFor(protocol).runExclusive(() =>
+          service.disableExpiredClients(),
         );
       } catch {
         appLogger.warn(
-          `AmneziaWG 2.0 недоступен, пропускаем блокировку просроченных клиентов`,
-        );
-      }
-    }
-
-    if (enabled.includes(Protocol.XRAY)) {
-      try {
-        disabled += await this.lockFor(Protocol.XRAY).runExclusive(() =>
-          this.xrayService.disableExpiredClients(),
-        );
-      } catch {
-        appLogger.warn(
-          `Xray недоступен, пропускаем блокировку просроченных клиентов`,
+          `${protocol}: сервис недоступен, пропускаем блокировку просроченных клиентов`,
         );
       }
     }

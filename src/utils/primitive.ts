@@ -11,3 +11,14 @@ export const primitive = <Type>(value: Type) => {
  * Исключить null/undefined из массива
  */
 export const isNotNull = <T>(x: T | null | undefined): x is T => x != null;
+
+/**
+ * Привести строку к целому числу
+ */
+export const toInt = (value?: string): number | undefined => {
+  if (!value?.trim()) return undefined;
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
