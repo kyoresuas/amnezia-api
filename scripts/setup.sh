@@ -92,8 +92,8 @@ run_quiet() {
       i=$((i + 1))
       sleep 0.12
     done
-    wait "$pid"
-    local rc=$?
+    local rc=0
+    wait "$pid" || rc=$?
 
     printf "\r\033[2K" # очистить строку
 
@@ -120,8 +120,38 @@ run_quiet() {
   return 1
 }
 
+# Определяет режим уже запущенного сервиса
+detect_running_mode() {
+  # docker: контейнер amnezia-api
+  if command -v docker >/dev/null 2>&1 \
+    && $SUDO docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$APP_NAME"; then
+    printf "docker"
+    return 0
+  fi
+
+  # pm2: процесс amnezia-api
+  if command -v pm2 >/dev/null 2>&1 \
+    && pm2 jlist 2>/dev/null | grep -q "\"name\":\"$APP_NAME\""; then
+    printf "pm2"
+    return 0
+  fi
+
+  return 0
+}
+
 # Выбор режима установки/запуска
 choose_install_mode() {
+  # На обновлении определяем режим по уже запущенному сервису
+  if [ "${IS_UPDATE:-0}" -eq 1 ]; then
+    local detected
+    detected="$(detect_running_mode)"
+    if [ -n "$detected" ]; then
+      INSTALL_MODE="$detected"
+      kv "Режим" "$INSTALL_MODE (автоопределен)"
+      return 0
+    fi
+  fi
+
   # Если нет TTY, по умолчанию pm2
   if [ ! -t 0 ]; then
     INSTALL_MODE="pm2"
