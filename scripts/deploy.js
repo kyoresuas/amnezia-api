@@ -16,7 +16,16 @@ async function deploy() {
 
   console.log("Компиляция в JavaScript...");
 
+  // Чистим папку build и инкрементальный кэш tsc перед сборкой,
+  // иначе после удаления build на прошлом деплое tsc по .tsbuildinfo
+  // решит, что все файлы актуальны, и не сгенерирует build заново
+  removeBuildDirectory();
+
   child_process.execSync("npm run build", { stdio: "inherit" });
+
+  if (!fs.existsSync("./build")) {
+    throw new Error("Сборка не создала папку build");
+  }
 
   console.log("Запуск проекта в теневом режиме...");
 
@@ -61,7 +70,7 @@ async function deploy() {
       if (!success) {
         console.log(stdout);
         return reject(
-          new Error("Произошла ошибка при запуске проекта в теневом режиме!")
+          new Error("Произошла ошибка при запуске проекта в теневом режиме!"),
         );
       }
 
@@ -69,10 +78,10 @@ async function deploy() {
         console.log("Получение списка процессов...");
 
         const pm2List = JSON.parse(
-          child_process.execSync("pm2 jlist --silent").toString()
+          child_process.execSync("pm2 jlist --silent").toString(),
         );
         const processIsExists = !!pm2List.find(
-          (pm2Process) => pm2Process.name === PROCESS_NAME
+          (pm2Process) => pm2Process.name === PROCESS_NAME,
         );
 
         console.log("Перемещение ресурсов...");
@@ -86,7 +95,7 @@ async function deploy() {
         } else {
           child_process.execSync(
             `pm2 start npm --name "${PROCESS_NAME}" -- run start`,
-            { stdio: "inherit" }
+            { stdio: "inherit" },
           );
         }
 
@@ -103,11 +112,14 @@ async function deploy() {
 }
 
 /**
- * Очистить директорию со временной сборкой
+ * Очистить директорию со временной сборкой и инкрементальный кэш tsc
  */
 function removeBuildDirectory() {
   if (fs.existsSync("./build")) {
     fs.rmSync("./build", { recursive: true });
+  }
+  if (fs.existsSync("./tsconfig.tsbuildinfo")) {
+    fs.rmSync("./tsconfig.tsbuildinfo");
   }
 }
 
