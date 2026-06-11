@@ -1,3 +1,5 @@
+import { TimeContract } from "@/contracts/time";
+
 export const AppContract = {
   // Константы для AmneziaWG
   AmneziaWG: {
@@ -82,7 +84,7 @@ export const AppContract = {
     MAX: 100,
 
     // Длительность окна в миллисекундах
-    WINDOW_MS: 60000,
+    WINDOW_MS: TimeContract.MINUTE,
   } as const,
 
   // Константы для генерации QR

@@ -1,4 +1,5 @@
 import { ITask } from "@/types/cron";
+import { TimeContract } from "@/contracts/time";
 import { cleanupExpiredClientsTask } from "@/tasks";
 
 export namespace CronContract {
@@ -7,7 +8,7 @@ export namespace CronContract {
    */
   export const CleanupExpiredClientsTask: ITask = {
     name: "CleanupExpiredClientsTask",
-    interval: 1000 * 60 * 60,
+    interval: TimeContract.HOUR,
     handler: cleanupExpiredClientsTask,
   };
 }

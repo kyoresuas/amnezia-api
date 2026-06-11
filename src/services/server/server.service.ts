@@ -16,6 +16,7 @@ import appConfig from "@/constants/appConfig";
 import { XrayService } from "@/services/xray";
 import { AppContract } from "@/contracts/app";
 import { isNotNull } from "@/utils/primitive";
+import { TimeContract } from "@/contracts/time";
 import { appLogger } from "@/config/winstonLogger";
 import { ClientsService } from "@/services/clients";
 import { AmneziaWgService } from "@/services/amneziaWg";
@@ -110,7 +111,9 @@ export class ServerService {
     // Disk (df -kP /)
     const disk = await (async () => {
       try {
-        const { stdout } = await this.server.run("df -kP /", { timeout: 1500 });
+        const { stdout } = await this.server.run("df -kP /", {
+          timeout: 1.5 * TimeContract.SECOND,
+        });
         const lines = stdout
           .split("\n")
           .map((x) => x.trim())
@@ -195,7 +198,7 @@ export class ServerService {
         // Один вызов на все контейнеры
         const cmd = `docker stats --no-stream --format "{{.Name}}\\t{{.CPUPerc}}\\t{{.MemUsage}}\\t{{.NetIO}}\\t{{.PIDs}}" ${targets.join(" ")}`;
         const { stdout } = await this.server.run(cmd, {
-          timeout: 10000,
+          timeout: 10 * TimeContract.SECOND,
           maxBufferBytes: 1024 * 1024,
         });
 
@@ -295,7 +298,9 @@ export class ServerService {
   async rebootServer(): Promise<void> {
     try {
       appLogger.info("Перезагрузка сервера...");
-      await this.server.run("sudo reboot", { timeout: 1500 });
+      await this.server.run("sudo reboot", {
+        timeout: 1.5 * TimeContract.SECOND,
+      });
     } catch (err) {
       appLogger.warn(`При перезагрузке сервера произошла ошибка: ${err}`);
     }

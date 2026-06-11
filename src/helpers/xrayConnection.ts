@@ -7,6 +7,7 @@ import { APIError } from "@/utils/APIError";
 import { RunOptions } from "@/types/amnezia";
 import { AppContract } from "@/contracts/app";
 import { CommandResult } from "@/types/shared";
+import { TimeContract } from "@/contracts/time";
 import { ServerErrorCode } from "@/types/shared";
 import { buildWriteFileCommand } from "@/utils/shellWrite";
 
@@ -32,7 +33,7 @@ export class XrayConnection {
    */
   run(cmd: string, options?: RunOptions): Promise<CommandResult> {
     const finalCmd = this.buildCommand(cmd);
-    const timeout = options?.timeout ?? 5000;
+    const timeout = options?.timeout ?? 5 * TimeContract.SECOND;
     const maxBuffer = options?.maxBufferBytes ?? 10 * 1024 * 1024;
 
     return new Promise((resolve, reject) => {
@@ -68,7 +69,7 @@ export class XrayConnection {
    * Выполнить команду на хосте (вне контейнера)
    */
   runOnHost(cmd: string, options?: RunOptions): Promise<CommandResult> {
-    const timeout = options?.timeout ?? 5000;
+    const timeout = options?.timeout ?? 5 * TimeContract.SECOND;
     const maxBuffer = options?.maxBufferBytes ?? 10 * 1024 * 1024;
 
     return new Promise((resolve, reject) => {

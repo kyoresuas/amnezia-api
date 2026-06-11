@@ -3,6 +3,7 @@ import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { XrayBackupData } from "@/types/server";
+import { TimeContract } from "@/contracts/time";
 import { XrayConnection } from "@/helpers/xrayConnection";
 import { encodeVpnConfig } from "@/helpers/encodeVpnConfig";
 import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
@@ -122,7 +123,9 @@ export class XrayService {
     const stats = new Map<string, TrafficStats>();
 
     try {
-      const { stdout } = await this.xray.run(cmd, { timeout: 3000 });
+      const { stdout } = await this.xray.run(cmd, {
+        timeout: 3 * TimeContract.SECOND,
+      });
 
       const parsed = JSON.parse(stdout || "{}") as {
         stat?: { name?: string; value?: string }[];

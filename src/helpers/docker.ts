@@ -1,5 +1,6 @@
 import { promisify } from "util";
 import { exec } from "child_process";
+import { TimeContract } from "@/contracts/time";
 
 // Promisify exec
 const execAsync = promisify(exec);
@@ -11,7 +12,7 @@ const execAsync = promisify(exec);
 export async function listRunningDockerContainers(): Promise<Set<string>> {
   try {
     const { stdout } = await execAsync("docker ps --format '{{.Names}}'", {
-      timeout: 5000,
+      timeout: 5 * TimeContract.SECOND,
       maxBuffer: 1024 * 1024,
     });
 
