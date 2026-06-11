@@ -11,7 +11,7 @@ const execAsync = promisify(exec);
 export async function listRunningDockerContainers(): Promise<Set<string>> {
   try {
     const { stdout } = await execAsync("docker ps --format '{{.Names}}'", {
-      timeout: 1500,
+      timeout: 5000,
       maxBuffer: 1024 * 1024,
     });
 

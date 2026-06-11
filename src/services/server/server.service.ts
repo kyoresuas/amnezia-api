@@ -20,8 +20,8 @@ import { appLogger } from "@/config/winstonLogger";
 import { ClientsService } from "@/services/clients";
 import { AmneziaWgService } from "@/services/amneziaWg";
 import { AmneziaWg2Service } from "@/services/amneziaWg2";
-import { isDockerContainerRunning } from "@/helpers/docker";
 import { ServerConnection } from "@/helpers/serverConnection";
+import { listRunningDockerContainers } from "@/helpers/docker";
 import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
 import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
 
@@ -186,75 +186,58 @@ export class ServerService {
 
       if (!containers.length) return null;
 
-      const running = await Promise.all(
-        containers.map(async (name) => ({
-          name,
-          running: await isDockerContainerRunning(name),
-        })),
-      );
+      try {
+        const running = await listRunningDockerContainers();
 
-      const targets = running.filter((x) => x.running).map((x) => x.name);
-      if (!targets.length) return null;
+        const targets = containers.filter((name) => running.has(name));
+        if (!targets.length) return null;
 
-      // Читаем статистику контейнера
-      const readStats = async (
-        name: string,
-      ): Promise<ServerLoadDockerContainerStats | null> => {
-        // табулированные: Name, CPUPerc, MemUsage, NetIO, PIDs
-        const cmd = `docker stats --no-stream --format "{{.Name}}\\t{{.CPUPerc}}\\t{{.MemUsage}}\\t{{.NetIO}}\\t{{.PIDs}}" ${name}`;
+        // Один вызов на все контейнеры
+        const cmd = `docker stats --no-stream --format "{{.Name}}\\t{{.CPUPerc}}\\t{{.MemUsage}}\\t{{.NetIO}}\\t{{.PIDs}}" ${targets.join(" ")}`;
         const { stdout } = await this.server.run(cmd, {
-          timeout: 1500,
+          timeout: 10000,
           maxBufferBytes: 1024 * 1024,
         });
 
-        const line = stdout
+        // Разбираем строку статистики одного контейнера
+        const parseLine = (
+          line: string,
+        ): ServerLoadDockerContainerStats | null => {
+          const parts = line.split("\t");
+          if (parts.length < 5) return null;
+
+          const name = (parts[0] || "").trim();
+          if (!name) return null;
+
+          const memParsed = parseMemUsage(parts[2] || "");
+          const netParsed = parseNetIo(parts[3] || "");
+          const pidsNumber = Number((parts[4] || "").trim());
+
+          return {
+            name,
+            cpuPercent: parseCpuPercent(parts[1] || ""),
+            memUsageBytes: memParsed.usage,
+            memLimitBytes: memParsed.limit,
+            netRxBytes: netParsed.rx,
+            netTxBytes: netParsed.tx,
+            pids: Number.isFinite(pidsNumber) ? pidsNumber : null,
+          };
+        };
+
+        const stats = stdout
           .split("\n")
           .map((x) => x.trim())
-          .find(Boolean);
-        if (!line) return null;
+          .filter(Boolean)
+          .map(parseLine)
+          .filter(isNotNull);
 
-        const parts = line.split("\t");
-        if (parts.length < 5) return null;
+        if (!stats.length) return null;
 
-        const cpuString = parts[1] || "";
-        const memString = parts[2] || "";
-        const netString = parts[3] || "";
-        const pidsString = parts[4] || "";
-
-        const cpuPercent = parseCpuPercent(cpuString);
-        const memParsed = parseMemUsage(memString);
-        const netParsed = parseNetIo(netString);
-        const pids = (() => {
-          const number = Number((pidsString || "").trim());
-          return Number.isFinite(number) ? number : null;
-        })();
-
-        return {
-          name,
-          cpuPercent,
-          memUsageBytes: memParsed.usage,
-          memLimitBytes: memParsed.limit,
-          netRxBytes: netParsed.rx,
-          netTxBytes: netParsed.tx,
-          pids,
-        };
-      };
-
-      const stats = (
-        await Promise.all(
-          targets.map(async (name) => {
-            try {
-              return await readStats(name);
-            } catch {
-              return null;
-            }
-          }),
-        )
-      ).filter(isNotNull);
-
-      if (!stats.length) return null;
-
-      return { containers: stats };
+        return { containers: stats };
+      } catch (err) {
+        appLogger.warn(`Не удалось получить статистику Docker: ${err}`);
+        return null;
+      }
     })();
 
     const payload: ServerLoadPayload = {
