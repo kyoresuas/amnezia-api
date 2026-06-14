@@ -37,6 +37,17 @@ export const setupFastify = async (): Promise<AppFastifyInstance> => {
   // Установить собственный обработчик ошибок
   fastify.setErrorHandler(fastifyErrorHandler);
 
+  // Порядок регистрации маршрутов для сортировки операций в Swagger UI
+  const routeOrder = new Map<string, number>();
+  fastify.addHook("onRoute", (route) => {
+    const methods = Array.isArray(route.method) ? route.method : [route.method];
+
+    for (const method of methods) {
+      const key = `${method.toUpperCase()} ${route.url}`;
+      if (!routeOrder.has(key)) routeOrder.set(key, routeOrder.size);
+    }
+  });
+
   // Заголовки безопасности
   await fastify.register(fastifyHelmet, { contentSecurityPolicy: false });
 
@@ -54,7 +65,6 @@ export const setupFastify = async (): Promise<AppFastifyInstance> => {
 
   // Регистрация сваггера
   await fastify.register(fastifySwagger, SwaggerContract.GetConfig());
-  await fastify.register(fastifySwaggerUi, SwaggerContract.ConfigUi);
 
   // Прочие плагины
   await fastify.register(fastifyCookie);
@@ -64,6 +74,12 @@ export const setupFastify = async (): Promise<AppFastifyInstance> => {
 
   // Регистрация маршрутов
   setupFastifyRoutes(fastify);
+
+  // Регистрация сваггера с порядком маршрутов
+  await fastify.register(
+    fastifySwaggerUi,
+    SwaggerContract.GetConfigUi(routeOrder),
+  );
 
   await fastify.listen({ host, port });
   await fastify.ready();

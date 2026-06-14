@@ -293,11 +293,63 @@ export namespace SwaggerContract {
     };
   };
 
-  export const ConfigUi: FastifySwaggerUiOptions = {
-    routePrefix: "docs",
-    uiConfig: {
-      docExpansion: "list",
-      deepLinking: false,
-    },
+  /**
+   * Иммутабельный объект операции, который сваггер передает в сортировщик
+   */
+  interface UiOperation {
+    get(key: "operation"): { get(key: string): number | undefined };
+  }
+
+  /**
+   * Сортировщик операций по полю x-order (порядок регистрации маршрутов)
+   */
+  const operationsSorter = (a: UiOperation, b: UiOperation): number => {
+    const orderA = a.get("operation").get("x-order") ?? Number.MAX_SAFE_INTEGER;
+    const orderB = b.get("operation").get("x-order") ?? Number.MAX_SAFE_INTEGER;
+
+    return orderA - orderB;
+  };
+
+  /**
+   * Получить конфигурацию сваггера
+   */
+  export const GetConfigUi = (
+    routeOrder: Map<string, number>,
+  ): FastifySwaggerUiOptions => {
+    return {
+      routePrefix: "docs",
+      uiConfig: {
+        docExpansion: "list",
+        deepLinking: false,
+        operationsSorter: operationsSorter as unknown as (
+          a: string,
+          b: string,
+        ) => number,
+      },
+      // Проставляем x-order в спеку на сервере, где известен порядок регистрации
+      transformSpecification: (swaggerObject) => {
+        const paths = swaggerObject.paths as
+          | Record<string, Record<string, { ["x-order"]?: number }>>
+          | undefined;
+
+        if (!paths) return swaggerObject as Record<string, unknown>;
+
+        for (const [path, methods] of Object.entries(paths)) {
+          for (const [method, operation] of Object.entries(methods)) {
+            const order = routeOrder.get(`${method.toUpperCase()} ${path}`);
+
+            if (
+              order !== undefined &&
+              operation &&
+              typeof operation === "object"
+            ) {
+              operation["x-order"] = order;
+            }
+          }
+        }
+
+        return swaggerObject as Record<string, unknown>;
+      },
+    };
   };
 }
