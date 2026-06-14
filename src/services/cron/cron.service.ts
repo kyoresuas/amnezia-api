@@ -41,7 +41,7 @@ export class CronService {
 
       // Задача завершена с ошибкой
       .catch((err: Error) => {
-        console.error(err);
+        appLogger.error(err.stack || String(err));
 
         appLogger.fatal(`Задача ${coloredTaskName} прервана с ошибкой`);
       })

@@ -3,7 +3,6 @@ import i18next from "i18next";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyCookie from "@fastify/cookie";
-import { APIError } from "@/utils/APIError";
 import metricsPlugin from "fastify-metrics";
 import { appLogger } from "../winstonLogger";
 import appConfig from "@/constants/appConfig";
@@ -25,19 +24,7 @@ import { JsonSchemaToTsProvider } from "@fastify/type-provider-json-schema-to-ts
  * Запуск систем Fastify
  */
 export const setupFastify = async (): Promise<AppFastifyInstance> => {
-  const { host, port } = appConfig.FASTIFY_ROUTES!;
-
-  if (!host) {
-    throw new APIError(500, {
-      msg: "system.NO_FASTIFY_HOST",
-    });
-  }
-
-  if (typeof port !== "number" || Number.isNaN(port)) {
-    throw new APIError(500, {
-      msg: "system.NO_FASTIFY_PORT",
-    });
-  }
+  const { host, port } = appConfig.FASTIFY_ROUTES;
 
   appLogger.info(`Запуск приложения Fastify...`);
 
@@ -73,7 +60,7 @@ export const setupFastify = async (): Promise<AppFastifyInstance> => {
   await fastify.register(fastifyCookie);
   await fastify.register(fastifyFormbody);
   await fastify.register(metricsPlugin, { clearRegisterOnInit: true });
-  await fastify.register(fastifyCors, { origin: true, credentials: true });
+  await fastify.register(fastifyCors, { origin: true });
 
   // Регистрация маршрутов
   setupFastifyRoutes(fastify);
@@ -83,7 +70,7 @@ export const setupFastify = async (): Promise<AppFastifyInstance> => {
 
   appLogger.verbose(`Приложение Fastify запущено на '${host}:${port}'`);
 
-  console.log(getFastifyRoutes(fastify));
+  appLogger.info(`Зарегистрированные маршруты:\n${getFastifyRoutes(fastify)}`);
 
   return fastify;
 };

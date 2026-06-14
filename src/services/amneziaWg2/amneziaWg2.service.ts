@@ -231,7 +231,7 @@ export class AmneziaWg2Service {
 
         // lastHandshake
         const lastHandshake =
-          Number(parts[4]) > 1_000_000_000_000
+          Number(parts[4]) > AppContract.WG.HANDSHAKE_NANO_THRESHOLD
             ? Math.floor(Number(parts[4]) / 1_000_000_000)
             : Number(parts[4]);
 
@@ -245,7 +245,8 @@ export class AmneziaWg2Service {
         const lastHandshakeSecondsAgo = now - lastHandshake;
 
         // online
-        const online = lastHandshakeSecondsAgo < 180;
+        const online =
+          lastHandshakeSecondsAgo < AppContract.WG.ONLINE_THRESHOLD_SECONDS;
 
         const username = userData[id]?.name || id;
         // label peer'а (если он был закодирован в clientsTable.userData.clientName)

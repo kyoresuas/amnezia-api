@@ -31,17 +31,17 @@ export enum Protocol {
 
 export interface IAppConfig {
   ENV: "development" | "preproduction" | "production";
-  FASTIFY_ROUTES?: {
+  FASTIFY_ROUTES: {
     host: string;
     port: number;
   };
-  FASTIFY_API_KEY?: string;
+  FASTIFY_API_KEY: string;
+  SERVER_PUBLIC_HOST: string;
   SERVER_ID?: string;
   SERVER_NAME?: string;
   SERVER_REGION?: string;
   SERVER_WEIGHT?: number;
   SERVER_MAX_PEERS?: number;
-  SERVER_PUBLIC_HOST?: string;
   PROTOCOLS_ENABLED?: Protocol[];
 }
 

@@ -1,8 +1,8 @@
 import "@/config/setupMultilingualism";
 import { setupFastify } from "@/config/fastify";
-import { validateEnv } from "@/config/validateEnv";
 import { appLogger } from "@/config/winstonLogger";
 import { AppFastifyInstance } from "@/types/shared";
+import { assertAppConfig } from "@/constants/appConfig";
 import { setupDIContainer } from "@/config/DIContainer";
 import { setupTaskQueue } from "@/config/setupTaskQueue";
 
@@ -36,7 +36,7 @@ const registerShutdown = (fastify: AppFastifyInstance): void => {
  */
 const bootstrapApp = async (): Promise<void> => {
   // Проверить окружение
-  validateEnv();
+  assertAppConfig();
 
   // Установить DI-контейнер
   setupDIContainer();
