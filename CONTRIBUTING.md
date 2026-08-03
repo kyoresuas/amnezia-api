@@ -35,9 +35,11 @@ Run all required checks before opening a pull request:
 npm run lint
 npm test
 npm run build
+npm run openapi:check
 ```
 
 Use `npm run test:watch` while developing and `npm run test:coverage` when changing service behavior.
+Run `npm run openapi:generate` after changing routes, schemas, or API metadata.
 
 ## Pull requests
 
@@ -49,3 +51,21 @@ Use `npm run test:watch` while developing and `npm run test:coverage` when chang
 6. Never commit `.env`, generated configs, real server data, or build and coverage artifacts.
 
 By contributing, you agree that your contribution is licensed under the repository's [MIT License](LICENSE).
+
+## Maintainer release checklist
+
+Releases are automated from semantic version tags. Prepare one as follows:
+
+```bash
+RELEASE_VERSION=1.0.0
+npm version "$RELEASE_VERSION" --no-git-tag-version --allow-same-version
+npm run openapi:generate
+npm run lint
+npm test
+git add package.json package-lock.json openapi/openapi.json
+git commit -m "chore(release): v$RELEASE_VERSION"
+git tag "v$RELEASE_VERSION"
+git push origin main "v$RELEASE_VERSION"
+```
+
+The tag must match the version in `package.json`. The release workflow publishes the GHCR image, attaches provenance and an SBOM, creates generated release notes, and uploads `openapi/openapi.json` to the GitHub Release.

@@ -4,6 +4,7 @@
 [![Fastify](https://img.shields.io/badge/Fastify-5.x-000000?logo=fastify&logoColor=white)](https://fastify.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![CI](https://github.com/kyoresuas/amnezia-api/actions/workflows/ci.yml/badge.svg)](https://github.com/kyoresuas/amnezia-api/actions/workflows/ci.yml)
+[![GHCR](https://img.shields.io/badge/GHCR-amnezia--api-2496ED?logo=docker&logoColor=white)](https://github.com/kyoresuas/amnezia-api/pkgs/container/amnezia-api)
 [![License](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
 
 **English** · [Русский](README_RU.md)
@@ -92,7 +93,7 @@ Health:  http://<server-ip>/healthz
 
 ### Docker Compose
 
-For a manual Docker deployment:
+For a manual Docker deployment with the prebuilt GHCR image:
 
 ```bash
 git clone https://github.com/kyoresuas/amnezia-api.git
@@ -107,8 +108,16 @@ openssl rand -hex 32
 ```
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.ghcr.yml up -d
 docker compose ps
+```
+
+Set `AMNEZIA_API_VERSION` to a release such as `1.0.0` to pin the deployment. It defaults to `latest`.
+
+To build the image locally from source instead:
+
+```bash
+docker compose up -d --build
 ```
 
 Docker Compose binds the API to `127.0.0.1:4001`. Put a TLS-enabled reverse proxy in front of it when remote access is required.
@@ -122,6 +131,17 @@ bash ./scripts/setup.sh
 ```
 
 It performs a fast-forward update, detects the current Docker/PM2 mode, rebuilds the application, and preserves the existing `.env`.
+
+## Releases and container images
+
+Every `vX.Y.Z` release publishes a multi-platform image for `linux/amd64` and `linux/arm64`:
+
+```bash
+docker pull ghcr.io/kyoresuas/amnezia-api:latest
+docker pull ghcr.io/kyoresuas/amnezia-api:1.0.0
+```
+
+Stable releases receive `latest`, major, minor, exact, and `v`-prefixed tags. Each image includes OCI metadata, an SBOM, and a GitHub provenance attestation. The corresponding GitHub Release includes generated release notes and the portable OpenAPI contract.
 
 ## Authentication
 
@@ -153,6 +173,8 @@ x-api-key: <FASTIFY_API_KEY>
 | `GET` | `/metrics` | Prometheus metrics |
 
 Swagger UI is available at `/docs` and contains the full request/response schemas, validation rules, and examples.
+
+The versioned [OpenAPI 3.0 contract](openapi/openapi.json) can be downloaded without a running server and imported into Postman, Insomnia, API clients, or SDK generators. The same file is attached to every GitHub Release.
 
 ### Create a client
 
@@ -219,6 +241,7 @@ The installer creates `.env` from `.env.example` and fills the most important va
 | `SERVER_PUBLIC_HOST` | Public host or domain placed into generated endpoints |
 | `DOCKER_GID` | Docker socket group ID used by Docker mode |
 | `DOCKER_API_VERSION` | Docker Engine API version used by the bundled CLI |
+| `AMNEZIA_API_VERSION` | GHCR image tag used by `docker-compose.ghcr.yml`; defaults to `latest` |
 
 ## Security
 
@@ -250,9 +273,10 @@ Before submitting a change:
 npm run lint
 npm test
 npm run build
+npm run openapi:check
 ```
 
-CI runs lint, tests, and build checks on Node.js 20, 22, and 24. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution workflow.
+When routes or schemas change, regenerate the portable contract with `npm run openapi:generate`. CI runs lint, tests, build, and contract checks on Node.js 20, 22, and 24. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution workflow.
 
 ## Ecosystem
 

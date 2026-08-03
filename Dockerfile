@@ -29,8 +29,11 @@ RUN npm ci --omit=dev
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 
+ARG APP_VERSION=development
+
 ENV NODE_ENV=production
 ENV ENV=production
+ENV APP_VERSION=${APP_VERSION}
 
 COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
 

@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -34,6 +34,10 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Check OpenAPI contract
+        if: matrix.node-version == 22
+        run: npm run openapi:check
 
       - name: Test
         run: npm test

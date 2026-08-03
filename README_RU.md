@@ -4,6 +4,7 @@
 [![Fastify](https://img.shields.io/badge/Fastify-5.x-000000?logo=fastify&logoColor=white)](https://fastify.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![CI](https://github.com/kyoresuas/amnezia-api/actions/workflows/ci.yml/badge.svg)](https://github.com/kyoresuas/amnezia-api/actions/workflows/ci.yml)
+[![GHCR](https://img.shields.io/badge/GHCR-amnezia--api-2496ED?logo=docker&logoColor=white)](https://github.com/kyoresuas/amnezia-api/pkgs/container/amnezia-api)
 [![License](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
 
 [English](README.md) · **Русский**
@@ -103,8 +104,16 @@ openssl rand -hex 32
 ```
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.ghcr.yml up -d
 docker compose ps
+```
+
+Чтобы закрепить конкретный релиз, задайте `AMNEZIA_API_VERSION`, например `1.0.0`. По умолчанию используется `latest`.
+
+Для локальной сборки образа из исходников используйте:
+
+```bash
+docker compose up -d --build
 ```
 
 Docker Compose публикует API только на `127.0.0.1:4001`. Для удалённого доступа используйте reverse proxy с TLS.
@@ -116,6 +125,17 @@ bash ./scripts/setup.sh
 ```
 
 Скрипт обновит репозиторий, определит текущий режим запуска, пересоберёт приложение и сохранит существующий `.env`.
+
+## Релизы и Docker-образы
+
+Каждый релиз `vX.Y.Z` публикует multi-platform образ для `linux/amd64` и `linux/arm64`:
+
+```bash
+docker pull ghcr.io/kyoresuas/amnezia-api:latest
+docker pull ghcr.io/kyoresuas/amnezia-api:1.0.0
+```
+
+Стабильные релизы получают теги `latest`, major, minor, точную версию и версию с префиксом `v`. Образы содержат OCI-метаданные, SBOM и GitHub provenance attestation. В GitHub Release автоматически добавляются release notes и переносимый OpenAPI-контракт.
 
 ## Аутентификация
 
@@ -147,6 +167,8 @@ x-api-key: <FASTIFY_API_KEY>
 | `GET` | `/metrics` | Prometheus-метрики |
 
 Полные схемы запросов и ответов доступны в Swagger UI на `/docs`.
+
+Версионируемый [контракт OpenAPI 3.0](openapi/openapi.json) доступен без запущенного сервера. Его можно импортировать в Postman, Insomnia, API-клиенты и генераторы SDK. Этот же файл прикладывается к каждому GitHub Release.
 
 ### Создать клиента
 
@@ -198,6 +220,7 @@ curl -X PATCH "https://vpn.example.com/clients" \
 | `SERVER_PUBLIC_HOST` | Публичный хост для сгенерированных endpoint |
 | `DOCKER_GID` | ID группы Docker socket в Docker-режиме |
 | `DOCKER_API_VERSION` | Версия Docker Engine API |
+| `AMNEZIA_API_VERSION` | Тег GHCR-образа для `docker-compose.ghcr.yml`; по умолчанию `latest` |
 
 ## Безопасность
 
@@ -228,9 +251,10 @@ npm run dev
 npm run lint
 npm test
 npm run build
+npm run openapi:check
 ```
 
-CI запускает lint, тесты и сборку на Node.js 20, 22 и 24. Полный порядок подготовки изменений описан в [CONTRIBUTING.md](CONTRIBUTING.md).
+После изменения маршрутов или схем обновите переносимый контракт командой `npm run openapi:generate`. CI запускает lint, тесты, сборку и проверку контракта на Node.js 20, 22 и 24. Полный порядок подготовки изменений описан в [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Экосистема
 

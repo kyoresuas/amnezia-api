@@ -35,6 +35,8 @@
     "test:typecheck": "tsc --project tsconfig.json",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "openapi:generate": "npm run build && node ./scripts/generate-openapi.js",
+    "openapi:check": "node ./scripts/generate-openapi.js --check",
     "pre-start": "npx cross-env ENV=preproduction node build/main.js",
     "start": "npx cross-env ENV=production node dist/main.js",
     "deploy": "node ./scripts/deploy.js"

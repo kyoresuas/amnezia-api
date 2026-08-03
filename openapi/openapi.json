@@ -1,0 +1,2024 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Amnezia API",
+    "version": "1.0.0",
+    "description": "Self-hosted REST API for automating Amnezia VPN servers.",
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {}
+  },
+  "paths": {
+    "/metrics": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/clients": {
+      "get": {
+        "summary": "Получить всех клиентов",
+        "tags": [
+          "Clients"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "example": 0
+            },
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "description": "Сколько элементов необходимо пропустить"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100,
+              "example": 100
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Максимальное количество элементов"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ответ на запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Ответ на запрос",
+                  "required": [
+                    "total",
+                    "items"
+                  ],
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Количество всех элементов",
+                      "example": 128
+                    },
+                    "items": {
+                      "type": "array",
+                      "description": "Клиенты",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "username",
+                          "peers"
+                        ],
+                        "properties": {
+                          "username": {
+                            "type": "string",
+                            "description": "Имя клиента",
+                            "example": "Kyoresuas"
+                          },
+                          "peers": {
+                            "type": "array",
+                            "description": "Список peer'ов клиента",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "id",
+                                "name",
+                                "status",
+                                "allowedIps",
+                                "lastHandshake",
+                                "traffic",
+                                "online",
+                                "endpoint",
+                                "expiresAt",
+                                "protocol"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128,
+                                  "pattern": "^[A-Za-z0-9+/=_-]+$",
+                                  "description": "Идентификатор (PublicKey)",
+                                  "example": "PF77ZXRl1yAkFzhBq/zQNlDPD73XXTq+Zs2PgtjLKVA="
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Название peer'а (если есть)",
+                                  "example": "macOS 26.0"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "description": "Статус ключа",
+                                  "enum": [
+                                    "active",
+                                    "disabled"
+                                  ],
+                                  "example": "active"
+                                },
+                                "allowedIps": {
+                                  "type": "array",
+                                  "description": "Список разрешенных IP/подсетей",
+                                  "items": {
+                                    "type": "string",
+                                    "example": "10.8.1.1/32"
+                                  }
+                                },
+                                "lastHandshake": {
+                                  "type": "number",
+                                  "description": "Время последнего рукопожатия",
+                                  "example": 1759477747
+                                },
+                                "traffic": {
+                                  "type": "object",
+                                  "required": [
+                                    "received",
+                                    "sent"
+                                  ],
+                                  "properties": {
+                                    "received": {
+                                      "type": "number",
+                                      "example": 4490348984
+                                    },
+                                    "sent": {
+                                      "type": "number",
+                                      "example": 66372801657
+                                    }
+                                  }
+                                },
+                                "endpoint": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Адрес и порт подключения",
+                                  "example": "192.168.1.1:12345"
+                                },
+                                "online": {
+                                  "type": "boolean",
+                                  "example": true
+                                },
+                                "expiresAt": {
+                                  "type": "number",
+                                  "nullable": true,
+                                  "description": "Дата окончания доступа",
+                                  "example": 1735689600
+                                },
+                                "protocol": {
+                                  "type": "string",
+                                  "description": "Протокол подключения",
+                                  "enum": [
+                                    "amneziawg",
+                                    "amneziawg2",
+                                    "xray"
+                                  ],
+                                  "example": "amneziawg"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Создать нового клиента",
+        "tags": [
+          "Clients"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "clientName"
+                ],
+                "properties": {
+                  "clientName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[^\\u0000-\\u001f]+$",
+                    "description": "Имя клиента",
+                    "example": "Kyoresuas"
+                  },
+                  "protocol": {
+                    "type": "string",
+                    "description": "Протокол подключения",
+                    "enum": [
+                      "amneziawg",
+                      "amneziawg2",
+                      "xray"
+                    ],
+                    "example": "amneziawg",
+                    "default": "amneziawg2"
+                  },
+                  "expiresAt": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Дата окончания доступа",
+                    "example": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message",
+                    "client"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Сообщение для уведомления",
+                      "example": "Успешно сохранено"
+                    },
+                    "client": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "config",
+                        "protocol"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "pattern": "^[A-Za-z0-9+/=_-]+$",
+                          "description": "Идентификатор (PublicKey)",
+                          "example": "PF77ZXRl1yAkFzhBq/zQNlDPD73XXTq+Zs2PgtjLKVA="
+                        },
+                        "config": {
+                          "type": "string",
+                          "description": "Конфиг для импорта в приложение",
+                          "example": "vpn://3fa85f64-5717-4562-b3fc-2c963f66afa6..."
+                        },
+                        "protocol": {
+                          "type": "string",
+                          "description": "Протокол подключения",
+                          "enum": [
+                            "amneziawg",
+                            "amneziawg2",
+                            "xray"
+                          ],
+                          "example": "amneziawg"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Некорректный запрос"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Не найдено"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Конфликт"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Обновить данные клиента",
+        "tags": [
+          "Clients"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "clientId"
+                ],
+                "anyOf": [
+                  {
+                    "required": [
+                      "expiresAt"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "status"
+                    ]
+                  }
+                ],
+                "properties": {
+                  "clientId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9+/=_-]+$",
+                    "description": "Идентификатор (PublicKey)",
+                    "example": "PF77ZXRl1yAkFzhBq/zQNlDPD73XXTq+Zs2PgtjLKVA="
+                  },
+                  "protocol": {
+                    "type": "string",
+                    "description": "Протокол подключения",
+                    "enum": [
+                      "amneziawg",
+                      "amneziawg2",
+                      "xray"
+                    ],
+                    "example": "amneziawg",
+                    "default": "amneziawg"
+                  },
+                  "expiresAt": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Дата окончания доступа",
+                    "example": 1735689600
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Статус ключа",
+                    "enum": [
+                      "active",
+                      "disabled"
+                    ],
+                    "example": "active"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ответ на действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на действие",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Сообщение для уведомления",
+                      "example": "Успешно сохранено"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Некорректный запрос"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Не найдено"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Удалить клиента",
+        "tags": [
+          "Clients"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "clientId"
+                ],
+                "properties": {
+                  "clientId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9+/=_-]+$",
+                    "description": "Идентификатор (PublicKey)",
+                    "example": "PF77ZXRl1yAkFzhBq/zQNlDPD73XXTq+Zs2PgtjLKVA="
+                  },
+                  "protocol": {
+                    "type": "string",
+                    "description": "Протокол подключения",
+                    "enum": [
+                      "amneziawg",
+                      "amneziawg2",
+                      "xray"
+                    ],
+                    "example": "amneziawg",
+                    "default": "amneziawg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ответ на действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на действие",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Сообщение для уведомления",
+                      "example": "Успешно сохранено"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Не найдено"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients/qr": {
+      "post": {
+        "summary": "Сгенерировать QR-коды для конфига клиента",
+        "tags": [
+          "Clients"
+        ],
+        "description": "Возвращает серию QR-кодов (PNG data URI) в формате клиента Amnezia. Большие конфиги разбиваются на несколько QR.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "config"
+                ],
+                "properties": {
+                  "config": {
+                    "type": "string",
+                    "description": "Конфиг клиента (строка вида vpn://...), полученный при создании",
+                    "example": "vpn://..."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Серия QR-кодов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Серия QR-кодов",
+                  "required": [
+                    "total",
+                    "items"
+                  ],
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Количество QR-кодов в серии",
+                      "example": 1
+                    },
+                    "items": {
+                      "type": "array",
+                      "description": "QR-коды в виде PNG data URI",
+                      "items": {
+                        "type": "string",
+                        "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg..."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Некорректный запрос"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server": {
+      "get": {
+        "summary": "Информация о текущем сервере",
+        "tags": [
+          "Server"
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о текущем сервере",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Информация о текущем сервере",
+                  "required": [
+                    "id",
+                    "region",
+                    "weight",
+                    "maxPeers",
+                    "totalPeers",
+                    "protocols"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Уникальный идентификатор сервера",
+                      "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "region": {
+                      "type": "string",
+                      "description": "Регион/зона/лейбл сервера",
+                      "example": "NLs-1"
+                    },
+                    "weight": {
+                      "type": "number",
+                      "description": "Вес сервера для балансировки",
+                      "example": 100
+                    },
+                    "maxPeers": {
+                      "type": "number",
+                      "description": "Максимально допустимое число клиентов",
+                      "example": 200
+                    },
+                    "totalPeers": {
+                      "type": "number",
+                      "description": "Текущее число клиентов",
+                      "example": 8
+                    },
+                    "protocols": {
+                      "type": "array",
+                      "description": "Список поддерживаемых протоколов",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "amneziawg",
+                          "amneziawg2",
+                          "xray"
+                        ]
+                      },
+                      "example": [
+                        "amneziawg",
+                        "xray"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/load": {
+      "get": {
+        "summary": "Получить метрики нагрузки сервера",
+        "tags": [
+          "Server"
+        ],
+        "responses": {
+          "200": {
+            "description": "Метрики нагрузки сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Метрики нагрузки сервера",
+                  "required": [
+                    "timestamp",
+                    "uptimeSec",
+                    "cpu",
+                    "memory",
+                    "loadavg"
+                  ],
+                  "properties": {
+                    "timestamp": {
+                      "type": "string",
+                      "description": "Время формирования ответа (ISO)",
+                      "example": "2024-12-16T10:51:47.087Z"
+                    },
+                    "uptimeSec": {
+                      "type": "number",
+                      "description": "Uptime сервера в секундах",
+                      "example": 86400
+                    },
+                    "loadavg": {
+                      "type": "array",
+                      "description": "Load average за 1/5/15 минут",
+                      "items": {
+                        "type": "number"
+                      },
+                      "example": [
+                        0.12,
+                        0.18,
+                        0.22
+                      ]
+                    },
+                    "cpu": {
+                      "type": "object",
+                      "description": "CPU",
+                      "required": [
+                        "cores"
+                      ],
+                      "properties": {
+                        "cores": {
+                          "type": "number",
+                          "description": "Количество ядер CPU",
+                          "example": 2
+                        }
+                      }
+                    },
+                    "memory": {
+                      "type": "object",
+                      "description": "RAM",
+                      "required": [
+                        "totalBytes",
+                        "freeBytes",
+                        "usedBytes"
+                      ],
+                      "properties": {
+                        "totalBytes": {
+                          "type": "number",
+                          "description": "Всего RAM (bytes)",
+                          "example": 2147483648
+                        },
+                        "freeBytes": {
+                          "type": "number",
+                          "description": "Свободно RAM (bytes)",
+                          "example": 734003200
+                        },
+                        "usedBytes": {
+                          "type": "number",
+                          "description": "Занято RAM (bytes)",
+                          "example": 1413480448
+                        }
+                      }
+                    },
+                    "disk": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "Диск (корень /). Может быть null, если метрики недоступны",
+                      "required": [
+                        "totalBytes",
+                        "usedBytes",
+                        "availableBytes",
+                        "usedPercent"
+                      ],
+                      "properties": {
+                        "totalBytes": {
+                          "type": "number",
+                          "description": "Всего (bytes)",
+                          "example": 32212254720
+                        },
+                        "usedBytes": {
+                          "type": "number",
+                          "description": "Использовано (bytes)",
+                          "example": 10737418240
+                        },
+                        "availableBytes": {
+                          "type": "number",
+                          "description": "Доступно (bytes)",
+                          "example": 21474836480
+                        },
+                        "usedPercent": {
+                          "type": "number",
+                          "description": "Заполненность (0..100)",
+                          "example": 33.3
+                        }
+                      }
+                    },
+                    "network": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "Суммарные сетевые счётчики (bytes). Может быть null, если /proc недоступен",
+                      "required": [
+                        "rxBytes",
+                        "txBytes"
+                      ],
+                      "properties": {
+                        "rxBytes": {
+                          "type": "number",
+                          "description": "Принято (bytes)",
+                          "example": 123456789
+                        },
+                        "txBytes": {
+                          "type": "number",
+                          "description": "Отправлено (bytes)",
+                          "example": 987654321
+                        }
+                      }
+                    },
+                    "docker": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "Docker-метрики контейнеров VPN (если Docker доступен и контейнеры запущены)",
+                      "required": [
+                        "containers"
+                      ],
+                      "properties": {
+                        "containers": {
+                          "type": "array",
+                          "description": "Список контейнеров и их метрик",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "name"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "description": "Имя контейнера",
+                                "example": "amnezia-awg"
+                              },
+                              "cpuPercent": {
+                                "type": "number",
+                                "nullable": true,
+                                "description": "CPU (в процентах), если удалось распарсить",
+                                "example": 0.15
+                              },
+                              "memUsageBytes": {
+                                "type": "number",
+                                "nullable": true,
+                                "description": "Использование памяти (bytes), если удалось распарсить",
+                                "example": 12582912
+                              },
+                              "memLimitBytes": {
+                                "type": "number",
+                                "nullable": true,
+                                "description": "Лимит памяти (bytes), если удалось распарсить",
+                                "example": 2147483648
+                              },
+                              "netRxBytes": {
+                                "type": "number",
+                                "nullable": true,
+                                "description": "Сеть RX (bytes), если удалось распарсить",
+                                "example": 1048576
+                              },
+                              "netTxBytes": {
+                                "type": "number",
+                                "nullable": true,
+                                "description": "Сеть TX (bytes), если удалось распарсить",
+                                "example": 2097152
+                              },
+                              "pids": {
+                                "type": "number",
+                                "nullable": true,
+                                "description": "Количество процессов, если удалось распарсить",
+                                "example": 12
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/backup": {
+      "get": {
+        "summary": "Резервная копия конфигурации сервера",
+        "tags": [
+          "Server"
+        ],
+        "responses": {
+          "200": {
+            "description": "Полный набор данных для развёртывания идентичной конфигурации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Полный набор данных для развёртывания идентичной конфигурации",
+                  "required": [
+                    "generatedAt",
+                    "serverId",
+                    "protocols"
+                  ],
+                  "properties": {
+                    "generatedAt": {
+                      "type": "string",
+                      "format": "dateTime",
+                      "description": "Время формирования выгрузки",
+                      "example": "2025-01-15T12:34:56.789Z"
+                    },
+                    "serverId": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Идентификатор сервера из конфигурации",
+                      "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "protocols": {
+                      "type": "array",
+                      "description": "Список экспортированных протоколов",
+                      "minItems": 1,
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "amneziawg",
+                          "amneziawg2",
+                          "xray"
+                        ]
+                      },
+                      "example": [
+                        "amneziawg",
+                        "amneziawg2",
+                        "xray"
+                      ]
+                    },
+                    "amnezia": {
+                      "type": "object",
+                      "required": [
+                        "wgConfig",
+                        "presharedKey",
+                        "serverPublicKey",
+                        "clients"
+                      ],
+                      "properties": {
+                        "wgConfig": {
+                          "type": "string",
+                          "description": "Содержимое файла wg0.conf"
+                        },
+                        "presharedKey": {
+                          "type": "string",
+                          "description": "Содержимое файла wireguard_psk.key"
+                        },
+                        "serverPublicKey": {
+                          "type": "string",
+                          "description": "Публичный ключ сервера WireGuard"
+                        },
+                        "clients": {
+                          "type": "array",
+                          "description": "Содержимое таблицы клиентов AmneziaWG",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "clientId": {
+                                "type": "string",
+                                "description": "Публичный ключ клиента"
+                              },
+                              "publicKey": {
+                                "type": "string",
+                                "description": "Дополнительный публичный ключ"
+                              },
+                              "userData": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "clientName": {
+                                    "type": "string"
+                                  },
+                                  "creationDate": {
+                                    "type": "string"
+                                  },
+                                  "expiresAt": {
+                                    "type": "number"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "example": {
+                        "wgConfig": "[Interface]\\nAddress = 10.8.1.2/32\\nPrivateKey = <client-private-key>\\n\\n[Peer]\\nPublicKey = <server-public-key>\\nAllowedIPs = 0.0.0.0/0",
+                        "presharedKey": "y8PpvlM2QEqLPTbV5X3QfUuRiK6sR3yIYB4u6Fvxtn4=",
+                        "serverPublicKey": "aDrz0wS1C8VZK7arx2n3dE0Bf2c5LQdYpO7h4g9l8m0=",
+                        "clients": [
+                          {
+                            "clientId": "YjYxMzNhZjY2YzE4MjJmN2M0OTViYzQwYmVhZTM0NjY=",
+                            "publicKey": "YjYxMzNhZjY2YzE4MjJmN2M0OTViYzQwYmVhZTM0NjY=",
+                            "userData": {
+                              "clientName": "john.doe [iphone]",
+                              "creationDate": "Mon, 06 Nov 2023 10:12:45 GMT",
+                              "expiresAt": 1736200000
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "amneziaWg2": {
+                      "type": "object",
+                      "required": [
+                        "wgConfig",
+                        "presharedKey",
+                        "serverPublicKey",
+                        "clients"
+                      ],
+                      "properties": {
+                        "wgConfig": {
+                          "type": "string",
+                          "description": "Содержимое файла awg0.conf"
+                        },
+                        "presharedKey": {
+                          "type": "string",
+                          "description": "Содержимое файла wireguard_psk.key"
+                        },
+                        "serverPublicKey": {
+                          "type": "string",
+                          "description": "Публичный ключ сервера AmneziaWG"
+                        },
+                        "clients": {
+                          "type": "array",
+                          "description": "Содержимое таблицы клиентов AmneziaWG 2.0",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "clientId": {
+                                "type": "string",
+                                "description": "Публичный ключ клиента"
+                              },
+                              "publicKey": {
+                                "type": "string",
+                                "description": "Дополнительный публичный ключ"
+                              },
+                              "userData": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "clientName": {
+                                    "type": "string"
+                                  },
+                                  "creationDate": {
+                                    "type": "string"
+                                  },
+                                  "expiresAt": {
+                                    "type": "number"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "xray": {
+                      "type": "object",
+                      "required": [
+                        "serverConfig",
+                        "uuid",
+                        "publicKey",
+                        "privateKey",
+                        "shortId"
+                      ],
+                      "properties": {
+                        "serverConfig": {
+                          "type": "string",
+                          "description": "Содержимое server.json"
+                        },
+                        "uuid": {
+                          "type": "string",
+                          "description": "UUID сервера"
+                        },
+                        "publicKey": {
+                          "type": "string",
+                          "description": "Публичный ключ Xray"
+                        },
+                        "privateKey": {
+                          "type": "string",
+                          "description": "Приватный ключ Xray"
+                        },
+                        "shortId": {
+                          "type": "string",
+                          "description": "Short ID Xray"
+                        }
+                      },
+                      "example": {
+                        "serverConfig": "{ \"inbounds\": [{ \"settings\": { \"clients\": [{ \"id\": \"0ce3c1f2-3ba7-4c75-8b0c-7d6a5e4f3d2c\" }] } }] }",
+                        "uuid": "0ce3c1f2-3ba7-4c75-8b0c-7d6a5e4f3d2c",
+                        "publicKey": "l5TbmY0Bf9hQ2w3e7r1t5y8u0i2o4p6s8a3d5f7g9h1=",
+                        "privateKey": "B4nG7k9m2p5s8v1y3b6n8m2p4s6v8y1z3x5c7v9b1n3=",
+                        "shortId": "a1b2c3d4"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Импорт резервной копии конфигурации сервера",
+        "tags": [
+          "Server"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "generatedAt",
+                  "serverId",
+                  "protocols"
+                ],
+                "properties": {
+                  "generatedAt": {
+                    "type": "string",
+                    "format": "dateTime",
+                    "description": "Время формирования выгрузки",
+                    "example": "2025-01-15T12:34:56.789Z"
+                  },
+                  "serverId": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Идентификатор сервера из конфигурации",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  },
+                  "protocols": {
+                    "type": "array",
+                    "description": "Список протоколов, которые необходимо восстановить",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "amneziawg",
+                        "amneziawg2",
+                        "xray"
+                      ]
+                    },
+                    "example": [
+                      "amneziawg",
+                      "amneziawg2",
+                      "xray"
+                    ]
+                  },
+                  "amnezia": {
+                    "type": "object",
+                    "required": [
+                      "wgConfig",
+                      "presharedKey",
+                      "serverPublicKey",
+                      "clients"
+                    ],
+                    "properties": {
+                      "wgConfig": {
+                        "type": "string",
+                        "description": "Содержимое файла wg0.conf"
+                      },
+                      "presharedKey": {
+                        "type": "string",
+                        "description": "Содержимое файла wireguard_psk.key"
+                      },
+                      "serverPublicKey": {
+                        "type": "string",
+                        "description": "Публичный ключ сервера WireGuard"
+                      },
+                      "clients": {
+                        "type": "array",
+                        "description": "Содержимое таблицы клиентов AmneziaWG",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "clientId": {
+                              "type": "string",
+                              "description": "Публичный ключ клиента"
+                            },
+                            "publicKey": {
+                              "type": "string",
+                              "description": "Дополнительный публичный ключ"
+                            },
+                            "userData": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "clientName": {
+                                  "type": "string"
+                                },
+                                "creationDate": {
+                                  "type": "string"
+                                },
+                                "expiresAt": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "example": {
+                      "wgConfig": "[Interface]\\nAddress = 10.8.1.2/32\\nPrivateKey = <client-private-key>\\n\\n[Peer]\\nPublicKey = <server-public-key>\\nAllowedIPs = 0.0.0.0/0",
+                      "presharedKey": "y8PpvlM2QEqLPTbV5X3QfUuRiK6sR3yIYB4u6Fvxtn4=",
+                      "serverPublicKey": "aDrz0wS1C8VZK7arx2n3dE0Bf2c5LQdYpO7h4g9l8m0=",
+                      "clients": [
+                        {
+                          "clientId": "YjYxMzNhZjY2YzE4MjJmN2M0OTViYzQwYmVhZTM0NjY=",
+                          "publicKey": "YjYxMzNhZjY2YzE4MjJmN2M0OTViYzQwYmVhZTM0NjY=",
+                          "userData": {
+                            "clientName": "john.doe [iphone]",
+                            "creationDate": "Mon, 06 Nov 2023 10:12:45 GMT",
+                            "expiresAt": 1736200000
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "amneziaWg2": {
+                    "type": "object",
+                    "required": [
+                      "wgConfig",
+                      "presharedKey",
+                      "serverPublicKey",
+                      "clients"
+                    ],
+                    "properties": {
+                      "wgConfig": {
+                        "type": "string",
+                        "description": "Содержимое файла wg0.conf"
+                      },
+                      "presharedKey": {
+                        "type": "string",
+                        "description": "Содержимое файла wireguard_psk.key"
+                      },
+                      "serverPublicKey": {
+                        "type": "string",
+                        "description": "Публичный ключ сервера WireGuard"
+                      },
+                      "clients": {
+                        "type": "array",
+                        "description": "Содержимое таблицы клиентов AmneziaWG",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "clientId": {
+                              "type": "string",
+                              "description": "Публичный ключ клиента"
+                            },
+                            "publicKey": {
+                              "type": "string",
+                              "description": "Дополнительный публичный ключ"
+                            },
+                            "userData": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "clientName": {
+                                  "type": "string"
+                                },
+                                "creationDate": {
+                                  "type": "string"
+                                },
+                                "expiresAt": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "example": {
+                      "wgConfig": "[Interface]\\nAddress = 10.8.1.2/32\\nPrivateKey = <client-private-key>\\n\\n[Peer]\\nPublicKey = <server-public-key>\\nAllowedIPs = 0.0.0.0/0",
+                      "presharedKey": "y8PpvlM2QEqLPTbV5X3QfUuRiK6sR3yIYB4u6Fvxtn4=",
+                      "serverPublicKey": "aDrz0wS1C8VZK7arx2n3dE0Bf2c5LQdYpO7h4g9l8m0=",
+                      "clients": [
+                        {
+                          "clientId": "YjYxMzNhZjY2YzE4MjJmN2M0OTViYzQwYmVhZTM0NjY=",
+                          "publicKey": "YjYxMzNhZjY2YzE4MjJmN2M0OTViYzQwYmVhZTM0NjY=",
+                          "userData": {
+                            "clientName": "john.doe [iphone]",
+                            "creationDate": "Mon, 06 Nov 2023 10:12:45 GMT",
+                            "expiresAt": 1736200000
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "xray": {
+                    "type": "object",
+                    "required": [
+                      "serverConfig",
+                      "uuid",
+                      "publicKey",
+                      "privateKey",
+                      "shortId"
+                    ],
+                    "properties": {
+                      "serverConfig": {
+                        "type": "string",
+                        "description": "Содержимое server.json"
+                      },
+                      "uuid": {
+                        "type": "string",
+                        "description": "UUID сервера"
+                      },
+                      "publicKey": {
+                        "type": "string",
+                        "description": "Публичный ключ Xray"
+                      },
+                      "privateKey": {
+                        "type": "string",
+                        "description": "Приватный ключ Xray"
+                      },
+                      "shortId": {
+                        "type": "string",
+                        "description": "Short ID Xray"
+                      }
+                    },
+                    "example": {
+                      "serverConfig": "{ \"inbounds\": [{ \"settings\": { \"clients\": [{ \"id\": \"0ce3c1f2-3ba7-4c75-8b0c-7d6a5e4f3d2c\" }] } }] }",
+                      "uuid": "0ce3c1f2-3ba7-4c75-8b0c-7d6a5e4f3d2c",
+                      "publicKey": "l5TbmY0Bf9hQ2w3e7r1t5y8u0i2o4p6s8a3d5f7g9h1=",
+                      "privateKey": "B4nG7k9m2p5s8v1y3b6n8m2p4s6v8y1z3x5c7v9b1n3=",
+                      "shortId": "a1b2c3d4"
+                    }
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "protocols": {
+                          "type": "array",
+                          "contains": {
+                            "enum": [
+                              "amneziawg"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "protocols"
+                      ]
+                    },
+                    "then": {
+                      "required": [
+                        "amnezia"
+                      ]
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "protocols": {
+                          "type": "array",
+                          "contains": {
+                            "enum": [
+                              "amneziawg2"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "protocols"
+                      ]
+                    },
+                    "then": {
+                      "required": [
+                        "amneziaWg2"
+                      ]
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "protocols": {
+                          "type": "array",
+                          "contains": {
+                            "enum": [
+                              "xray"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "protocols"
+                      ]
+                    },
+                    "then": {
+                      "required": [
+                        "xray"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Информация о текущем сервере",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Информация о текущем сервере",
+                  "required": [
+                    "id",
+                    "region",
+                    "weight",
+                    "maxPeers",
+                    "totalPeers",
+                    "protocols"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Уникальный идентификатор сервера",
+                      "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "region": {
+                      "type": "string",
+                      "description": "Регион/зона/лейбл сервера",
+                      "example": "NLs-1"
+                    },
+                    "weight": {
+                      "type": "number",
+                      "description": "Вес сервера для балансировки",
+                      "example": 100
+                    },
+                    "maxPeers": {
+                      "type": "number",
+                      "description": "Максимально допустимое число клиентов",
+                      "example": 200
+                    },
+                    "totalPeers": {
+                      "type": "number",
+                      "description": "Текущее число клиентов",
+                      "example": 8
+                    },
+                    "protocols": {
+                      "type": "array",
+                      "description": "Список поддерживаемых протоколов",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "amneziawg",
+                          "amneziawg2",
+                          "xray"
+                        ]
+                      },
+                      "example": [
+                        "amneziawg",
+                        "xray"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/reboot": {
+      "post": {
+        "summary": "Перезагрузить сервер",
+        "tags": [
+          "Server"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Сервер перезагружается..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Требуется авторизация"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ответ на запрос с ошибкой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "description": "Ответ на запрос с ошибкой",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Описание ошибки",
+                      "example": "Доступ запрещён"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "ApiKey": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Clients",
+      "description": "Маршруты для управления клиентами"
+    },
+    {
+      "name": "Server",
+      "description": "Маршруты для управления сервером"
+    }
+  ]
+}

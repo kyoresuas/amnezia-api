@@ -187,9 +187,19 @@ export const SwaggerContract = {
     };
 
     openapi.info = {
-      title: "Admin API",
-      version: "1.0.0",
+      title: "Amnezia API",
+      version:
+        process.env.APP_VERSION ??
+        process.env.npm_package_version ??
+        "development",
+      description:
+        "Self-hosted REST API for automating Amnezia VPN servers.",
+      license: {
+        name: "MIT",
+      },
     };
+
+    openapi.servers = [{ url: "/" }];
 
     openapi.tags!.push({
       name: this.Tags.CLIENTS,
