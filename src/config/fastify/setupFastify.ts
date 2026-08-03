@@ -1,4 +1,3 @@
-import Fastify from "fastify";
 import i18next from "i18next";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
@@ -10,6 +9,7 @@ import { AppContract } from "@/contracts/app";
 import fastifySwagger from "@fastify/swagger";
 import fastifyFormbody from "@fastify/formbody";
 import { plugin } from "i18next-http-middleware";
+import Fastify, { LogController } from "fastify";
 import fastifyRateLimit from "@fastify/rate-limit";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import { AppFastifyInstance } from "@/types/shared";
@@ -29,7 +29,7 @@ export const setupFastify = async (): Promise<AppFastifyInstance> => {
   appLogger.info(`Запуск приложения Fastify...`);
 
   const fastify: AppFastifyInstance = Fastify({
-    disableRequestLogging: true,
+    logController: new LogController({ disableRequestLogging: true }),
   })
     // Для улучшенной типизации запросов и ответов
     .withTypeProvider<JsonSchemaToTsProvider>();
