@@ -27,18 +27,39 @@ export const createProtocolServiceMock = (
     },
   );
 
+  // Создать мок функции обновления клиента
+  const updateClient = vi.fn<IProtocolService["updateClient"]>(
+    async () => true,
+  );
+
+  // Создать мок функции удаления клиента
+  const deleteClient = vi.fn<IProtocolService["deleteClient"]>(
+    async () => true,
+  );
+
+  // Создать мок функции отключения просроченных клиентов
+  const disableExpiredClients = vi.fn<
+    IProtocolService["disableExpiredClients"]
+  >(async () => 0);
+
   // Создать мок сервиса протокола
   const service: IProtocolService = {
     getClients,
     createClient,
-    updateClient: vi.fn(async () => true),
-    deleteClient: vi.fn(async () => true),
-    disableExpiredClients: vi.fn(async () => 0),
+    updateClient,
+    deleteClient,
+    disableExpiredClients,
   };
 
   return {
     service,
     state: { clients },
-    spies: { getClients, createClient },
+    spies: {
+      getClients,
+      createClient,
+      updateClient,
+      deleteClient,
+      disableExpiredClients,
+    },
   };
 };

@@ -7,11 +7,10 @@ import {
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
-import { ClientTableEntry } from "@/types/amnezia";
 import { AmneziaBackupData } from "@/types/server";
 import { Protocol, ClientErrorCode } from "@/types/shared";
 import { encodeVpnConfig } from "@/helpers/encodeVpnConfig";
-import { AmneziaWgConnection } from "@/helpers/amneziaWgConnection";
+import { ClientTableEntry, IAmneziaConnection } from "@/types/amnezia";
 
 /**
  * Сервис для работы с AmneziaWG
@@ -41,7 +40,7 @@ export class AmneziaWgService {
     `$ENDPOINT_LINE` +
     `PersistentKeepalive = $KEEPALIVE\n`;
 
-  constructor(private amneziaWg: AmneziaWgConnection) {}
+  constructor(private amneziaWg: IAmneziaConnection) {}
 
   /**
    * Проверить, что секция [Peer] принадлежит клиенту с данным publicKey.

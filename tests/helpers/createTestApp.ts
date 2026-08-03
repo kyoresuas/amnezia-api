@@ -2,13 +2,9 @@ import { asValue } from "awilix";
 import "@/config/setupMultilingualism";
 import { di } from "@/config/DIContainer";
 import { createFastify } from "@/config/fastify";
+import type { ClientsServiceStub } from "../types";
 import { AppFastifyInstance } from "@/types/shared";
 import { ClientsService } from "@/services/clients";
-
-export type ClientsServiceStub = Pick<
-  ClientsService,
-  "getClients" | "updateClient"
->;
 
 /**
  * Создать тестовое приложение для клиентов

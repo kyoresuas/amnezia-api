@@ -1,21 +1,24 @@
 import {
+  RunOptions,
+  ClientTableEntry,
+  IAmneziaConnection,
+} from "@/types/amnezia";
+import {
   isDockerDaemonUnavailableError,
   isDockerContainerUnavailableError,
 } from "@/utils/dockerErrors";
 import { exec } from "child_process";
 import { APIError } from "@/utils/APIError";
-import { RunOptions } from "@/types/amnezia";
 import { AppContract } from "@/contracts/app";
 import { CommandResult } from "@/types/shared";
 import { TimeContract } from "@/contracts/time";
 import { ServerErrorCode } from "@/types/shared";
-import { ClientTableEntry } from "@/types/amnezia";
 import { buildWriteFileCommand } from "@/utils/shellWrite";
 
 /**
  * Создать соединение с AmneziaWG 2.0
  */
-export class AmneziaWg2Connection {
+export class AmneziaWg2Connection implements IAmneziaConnection {
   static key = "amneziaWg2";
 
   /**

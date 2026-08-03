@@ -1,15 +1,5 @@
-import { Protocol } from "@/types/shared";
+import type { ClientPeerOptions, ClientRecordOptions } from "../types";
 import { PeerStatus, ClientPeer, ClientRecord } from "@/types/clients";
-
-type ClientPeerOptions = Pick<ClientPeer, "id" | "protocol"> &
-  Partial<Omit<ClientPeer, "id" | "protocol">>;
-
-type ClientRecordOptions = {
-  username: string;
-  protocol: Protocol;
-  clientId?: string;
-  peers?: ClientPeer[];
-};
 
 /**
  * Создать клиентского пира

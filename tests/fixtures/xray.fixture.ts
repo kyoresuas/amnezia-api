@@ -1,14 +1,26 @@
 import { XrayServerConfig } from "@/types/xray";
+import type { XrayServerConfigFixtureOptions } from "../types";
 
 /**
  * Создать фикстуру конфигурации сервера Xray
  */
-export const createXrayServerConfigFixture = (): XrayServerConfig => ({
+export const createXrayServerConfigFixture = ({
+  clients = [{ id: "active-id", username: "active" }],
+  clientsDisabled = [{ id: "disabled-id", username: "disabled" }],
+  port = 443,
+  serverNames = ["example.com"],
+}: XrayServerConfigFixtureOptions = {}): XrayServerConfig => ({
   inbounds: [
     {
+      port,
       settings: {
-        clients: [{ id: "active-id", username: "active" }],
-        clientsDisabled: [{ id: "disabled-id", username: "disabled" }],
+        clients,
+        clientsDisabled,
+      },
+      streamSettings: {
+        realitySettings: {
+          serverNames,
+        },
       },
     },
   ],
