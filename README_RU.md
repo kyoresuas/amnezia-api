@@ -213,6 +213,8 @@ Amnezia API изменяет VPN-конфигурацию и управляет 
 
 В API используются constant-time сравнение ключа, rate limiting, валидация запросов и security headers. Они не заменяют TLS, сетевую изоляцию и защиту сервера.
 
+Сообщайте об уязвимостях приватно по инструкции из [SECURITY.md](SECURITY.md). Не создавайте для них публичные issues.
+
 ## Разработка
 
 ```bash
@@ -224,10 +226,11 @@ npm run dev
 
 ```bash
 npm run lint
+npm test
 npm run build
 ```
 
-CI запускает lint и сборку на Node.js 20, 22 и 24.
+CI запускает lint, тесты и сборку на Node.js 20, 22 и 24. Полный порядок подготовки изменений описан в [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Экосистема
 

@@ -1,0 +1,90 @@
+name: Bug report
+description: Report reproducible behavior that is not working as expected
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Remove all API keys, VPN configs, QR codes, backups, client identifiers, and real server addresses before submitting.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem and its impact.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the smallest reliable sequence of requests or actions.
+      placeholder: |
+        1. Send ...
+        2. Configure ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment mode
+      options:
+        - Docker Compose
+        - PM2
+        - Development
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: protocols
+    attributes:
+      label: Enabled protocols
+      description: For example, amneziawg, amneziawg2, or xray.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Provide a release version or the output of `git rev-parse --short HEAD`.
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Server environment
+      description: OS version, Node.js version, Docker version, and relevant Amnezia container versions.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs or responses
+      description: Use a code block and remove all secrets and identifying data.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: I removed API keys, configs, QR codes, backups, client identifiers, and real server addresses.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

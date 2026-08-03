@@ -235,6 +235,8 @@ Amnezia API can modify VPN configuration and control Amnezia containers. Treat i
 
 The service uses constant-time API-key comparison, rate limiting, request validation, and security headers. These controls do not replace TLS, network isolation, or host hardening.
 
+Report suspected vulnerabilities privately by following the instructions in [SECURITY.md](SECURITY.md). Do not open a public issue for a security report.
+
 ## Development
 
 ```bash
@@ -246,10 +248,11 @@ Before submitting a change:
 
 ```bash
 npm run lint
+npm test
 npm run build
 ```
 
-CI runs lint and build checks on Node.js 20, 22, and 24.
+CI runs lint, tests, and build checks on Node.js 20, 22, and 24. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution workflow.
 
 ## Ecosystem
 

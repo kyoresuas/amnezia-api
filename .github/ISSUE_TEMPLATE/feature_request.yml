@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest an improvement or a new integration
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to accomplish, and who benefits from it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the API, configuration, deployment, or documentation change you would like.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe current workarounds or other approaches.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Client API
+        - Server API
+        - AmneziaWG
+        - AmneziaWG 2.0
+        - Xray
+        - Installation and deployment
+        - Documentation
+        - Integration or SDK
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and did not find the same request.
+          required: true
+        - label: I have not included credentials or sensitive server data.
+          required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/kyoresuas/amnezia-api/security/policy
+    about: Report vulnerabilities privately; do not create a public issue.
+  - name: Usage questions
+    url: https://t.me/stercuss
+    about: Ask setup and usage questions in the project support chat.

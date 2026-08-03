@@ -1,7 +1,32 @@
 {
   "name": "amnezia-api",
   "version": "1.0.0",
+  "description": "Self-hosted REST API for automating Amnezia VPN servers",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kyoresuas/amnezia-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kyoresuas/amnezia-api/issues"
+  },
+  "homepage": "https://github.com/kyoresuas/amnezia-api#readme",
+  "keywords": [
+    "amnezia",
+    "amneziawg",
+    "wireguard",
+    "xray",
+    "vpn",
+    "vpn-management",
+    "self-hosted",
+    "rest-api",
+    "fastify",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "lint": "npx eslint . --max-warnings=0",
     "dev": "npx cross-env ENV=development nodemon -q",
