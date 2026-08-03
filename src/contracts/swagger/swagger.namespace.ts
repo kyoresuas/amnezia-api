@@ -318,6 +318,7 @@ export namespace SwaggerContract {
   ): FastifySwaggerUiOptions => {
     return {
       routePrefix: "docs",
+      staticCSP: true,
       uiConfig: {
         docExpansion: "list",
         deepLinking: false,

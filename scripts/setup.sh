@@ -224,6 +224,26 @@ generate_api_key() {
   (date +%s | sha256sum | awk '{print $1}')
 }
 
+# Создает безопасный API-ключ для новой установки или заменяет слабый ключ
+ensure_api_key() {
+  local current_api_key
+  current_api_key="$(get_env_var FASTIFY_API_KEY)"
+
+  if [ -z "$current_api_key" ] || \
+    echo "$current_api_key" | grep -qiE '^[[:space:]]*(change-me|changeme|password|secret)[[:space:]]*$' || \
+    [ "${#current_api_key}" -lt 32 ]; then
+    if [ -n "$current_api_key" ] && \
+      ! echo "$current_api_key" | grep -qiE '^[[:space:]]*(change-me|changeme|password|secret)[[:space:]]*$'; then
+      warn "Слабый FASTIFY_API_KEY заменен. Обновите ключ во всех API-клиентах."
+    fi
+
+    upsert_env_var FASTIFY_API_KEY "$(generate_api_key)"
+    ok "Безопасный FASTIFY_API_KEY сгенерирован автоматически"
+  else
+    info "FASTIFY_API_KEY уже задан"
+  fi
+}
+
 # Получает внешний IP адрес
 get_public_ip() {
   curl -4 -fsS --connect-timeout 3 --max-time 5 http://checkip.amazonaws.com 2>/dev/null || \
@@ -406,14 +426,7 @@ setup_env() {
   fi
   
   # API ключ
-  local current_api_key
-  current_api_key="$(get_env_var FASTIFY_API_KEY)"
-  if [ -z "$current_api_key" ] || echo "$current_api_key" | grep -qiE '^\s*change-me\s*$'; then
-    upsert_env_var FASTIFY_API_KEY "$(generate_api_key)"
-    ok "FASTIFY_API_KEY сгенерирован автоматически"
-  else
-    info "FASTIFY_API_KEY уже задан"
-  fi
+  ensure_api_key
 
   # Протоколы
   local current_protocols auto_protocols
@@ -745,6 +758,8 @@ main() {
     if [ "${INSTALL_MODE:-pm2}" != "docker" ]; then
       install_dependencies
     fi
+  else
+    ensure_api_key
   fi
 
   if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then

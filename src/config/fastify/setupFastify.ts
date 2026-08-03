@@ -49,7 +49,7 @@ export const setupFastify = async (): Promise<AppFastifyInstance> => {
   });
 
   // Заголовки безопасности
-  await fastify.register(fastifyHelmet, { contentSecurityPolicy: false });
+  await fastify.register(fastifyHelmet);
 
   // Ограничение частоты запросов
   await fastify.register(fastifyRateLimit, {
@@ -70,7 +70,13 @@ export const setupFastify = async (): Promise<AppFastifyInstance> => {
   await fastify.register(fastifyCookie);
   await fastify.register(fastifyFormbody);
   await fastify.register(metricsPlugin, { clearRegisterOnInit: true });
-  await fastify.register(fastifyCors, { origin: true });
+  await fastify.register(fastifyCors, {
+    origin: appConfig.CORS_ORIGINS.length ? appConfig.CORS_ORIGINS : false,
+    methods: ["GET", "HEAD", "POST", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "x-api-key", "Accept-Language"],
+    maxAge: 600,
+    strictPreflight: true,
+  });
 
   // Регистрация маршрутов
   setupFastifyRoutes(fastify);

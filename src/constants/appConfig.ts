@@ -1,10 +1,16 @@
 import "dotenv/config";
 import { toInt } from "@/utils/primitive";
-import { appLogger } from "@/config/winstonLogger";
 import { Protocol, IAppConfig } from "@/types/shared";
 
 // Накопленные ошибки конфигурации окружения
 const errors: string[] = [];
+const MIN_API_KEY_LENGTH = 32;
+const INSECURE_API_KEYS = new Set([
+  "change-me",
+  "changeme",
+  "password",
+  "secret",
+]);
 
 /**
  * Прочитать обязательную строковую переменную
@@ -18,6 +24,63 @@ const requireStr = (name: string, value?: string): string => {
   }
 
   return trimmed;
+};
+
+/**
+ * Проверить ключ доступа к API
+ */
+const parseApiKey = (value?: string): string => {
+  const apiKey = requireStr("FASTIFY_API_KEY", value);
+
+  if (!apiKey) return apiKey;
+
+  if (INSECURE_API_KEYS.has(apiKey.toLowerCase())) {
+    errors.push("FASTIFY_API_KEY содержит небезопасное значение по умолчанию");
+  } else if (apiKey.length < MIN_API_KEY_LENGTH) {
+    errors.push(
+      `FASTIFY_API_KEY должен содержать не менее ${MIN_API_KEY_LENGTH} символов`,
+    );
+  }
+
+  return apiKey;
+};
+
+/**
+ * Разобрать список разрешённых CORS origin
+ */
+const parseCorsOrigins = (value?: string): string[] => {
+  if (!value?.trim()) return [];
+
+  const origins = new Set<string>();
+
+  for (const rawOrigin of value.split(",")) {
+    const origin = rawOrigin.trim();
+
+    if (!origin) continue;
+
+    try {
+      const url = new URL(origin);
+      const isHttp = url.protocol === "http:" || url.protocol === "https:";
+      const hasOnlyOrigin =
+        url.pathname === "/" &&
+        !url.search &&
+        !url.hash &&
+        !url.username &&
+        !url.password;
+
+      if (!isHttp || !hasOnlyOrigin || origin === "*") {
+        throw new Error("invalid origin");
+      }
+
+      origins.add(url.origin);
+    } catch {
+      errors.push(
+        `CORS_ORIGINS содержит некорректный origin: ${JSON.stringify(origin)}`,
+      );
+    }
+  }
+
+  return [...origins];
 };
 
 /**
@@ -63,7 +126,8 @@ const parseProtocols = (value?: string): Protocol[] | undefined => {
 const appConfig: IAppConfig = {
   ENV: process.env.ENV as IAppConfig["ENV"],
   FASTIFY_ROUTES: parseRoutes(process.env.FASTIFY_ROUTES),
-  FASTIFY_API_KEY: requireStr("FASTIFY_API_KEY", process.env.FASTIFY_API_KEY),
+  FASTIFY_API_KEY: parseApiKey(process.env.FASTIFY_API_KEY),
+  CORS_ORIGINS: parseCorsOrigins(process.env.CORS_ORIGINS),
   SERVER_PUBLIC_HOST: requireStr(
     "SERVER_PUBLIC_HOST",
     process.env.SERVER_PUBLIC_HOST,
@@ -82,10 +146,6 @@ const appConfig: IAppConfig = {
 export const assertAppConfig = (): void => {
   if (errors.length) {
     throw new Error(`Некорректная конфигурация:\n- ${errors.join("\n- ")}`);
-  }
-
-  if (appConfig.FASTIFY_API_KEY === "change-me") {
-    appLogger.warn("FASTIFY_API_KEY использует значение по умолчанию");
   }
 };
 

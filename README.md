@@ -100,7 +100,11 @@ cd amnezia-api
 cp .env.example .env
 ```
 
-Set `FASTIFY_API_KEY` in `.env` to a strong random secret, verify the remaining values, then start the service:
+Generate a strong `FASTIFY_API_KEY`, place it in `.env`, verify the remaining values, then start the service:
+
+```bash
+openssl rand -hex 32
+```
 
 ```bash
 docker compose up -d --build
@@ -204,7 +208,8 @@ The installer creates `.env` from `.env.example` and fills the most important va
 | Variable | Description |
 | --- | --- |
 | `FASTIFY_ROUTES` | Fastify bind address in `host:port` format |
-| `FASTIFY_API_KEY` | Secret expected in the `x-api-key` header |
+| `FASTIFY_API_KEY` | Secret expected in the `x-api-key` header; minimum 32 characters |
+| `CORS_ORIGINS` | Comma-separated browser origins; CORS is disabled when empty |
 | `PROTOCOLS_ENABLED` | Comma-separated list: `amneziawg,amneziawg2,xray` |
 | `SERVER_ID` | Stable unique server identifier |
 | `SERVER_NAME` | Human-readable server name |
@@ -223,6 +228,7 @@ Amnezia API can modify VPN configuration and control Amnezia containers. Treat i
 - Terminate TLS with Nginx, Caddy, Traefik, or another trusted reverse proxy.
 - Restrict inbound access by IP, private network, or VPN whenever possible.
 - Rotate `FASTIFY_API_KEY` if it may have been exposed.
+- Keep `CORS_ORIGINS` empty for server-to-server use. If a browser client is required, list only its exact `http://` or `https://` origins.
 - Docker mode mounts `/var/run/docker.sock`; access to this socket is highly privileged. Run the API only on a trusted host and keep dependencies updated.
 - `/docs` and `/metrics` do not require the API key by default. Protect them at the reverse proxy when appropriate.
 - Do not publish real API keys, `vpn://` configs, QR codes, backups, or unredacted production responses in issues or screenshots.

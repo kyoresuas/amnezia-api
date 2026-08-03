@@ -96,7 +96,11 @@ cd amnezia-api
 cp .env.example .env
 ```
 
-Задайте для `FASTIFY_API_KEY` в `.env` случайный секрет, проверьте остальные значения и запустите сервис:
+Сгенерируйте случайный `FASTIFY_API_KEY`, запишите его в `.env`, проверьте остальные значения и запустите сервис:
+
+```bash
+openssl rand -hex 32
+```
 
 ```bash
 docker compose up -d --build
@@ -183,7 +187,8 @@ curl -X PATCH "https://vpn.example.com/clients" \
 | Переменная | Описание |
 | --- | --- |
 | `FASTIFY_ROUTES` | Адрес Fastify в формате `host:port` |
-| `FASTIFY_API_KEY` | Секрет для заголовка `x-api-key` |
+| `FASTIFY_API_KEY` | Секрет для заголовка `x-api-key`, минимум 32 символа |
+| `CORS_ORIGINS` | Browser origin через запятую; пустое значение отключает CORS |
 | `PROTOCOLS_ENABLED` | `amneziawg,amneziawg2,xray` |
 | `SERVER_ID` | Постоянный уникальный ID сервера |
 | `SERVER_NAME` | Понятное название сервера |
@@ -201,6 +206,7 @@ Amnezia API изменяет VPN-конфигурацию и управляет 
 - Не передавайте API-ключ по обычному HTTP вне доверенной сети.
 - Используйте TLS и ограничивайте доступ по IP, private network или VPN.
 - Меняйте `FASTIFY_API_KEY`, если он мог попасть к посторонним.
+- Оставляйте `CORS_ORIGINS` пустым для server-to-server запросов. Для браузерного клиента перечислите только его точные `http://` или `https://` origin.
 - Docker-режим монтирует `/var/run/docker.sock`, доступ к которому даёт высокие привилегии на хосте.
 - При необходимости закройте `/docs` и `/metrics` на reverse proxy.
 - Не публикуйте реальные ключи, `vpn://`-конфиги, QR-коды, бэкапы и production-ответы в issues или скриншотах.
