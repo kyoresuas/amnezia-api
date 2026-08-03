@@ -1,1 +1,1 @@
-export * from "./cron.namespace";
+export * from "./cron.contract";

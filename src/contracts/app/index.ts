@@ -1,1 +1,1 @@
-export * from "./app.namespace";
+export * from "./app.contract";

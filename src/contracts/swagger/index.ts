@@ -1,1 +1,1 @@
-export * from "./swagger.namespace";
+export * from "./swagger.contract";

@@ -2,13 +2,13 @@ import { ITask } from "@/types/cron";
 import { TimeContract } from "@/contracts/time";
 import { cleanupExpiredClientsTask } from "@/tasks";
 
-export namespace CronContract {
+export const CronContract = {
   /**
    * Очистка просроченных клиентов (каждые 60 минут)
    */
-  export const CleanupExpiredClientsTask: ITask = {
+  CleanupExpiredClientsTask: {
     name: "CleanupExpiredClientsTask",
     interval: TimeContract.HOUR,
     handler: cleanupExpiredClientsTask,
-  };
-}
+  } satisfies ITask,
+} as const;

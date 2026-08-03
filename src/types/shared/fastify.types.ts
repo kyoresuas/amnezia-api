@@ -9,7 +9,7 @@ import {
   RouteGenericInterface,
 } from "fastify";
 import { StatusCodes } from "@/types/shared";
-import { SwaggerContract } from "@/contracts/swagger";
+import { SwaggerTag } from "@/contracts/swagger";
 import { ServerResponse, IncomingMessage } from "http";
 import { JSONSchema, FromSchemaDefaultOptions } from "json-schema-to-ts";
 import { JsonSchemaToTsProvider } from "@fastify/type-provider-json-schema-to-ts";
@@ -45,7 +45,7 @@ export type AppJSONSchema = JSONSchema &
   }>;
 
 export interface AppFastifySchema extends FastifySchema {
-  tags?: SwaggerContract.Tags[];
+  tags?: SwaggerTag[];
   summary?: string;
   body?: AppJSONSchema;
   querystring?: AppJSONSchema;
@@ -90,3 +90,64 @@ export type AppFastifyHandler<SchemaType extends AppFastifySchema> =
     JsonSchemaToTsProvider<FromSchemaDefaultOptions>,
     FastifyBaseLogger
   >;
+
+export type EnablePaginationType = {
+  type: "object";
+  properties: {
+    skip: {
+      type: "integer";
+      minimum: number;
+      default: number;
+      description: string;
+      example: number;
+    };
+    limit: {
+      type: "integer";
+      minimum: number;
+      maximum: 100;
+      default: number;
+      description: string;
+      example: number;
+    };
+    [x: string]: AppJSONSchema;
+  };
+};
+
+export type ActionResponseType = {
+  type: "object";
+  required: readonly ["message", ...string[]];
+  description: string;
+  properties: {
+    message: {
+      type: "string";
+      description: string;
+      example: string;
+    };
+    [x: string]: AppJSONSchema;
+  };
+};
+
+export type PaginatedResponseType = {
+  type: "object";
+  required: readonly ["total", "items", ...string[]];
+  description: string;
+  properties: {
+    total: {
+      type: "integer";
+      description: string;
+      example: number;
+    };
+    items: {
+      type: "array";
+      description: string;
+      items: AppJSONSchema;
+    };
+    [x: string]: AppJSONSchema;
+  };
+};
+
+export interface UiOperation {
+  get(key: "operation"): {
+    get(key: string): number | undefined;
+  };
+}

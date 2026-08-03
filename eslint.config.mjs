@@ -9,8 +9,8 @@ export default tseslint.config(
   },
   {
     rules: {
-      "@typescript-eslint/no-namespace": "warn",
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-namespace": "error",
+      "@typescript-eslint/no-explicit-any": "error",
     },
   },
 );

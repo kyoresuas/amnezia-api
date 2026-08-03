@@ -1,26 +1,30 @@
 import {
   AppFastifyRoute,
+  AppFastifySchema,
   AppFastifyInstance,
-  AppFastifyPreHandler,
 } from "@/types/shared";
 
+export interface AppController {
+  register(fastify: AppFastifyInstance): void;
+}
+
 /**
- * Регистрация группы маршрутов
+ * Создать контроллер, сохранив типы его схемы и обработчика
+ */
+export const defineController = <Schema extends AppFastifySchema>(
+  route: AppFastifyRoute<Schema>,
+): AppController => ({
+  register: (fastify) => fastify.route(route),
+});
+
+/**
+ * Зарегистрировать упорядоченную коллекцию контроллеров
  */
 export const registerControllers = (
   fastify: AppFastifyInstance,
-  controllers: { [x: string]: AppFastifyRoute<any> },
-  commonPreHandlers: AppFastifyPreHandler<any>[] = [],
+  controllers: readonly AppController[],
 ): void => {
-  for (const key in controllers) {
-    if (!controllers[key].preHandler) {
-      controllers[key].preHandler = [];
-    } else if (!Array.isArray(controllers[key].preHandler)) {
-      controllers[key].preHandler = [controllers[key].preHandler];
-    }
-
-    controllers[key].preHandler.unshift(...commonPreHandlers);
-
-    fastify.route(controllers[key]);
+  for (const controller of controllers) {
+    controller.register(fastify);
   }
 };

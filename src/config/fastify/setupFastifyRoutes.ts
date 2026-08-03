@@ -1,4 +1,4 @@
-import * as controllers from "@/controllers";
+import * as Controllers from "@/controllers";
 import { AppFastifyInstance } from "@/types/shared";
 import { registerControllers } from "@/helpers/registerControllers";
 
@@ -11,5 +11,5 @@ export const setupFastifyRoutes = (fastify: AppFastifyInstance): void => {
     return { ok: true };
   });
 
-  registerControllers(fastify, controllers);
+  registerControllers(fastify, Object.values(Controllers));
 };

@@ -1,7 +1,5 @@
-export type ArgumentsType<F extends () => any> = F extends (
-  ...args: infer A
-) => any
-  ? A
+export type ArgumentsType<F> = F extends (...args: infer Arguments) => unknown
+  ? Arguments
   : never;
 
 export type Primitive<T> = {

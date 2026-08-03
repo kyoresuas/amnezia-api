@@ -1,1 +1,1 @@
-export * from "./time.namespace";
+export * from "./time.contract";

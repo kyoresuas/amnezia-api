@@ -1,30 +1,26 @@
 import {
   I18n,
   StatusCodes,
+  UiOperation,
   SuccessCode,
   AppJSONSchema,
   ClientErrorCode,
   RedirectionCode,
   ServerErrorCode,
   InformationalCode,
+  ActionResponseType,
 } from "@/types/shared";
 import i18next from "i18next";
 import { FastifySwaggerUiOptions } from "@fastify/swagger-ui";
 import { FastifyDynamicSwaggerOptions } from "@fastify/swagger";
 
-export namespace SwaggerContract {
-  /**
-   * Теги для документации
-   */
-  export enum Tags {
-    CLIENTS = "Clients",
-    SERVER = "Server",
-  }
+export const SwaggerContract = {
+  Tags: {
+    CLIENTS: "Clients",
+    SERVER: "Server",
+  },
 
-  /**
-   * Описания для кодов ответа REST API
-   */
-  export const CodeDescriptions = {
+  CodeDescriptions: {
     [InformationalCode.CONTINUE]: "swagger.codes.100",
     [InformationalCode.SWITCHING_PROTOCOLS]: "swagger.codes.101",
     [InformationalCode.PROCESSING]: "swagger.codes.102",
@@ -100,18 +96,13 @@ export namespace SwaggerContract {
     [ServerErrorCode.A_TIMEOUT_OCCURRED]: "swagger.codes.524",
     [ServerErrorCode.SSL_HANDSHAKE_FAILED]: "swagger.codes.525",
     [ServerErrorCode.INVALID_SSL_CERTIFICATE]: "swagger.codes.526",
-  } as const satisfies {
-    [x in StatusCodes]: I18n;
-  };
+  } as const satisfies { [x in StatusCodes]: I18n },
 
-  export const UUIDExample = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
-  export const DateTimeExample = "2024-12-16T10:51:47.087Z";
-  export const Base64Example = "PF77ZXRl1yAkFzhBq/zQNlDPD73XXTq+Zs2PgtjLKVA=";
+  UUIDExample: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  DateTimeExample: "2024-12-16T10:51:47.087Z",
+  Base64Example: "PF77ZXRl1yAkFzhBq/zQNlDPD73XXTq+Zs2PgtjLKVA=",
 
-  /**
-   * Схема запроса со включённой пагинацией
-   */
-  export const EnablePaginationSchema = {
+  EnablePaginationSchema: {
     type: "object",
     properties: {
       skip: {
@@ -130,37 +121,9 @@ export namespace SwaggerContract {
         example: 100,
       },
     },
-  } as const satisfies AppJSONSchema;
+  } as const satisfies AppJSONSchema,
 
-  /**
-   * Тип схемы для запроса со включённой пагинацией
-   */
-  export type EnablePaginationType = {
-    type: "object";
-    properties: {
-      skip: {
-        type: "integer";
-        minimum: number;
-        default: number;
-        description: string;
-        example: number;
-      };
-      limit: {
-        type: "integer";
-        minimum: number;
-        maximum: 100;
-        default: number;
-        description: string;
-        example: number;
-      };
-      [x: string]: AppJSONSchema;
-    };
-  };
-
-  /**
-   * Схема для ответа на запрос с действием
-   */
-  export const ActionResponseSchema = {
+  ActionResponseSchema: {
     type: "object",
     required: ["message"],
     description: "Ответ на действие",
@@ -171,29 +134,9 @@ export namespace SwaggerContract {
         example: i18next.t("swagger.messages.SAVED"),
       },
     },
-  } as const satisfies AppJSONSchema;
+  } as const satisfies AppJSONSchema,
 
-  /**
-   * Тип схемы для ответа на запрос с действием
-   */
-  export type ActionResponseType = {
-    type: "object";
-    required: readonly ["message", ...string[]];
-    description: string;
-    properties: {
-      message: {
-        type: "string";
-        description: string;
-        example: string;
-      };
-      [x: string]: AppJSONSchema;
-    };
-  };
-
-  /**
-   * Схема для ответа на запрос с пагинацией
-   */
-  export const PaginatedResponseSchema = {
+  PaginatedResponseSchema: {
     type: "object",
     required: ["total", "items"],
     description: "Ответ на запрос",
@@ -206,54 +149,28 @@ export namespace SwaggerContract {
       items: {
         type: "array",
         description: "Список элементов",
-        // "items" заполняет разработчик
       },
     },
-  } as const satisfies AppJSONSchema;
+  } as const satisfies AppJSONSchema,
 
-  /**
-   * Тип схемы для ответа на запрос с пагинацией
-   */
-  export type PaginatedResponseType = {
-    type: "object";
-    required: readonly ["total", "items", ...string[]];
-    description: string;
-    properties: {
-      total: {
-        type: "integer";
-        description: string;
-        example: number;
-      };
-      items: {
-        type: "array";
-        description: string;
-        items: AppJSONSchema;
-      };
-      [x: string]: AppJSONSchema;
-    };
-  };
-
-  /**
-   * Получить схему для ответа с ошибкой
-   */
-  export const ClientErrorResponseFactory = (
+  ClientErrorResponseFactory(
     clientErrorCode: ClientErrorCode,
-  ) => {
+  ): ActionResponseType {
     return {
-      type: ActionResponseSchema.type,
-      required: ActionResponseSchema.required,
+      type: this.ActionResponseSchema.type,
+      required: this.ActionResponseSchema.required,
       description: "Ответ на запрос с ошибкой",
       properties: {
         message: {
-          type: ActionResponseSchema.properties.message.type,
+          type: this.ActionResponseSchema.properties.message.type,
           description: "Описание ошибки",
-          example: i18next.t(CodeDescriptions[clientErrorCode]),
+          example: i18next.t(this.CodeDescriptions[clientErrorCode]),
         },
       },
-    } as const satisfies ActionResponseType;
-  };
+    };
+  },
 
-  export const GetConfig = (): FastifyDynamicSwaggerOptions => {
+  GetConfig(): FastifyDynamicSwaggerOptions {
     const openapi: FastifyDynamicSwaggerOptions["openapi"] = {
       openapi: "3.0.0",
       tags: [],
@@ -275,12 +192,11 @@ export namespace SwaggerContract {
     };
 
     openapi.tags!.push({
-      name: SwaggerContract.Tags.CLIENTS,
+      name: this.Tags.CLIENTS,
       description: "Маршруты для управления клиентами",
     });
-
     openapi.tags!.push({
-      name: SwaggerContract.Tags.SERVER,
+      name: this.Tags.SERVER,
       description: "Маршруты для управления сервером",
     });
 
@@ -291,31 +207,18 @@ export namespace SwaggerContract {
       },
       openapi,
     };
-  };
+  },
 
-  /**
-   * Иммутабельный объект операции, который сваггер передает в сортировщик
-   */
-  interface UiOperation {
-    get(key: "operation"): { get(key: string): number | undefined };
-  }
+  GetConfigUi(routeOrder: Map<string, number>): FastifySwaggerUiOptions {
+    const operationsSorter = (a: UiOperation, b: UiOperation): number => {
+      const orderA =
+        a.get("operation").get("x-order") ?? Number.MAX_SAFE_INTEGER;
+      const orderB =
+        b.get("operation").get("x-order") ?? Number.MAX_SAFE_INTEGER;
 
-  /**
-   * Сортировщик операций по полю x-order (порядок регистрации маршрутов)
-   */
-  const operationsSorter = (a: UiOperation, b: UiOperation): number => {
-    const orderA = a.get("operation").get("x-order") ?? Number.MAX_SAFE_INTEGER;
-    const orderB = b.get("operation").get("x-order") ?? Number.MAX_SAFE_INTEGER;
+      return orderA - orderB;
+    };
 
-    return orderA - orderB;
-  };
-
-  /**
-   * Получить конфигурацию сваггера
-   */
-  export const GetConfigUi = (
-    routeOrder: Map<string, number>,
-  ): FastifySwaggerUiOptions => {
     return {
       routePrefix: "docs",
       staticCSP: true,
@@ -327,7 +230,6 @@ export namespace SwaggerContract {
           b: string,
         ) => number,
       },
-      // Проставляем x-order в спеку на сервере, где известен порядок регистрации
       transformSpecification: (swaggerObject) => {
         const paths = swaggerObject.paths as
           | Record<string, Record<string, { ["x-order"]?: number }>>
@@ -352,5 +254,8 @@ export namespace SwaggerContract {
         return swaggerObject as Record<string, unknown>;
       },
     };
-  };
-}
+  },
+} as const;
+
+export type SwaggerTag =
+  (typeof SwaggerContract.Tags)[keyof typeof SwaggerContract.Tags];

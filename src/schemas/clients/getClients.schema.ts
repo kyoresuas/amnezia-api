@@ -1,7 +1,7 @@
 import { PeerStatus } from "@/types/clients";
-import { AppFastifySchema } from "@/types/shared";
 import { SwaggerContract } from "@/contracts/swagger";
 import { clientIdSchema, protocolSchema } from "./common.schema";
+import { AppFastifySchema, AppJSONSchema } from "@/types/shared";
 
 export const getClientsSchema = {
   tags: [SwaggerContract.Tags.CLIENTS],
@@ -99,7 +99,7 @@ export const getClientsSchema = {
           },
         },
       },
-    } as const satisfies SwaggerContract.PaginatedResponseType,
+    } as const satisfies AppJSONSchema,
     401: SwaggerContract.ClientErrorResponseFactory(401),
     403: SwaggerContract.ClientErrorResponseFactory(403),
   },

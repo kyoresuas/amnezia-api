@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "lint": "npx eslint .",
+    "lint": "npx eslint . --max-warnings=0",
     "dev": "npx cross-env ENV=development nodemon -q",
     "build": "npx tsc --project tsconfig.build.json && npx tsconfig-replace-paths --project tsconfig.build.json --src ./src",
     "test": "npm run test:typecheck && vitest run",
