@@ -11,7 +11,7 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
-COPY tsconfig.json eslint.config.mjs nodemon.json ./
+COPY tsconfig.base.json tsconfig.build.json eslint.config.mjs nodemon.json ./
 COPY src ./src
 COPY scripts ./scripts
 
@@ -47,4 +47,3 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=6 \
   CMD node -e "fetch('http://127.0.0.1:4001/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "dist/main.js"]
-

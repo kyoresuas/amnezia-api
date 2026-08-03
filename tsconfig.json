@@ -1,40 +1,11 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "strict": true,
-    "allowJs": true,
-    "baseUrl": "./",
-    "sourceMap": true,
-    "lib": ["ES2022"],
-    "target": "ES2022",
-    "outDir": "./build",
-    "rootDir": "./src",
-    "incremental": true,
-    "declaration": false,
-    "skipLibCheck": true,
-    "module": "commonjs",
-    "removeComments": true,
-    "noUnusedLocals": true,
-    "esModuleInterop": true,
-    "noErrorTruncation": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "noStrictGenericChecks": false,
-    "noFallthroughCasesInSwitch": false,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node", "vitest/globals"]
   },
-  "exclude": [
-    "dist",
-    "build",
-    "scripts",
-    "node_modules",
-    "amnezia-client", // Testing
-    "eslint.config.mjs"
-  ]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.mts"],
+  "exclude": ["node_modules", "build", "dist", "amnezia-client"]
 }

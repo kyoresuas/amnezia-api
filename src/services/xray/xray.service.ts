@@ -1,12 +1,15 @@
+import {
+  IXrayConnection,
+  XrayClientEntry,
+  XrayServerConfig,
+} from "@/types/xray";
 import { randomUUID } from "crypto";
 import { APIError } from "@/utils/APIError";
 import appConfig from "@/constants/appConfig";
 import { AppContract } from "@/contracts/app";
 import { XrayBackupData } from "@/types/server";
 import { TimeContract } from "@/contracts/time";
-import { XrayConnection } from "@/helpers/xrayConnection";
 import { encodeVpnConfig } from "@/helpers/encodeVpnConfig";
-import { XrayClientEntry, XrayServerConfig } from "@/types/xray";
 import { TrafficStats, CreateClientResult } from "@/types/clients";
 import { ClientPeer, PeerStatus, ClientRecord } from "@/types/clients";
 import { Protocol, ClientErrorCode, ServerErrorCode } from "@/types/shared";
@@ -65,7 +68,7 @@ export class XrayService {
     ]
   }`;
 
-  constructor(private xray: XrayConnection) {}
+  constructor(private xray: IXrayConnection) {}
 
   /**
    * Экспортировать данные Xray для резервной копии
@@ -565,26 +568,37 @@ export class XrayService {
     // Настройки первой входной точки
     const settings = inbound.settings;
 
-    // Если нет настроек или нет клиентов, то ошибка
-    if (!settings || !Array.isArray(settings.clients)) {
+    // Если нет настроек, то ошибка
+    if (!settings) {
       throw new APIError(ServerErrorCode.INTERNAL_SERVER_ERROR);
     }
 
-    // Длина клиентов
-    const initialLength = settings.clients.length;
+    const clients = Array.isArray(settings.clients) ? settings.clients : [];
+    const clientsDisabled = Array.isArray(settings.clientsDisabled)
+      ? settings.clientsDisabled
+      : [];
+    const initialLength = clients.length + clientsDisabled.length;
 
-    // Удаляем клиента
-    settings.clients = settings.clients.filter(
+    const updatedClients = clients.filter(
+      (client: { id?: string }) => client?.id !== clientId,
+    );
+    const updatedDisabledClients = clientsDisabled.filter(
       (client: { id?: string }) => client?.id !== clientId,
     );
 
-    // Если клиенты не изменились, то ошибка
-    if (settings.clients.length === initialLength) {
+    if (
+      updatedClients.length + updatedDisabledClients.length ===
+      initialLength
+    ) {
       return false;
     }
 
     // Обновляем конфиг
-    inbound.settings = settings;
+    inbound.settings = {
+      ...settings,
+      clients: updatedClients,
+      clientsDisabled: updatedDisabledClients,
+    };
     inbounds[0] = inbound;
     serverConfig.inbounds = inbounds;
 

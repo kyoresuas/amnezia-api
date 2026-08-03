@@ -21,13 +21,9 @@ import { fastifyErrorHandler } from "@/helpers/fastifyErrorHandler";
 import { JsonSchemaToTsProvider } from "@fastify/type-provider-json-schema-to-ts";
 
 /**
- * Запуск систем Fastify
+ * Создать и настроить экземпляр Fastify без открытия сетевого порта
  */
-export const setupFastify = async (): Promise<AppFastifyInstance> => {
-  const { host, port } = appConfig.FASTIFY_ROUTES;
-
-  appLogger.info(`Запуск приложения Fastify...`);
-
+export const createFastify = async (): Promise<AppFastifyInstance> => {
   const fastify: AppFastifyInstance = Fastify({
     logController: new LogController({ disableRequestLogging: true }),
   })
@@ -86,6 +82,19 @@ export const setupFastify = async (): Promise<AppFastifyInstance> => {
     fastifySwaggerUi,
     SwaggerContract.GetConfigUi(routeOrder),
   );
+
+  return fastify;
+};
+
+/**
+ * Запустить Fastify API
+ */
+export const setupFastify = async (): Promise<AppFastifyInstance> => {
+  const { host, port } = appConfig.FASTIFY_ROUTES;
+
+  appLogger.info(`Запуск приложения Fastify...`);
+
+  const fastify = await createFastify();
 
   await fastify.listen({ host, port });
   await fastify.ready();

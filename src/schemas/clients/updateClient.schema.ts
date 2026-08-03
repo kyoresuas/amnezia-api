@@ -9,6 +9,14 @@ export const updateClientSchema = {
   body: {
     type: "object",
     required: ["clientId"],
+    anyOf: [
+      {
+        required: ["expiresAt"],
+      },
+      {
+        required: ["status"],
+      },
+    ],
     properties: {
       clientId: clientIdSchema,
       protocol: {

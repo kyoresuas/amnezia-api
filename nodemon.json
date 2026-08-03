@@ -2,5 +2,5 @@
   "ignore": [".git", "node_modules", "*.spec.ts", "dist/*"],
   "watch": ["src"],
   "ext": "ts,json",
-  "exec": "npx ts-node -r tsconfig-paths/register src/main.ts"
+  "exec": "npx ts-node --project tsconfig.build.json -r tsconfig-paths/register src/main.ts"
 }

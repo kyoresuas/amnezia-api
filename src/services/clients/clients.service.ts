@@ -9,11 +9,8 @@ import {
 import { Mutex } from "@/utils/mutex";
 import { Protocol } from "@/types/shared";
 import { APIError } from "@/utils/APIError";
-import { XrayService } from "@/services/xray";
 import appConfig from "@/constants/appConfig";
 import { appLogger } from "@/config/winstonLogger";
-import { AmneziaWgService } from "@/services/amneziaWg";
-import { AmneziaWg2Service } from "@/services/amneziaWg2";
 import { ClientErrorCode, ServerErrorCode } from "@/types/shared";
 import { resolveEnabledProtocols } from "@/helpers/resolveEnabledProtocols";
 
@@ -27,9 +24,9 @@ export class ClientsService {
   private readonly servicesByProtocol: Record<Protocol, IProtocolService>;
 
   constructor(
-    private xrayService: XrayService,
-    private amneziaWgService: AmneziaWgService,
-    private amneziaWg2Service: AmneziaWg2Service,
+    private xrayService: IProtocolService,
+    private amneziaWgService: IProtocolService,
+    private amneziaWg2Service: IProtocolService,
   ) {
     this.servicesByProtocol = {
       [Protocol.XRAY]: this.xrayService,
@@ -42,6 +39,7 @@ export class ClientsService {
   // над wg0.conf / clientsTable / server.json, чтобы параллельные
   // create/update/delete/disable не затирали друг друга и не выбирали один IP
   private readonly writeLocks = new Map<Protocol, Mutex>();
+  private readonly createLock = new Mutex();
 
   /**
    * Получить мьютекс записи для протокола
@@ -142,13 +140,26 @@ export class ClientsService {
     protocol,
     expiresAt = null,
   }: CreateClientPayload): Promise<CreateClientResult> {
-    await this.ensureProtocolEnabled(protocol);
+    return this.createLock.runExclusive(async () => {
+      await this.ensureProtocolEnabled(protocol);
 
-    const service = this.getServiceByProtocol(protocol);
+      const maxPeers = appConfig.SERVER_MAX_PEERS;
+      if (maxPeers) {
+        const clients = await this.getClients();
+        const currentPeers = clients.reduce(
+          (total, client) => total + client.peers.length,
+          0,
+        );
 
-    return this.lockFor(protocol).runExclusive(() =>
-      service.createClient(clientName, { expiresAt }),
-    );
+        if (currentPeers >= maxPeers) {
+          throw new APIError(ClientErrorCode.CONFLICT);
+        }
+      }
+
+      const service = this.getServiceByProtocol(protocol);
+
+      return service.createClient(clientName, { expiresAt });
+    });
   }
 
   /**

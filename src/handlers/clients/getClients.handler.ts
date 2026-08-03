@@ -8,11 +8,14 @@ export const getClientsHandler: AppFastifyHandler<GetClientsType> = async (
   req,
   reply,
 ) => {
+  const { skip = 0, limit = 100 } = req.query;
+
   const clientsService = di.container.resolve<ClientsService>(
     ClientsService.key,
   );
 
   const clients = await clientsService.getClients();
+  const items = clients.slice(skip, skip + limit);
 
-  reply.code(200).send({ total: clients.length, items: primitive(clients) });
+  reply.code(200).send({ total: clients.length, items: primitive(items) });
 };

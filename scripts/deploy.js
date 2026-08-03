@@ -16,9 +16,7 @@ async function deploy() {
 
   console.log("Компиляция в JavaScript...");
 
-  // Чистим папку build и инкрементальный кэш tsc перед сборкой,
-  // иначе после удаления build на прошлом деплое tsc по .tsbuildinfo
-  // решит, что все файлы актуальны, и не сгенерирует build заново
+  // Чистим временную сборку перед компиляцией
   removeBuildDirectory();
 
   child_process.execSync("npm run build", { stdio: "inherit" });
@@ -112,14 +110,11 @@ async function deploy() {
 }
 
 /**
- * Очистить директорию со временной сборкой и инкрементальный кэш tsc
+ * Очистить директорию со временной сборкой
  */
 function removeBuildDirectory() {
   if (fs.existsSync("./build")) {
     fs.rmSync("./build", { recursive: true });
-  }
-  if (fs.existsSync("./tsconfig.tsbuildinfo")) {
-    fs.rmSync("./tsconfig.tsbuildinfo");
   }
 }
 

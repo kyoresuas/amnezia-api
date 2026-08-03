@@ -3,8 +3,8 @@ import { setupFastify } from "@/config/fastify";
 import { appLogger } from "@/config/winstonLogger";
 import { AppFastifyInstance } from "@/types/shared";
 import { assertAppConfig } from "@/constants/appConfig";
-import { setupDIContainer } from "@/config/DIContainer";
 import { setupTaskQueue } from "@/config/setupTaskQueue";
+import { setupDIContainer } from "@/config/DIContainer/setupDIContainer";
 
 /**
  * Корректно завершить работу
