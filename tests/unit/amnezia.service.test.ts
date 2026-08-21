@@ -263,14 +263,18 @@ AllowedIPs = 0.0.0.0/32
     const clients = await service.getClients();
 
     expect(clients).toHaveLength(1);
-    expect(clients[0]?.peers[0]).toMatchObject({
+    expect(clients[0]).toMatchObject({
       username: "blocked-user",
-      id: "blocked-config-id",
-      status: PeerStatus.Disabled,
-      allowedIps: ["0.0.0.0/32"],
-      endpoint: null,
-      traffic: { received: 0, sent: 0 },
-      online: false,
+      peers: [
+        {
+          id: "blocked-config-id",
+          status: PeerStatus.Disabled,
+          allowedIps: ["0.0.0.0/32"],
+          endpoint: null,
+          traffic: { received: 0, sent: 0 },
+          online: false,
+        },
+      ],
     });
   });
 
