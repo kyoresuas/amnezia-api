@@ -266,13 +266,10 @@ npm run openapi:check
 
 Если Amnezia API оказался полезен, вы можете поддержать его развитие:
 
-| Способ | Реквизиты |
-| --- | --- |
-| Visa | `4466148124171758` |
-| Карта РФ | `2200700644781816` |
-| TON | `kyoresuas.ton` |
-| TON-адрес | `UQATzyMcVoZudjaA5Rc9w5TV_lIqxh9DPk0gSnjkLVvwEVqz` |
-| USDT (TRC20) | `TJSLjDo4yRgHr9JqqEcrkbC51bP9DCiBC7` |
+- **Карта «Мир»:** `2200700644781816`
+- **TON:** `kyoresuas.ton`
+- **Адрес кошелька TON:** `UQATzyMcVoZudjaA5Rc9w5TV_lIqxh9DPk0gSnjkLVvwEVqz`
+- **USDT в сети TRON (TRC-20):** `TJSLjDo4yRgHr9JqqEcrkbC51bP9DCiBC7`
 
 Перед переводом криптовалюты убедитесь, что выбрана правильная сеть.
 
