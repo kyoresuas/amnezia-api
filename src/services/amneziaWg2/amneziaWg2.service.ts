@@ -13,41 +13,60 @@ import { encodeVpnConfig } from "@/helpers/encodeVpnConfig";
 import { ClientTableEntry, IAmneziaConnection } from "@/types/amnezia";
 
 /**
- * Сервис для работы с AmneziaWG 2.0
+ * Сервис для работы с AmneziaWG 2.0 и 3.x
  */
 export class AmneziaWg2Service {
   static key = "amneziaWg2Service";
 
-  // Шаблон клиентского конфига AmneziaWG
-  private static readonly AMNEZIAWG2_CLIENT_TEMPLATE =
-    `[Interface]\n` +
-    `Address = $CLIENT_ADDRESS/32\n` +
-    `DNS = $PRIMARY_DNS, $SECONDARY_DNS\n` +
-    `PrivateKey = $CLIENT_PRIVATE_KEY\n` +
-    `Jc = $JC\n` +
-    `Jmin = $JMIN\n` +
-    `Jmax = $JMAX\n` +
-    `S1 = $S1\n` +
-    `S2 = $S2\n` +
-    `S3 = $S3\n` +
-    `S4 = $S4\n` +
-    `H1 = $H1\n` +
-    `H2 = $H2\n` +
-    `H3 = $H3\n` +
-    `H4 = $H4\n\n` +
-    `I1 = $I1\n` +
-    `I2 = $I2\n` +
-    `I3 = $I3\n` +
-    `I4 = $I4\n` +
-    `I5 = $I5\n\n` +
-    `[Peer]\n` +
-    `PublicKey = $SERVER_PUBLIC_KEY\n` +
-    `PresharedKey = $PRESHARED_KEY\n` +
-    `AllowedIPs = 0.0.0.0/0, ::/0\n` +
-    `$ENDPOINT_LINE` +
-    `PersistentKeepalive = $KEEPALIVE\n`;
+  // Параметры, общие для всех версий протокола
+  private static readonly COMMON_KEYS = [
+    "Jc",
+    "Jmin",
+    "Jmax",
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+  ] as const;
+
+  // Сигнатурные пакеты. В 2.0 передаются всегда,
+  // в 3.x - только если заданы на сервере
+  private static readonly SPECIAL_JUNK_KEYS = [
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+  ] as const;
 
   constructor(private amneziaWg2: IAmneziaConnection) {}
+
+  /**
+   * Определить версию протокола по содержимому серверного конфига.
+   */
+  private detectProtocolVersion(config: string): string {
+    const { VERSIONS, V3_KEYS, V3_TOGGLE_KEYS, TOGGLE_OFF } =
+      AppContract.AmneziaWG2;
+
+    const valueOf = (key: string) =>
+      config
+        .match(new RegExp(`^\\s*${key}\\s*=\\s*(.*?)\\s*$`, "mi"))?.[1]
+        ?.trim() || "";
+
+    const hasV3Params = V3_KEYS.some((key) => valueOf(key));
+
+    const hasV3Toggles = V3_TOGGLE_KEYS.some((key) => {
+      const value = valueOf(key);
+
+      return value !== "" && value.toLowerCase() !== TOGGLE_OFF;
+    });
+
+    return hasV3Params || hasV3Toggles ? VERSIONS.V3 : VERSIONS.V2;
+  }
 
   /**
    * Проверить, что секция [Peer] принадлежит клиенту с данным publicKey.
@@ -412,9 +431,17 @@ export class AmneziaWg2Service {
     // Получаем хост
     const endpointHost = appConfig.SERVER_PUBLIC_HOST || "";
 
+    // Определяем версию протокола по серверному конфигу
+    const protocolVersion = this.detectProtocolVersion(config);
+    const isV3 = protocolVersion !== AppContract.AmneziaWG2.VERSIONS.V2;
+
     // Получаем MTU
     const mtu = AppContract.AmneziaWG2.DEFAULTS.MTU;
-    const keepAlive = AppContract.AmneziaWG2.DEFAULTS.KEEPALIVE;
+
+    // В 3.x PersistentKeepalive задается диапазоном
+    const keepAlive = isV3
+      ? AppContract.AmneziaWG2.V3_DEFAULTS.KEEPALIVE
+      : AppContract.AmneziaWG2.DEFAULTS.KEEPALIVE;
 
     // Параметры AWG
     const isValidI2I5 = (val: string) =>
@@ -443,7 +470,8 @@ export class AmneziaWg2Service {
 
       // Дефолты. Нужны на случай, если серверный конфиг
       // содержит пустые/неинициализированные значения
-      if (!commented) {
+      // В 3.x сервер задает все параметры явно
+      if (!commented && !isV3) {
         if (key === "S3") return "20";
         if (key === "S4") return "23";
         if (key === "I1")
@@ -453,61 +481,65 @@ export class AmneziaWg2Service {
       return commented;
     };
 
-    const awgParams = {
-      Jc: getVal("Jc"),
-      Jmin: getVal("Jmin"),
-      Jmax: getVal("Jmax"),
-      S1: getVal("S1"),
-      S2: getVal("S2"),
-      S3: getVal("S3"),
-      S4: getVal("S4"),
-      H1: getVal("H1"),
-      H2: getVal("H2"),
-      H3: getVal("H3"),
-      H4: getVal("H4"),
-      I1: getVal("I1"),
-      I2: getVal("I2"),
-      I3: getVal("I3"),
-      I4: getVal("I4"),
-      I5: getVal("I5"),
-    } as const;
+    const awgParams: Record<string, string> = {};
+
+    for (const key of AmneziaWg2Service.COMMON_KEYS) {
+      awgParams[key] = getVal(key);
+    }
+
+    // Сигнатурные пакеты. В 2.0 передаются всегда,
+    // в 3.x - только если сервер задал их явно
+    for (const key of AmneziaWg2Service.SPECIAL_JUNK_KEYS) {
+      const value = getVal(key);
+
+      if (!isV3 || value) {
+        awgParams[key] = value;
+      }
+    }
+
+    // Параметры 3.x.
+    if (isV3) {
+      const v3Keys: readonly string[] = [
+        ...AppContract.AmneziaWG2.V3_KEYS,
+        ...AppContract.AmneziaWG2.V3_TOGGLE_KEYS,
+      ];
+
+      for (const key of v3Keys) {
+        const value = getVal(key);
+
+        if (value) {
+          awgParams[key] = value;
+        }
+      }
+    }
 
     const primaryDns = AppContract.DNS.PRIMARY;
     const secondaryDns = AppContract.DNS.SECONDARY;
 
     // Текстовый конфиг
-    const configText = AmneziaWg2Service.AMNEZIAWG2_CLIENT_TEMPLATE.replace(
-      /\$CLIENT_ADDRESS/g,
-      assignedIp,
-    )
-      .replace(/\$PRIMARY_DNS/g, primaryDns)
-      .replace(/\$SECONDARY_DNS/g, secondaryDns)
-      .replace(/\$CLIENT_PRIVATE_KEY/g, clientPrivateKey)
-      .replace(/\$JC/g, awgParams.Jc)
-      .replace(/\$JMIN/g, awgParams.Jmin)
-      .replace(/\$JMAX/g, awgParams.Jmax)
-      .replace(/\$S1/g, awgParams.S1)
-      .replace(/\$S2/g, awgParams.S2)
-      .replace(/\$S3/g, awgParams.S3)
-      .replace(/\$S4/g, awgParams.S4)
-      .replace(/\$H1/g, awgParams.H1)
-      .replace(/\$H2/g, awgParams.H2)
-      .replace(/\$H3/g, awgParams.H3)
-      .replace(/\$H4/g, awgParams.H4)
-      .replace(/\$I1/g, awgParams.I1)
-      .replace(/\$I2/g, awgParams.I2)
-      .replace(/\$I3/g, awgParams.I3)
-      .replace(/\$I4/g, awgParams.I4)
-      .replace(/\$I5/g, awgParams.I5)
-      .replace(/\$SERVER_PUBLIC_KEY/g, serverPublicKey)
-      .replace(/\$PRESHARED_KEY/g, psk)
-      .replace(
-        /\$ENDPOINT_LINE/g,
-        endpointHost && listenPort
-          ? `Endpoint = ${endpointHost}:${listenPort}\n`
-          : "",
-      )
-      .replace(/\$KEEPALIVE/g, String(keepAlive));
+    const commonKeys: readonly string[] = AmneziaWg2Service.COMMON_KEYS;
+
+    const toLines = (entries: [string, string][]) =>
+      entries.map(([key, value]) => `${key} = ${value}\n`).join("");
+
+    const entries = Object.entries(awgParams);
+
+    const configText =
+      `[Interface]\n` +
+      `Address = ${assignedIp}/32\n` +
+      `DNS = ${primaryDns}, ${secondaryDns}\n` +
+      `PrivateKey = ${clientPrivateKey}\n` +
+      toLines(entries.filter(([key]) => commonKeys.includes(key))) +
+      `\n` +
+      toLines(entries.filter(([key]) => !commonKeys.includes(key))) +
+      `\n[Peer]\n` +
+      `PublicKey = ${serverPublicKey}\n` +
+      `PresharedKey = ${psk}\n` +
+      `AllowedIPs = 0.0.0.0/0, ::/0\n` +
+      (endpointHost && listenPort
+        ? `Endpoint = ${endpointHost}:${listenPort}\n`
+        : "") +
+      `PersistentKeepalive = ${keepAlive}\n`;
 
     // Последний конфиг
     const lastConfig = {
@@ -529,7 +561,7 @@ export class AmneziaWg2Service {
     // AWG
     const awg = {
       ...awgParams,
-      protocol_version: "2",
+      protocol_version: protocolVersion,
       last_config: JSON.stringify(lastConfig, null, 2),
       port: String(listenPort || ""),
       transport_proto: AppContract.AmneziaWG2.DEFAULTS.TRANSPORT,
@@ -539,7 +571,7 @@ export class AmneziaWg2Service {
     // {protocol} — протокол подключения (например, "AmneziaWG")
     // {username} — имя клиента (clientName)
     const baseServerName = appConfig.SERVER_NAME || "";
-    const protocolName = "AmneziaWG2";
+    const protocolName = `AmneziaWG${protocolVersion}`;
     let description = baseServerName;
 
     if (/\{protocol\}|\{username\}/i.test(baseServerName)) {

@@ -1,5 +1,7 @@
 import {
   AMNEZIA_WG_CONFIG_FIXTURE,
+  AMNEZIA_AWG3_CONFIG_FIXTURE,
+  AMNEZIA_AWG31_CONFIG_FIXTURE,
   createAmneziaBackupFixture,
 } from "../fixtures";
 import { Protocol } from "@/types/shared";
@@ -218,5 +220,144 @@ describe.each(protocolFixtures)("$name", (fixture) => {
       "imported-preshared-key\n",
     );
     expect(connection.spies.syncWgConfig).toHaveBeenCalledOnce();
+  });
+});
+
+/**
+ * Тестирование определения версии протокола AmneziaWG.
+ */
+describe("AmneziaWg2Service protocol version", () => {
+  /**
+   * Создать клиента и вернуть контейнер awg из конфигурации vpn://
+   */
+  const createAwgContainer = async (wgConfig: string) => {
+    const connection = createAmneziaConnectionMock({ wgConfig });
+    const service = new AmneziaWg2Service(connection.connection);
+
+    const { config } = await service.createClient("charlie");
+
+    const decoded = decodeVpnConfig(config) as unknown as {
+      description: string;
+      containers: { awg: Record<string, string> }[];
+    };
+
+    const awg = decoded.containers[0].awg;
+
+    return {
+      awg,
+      description: decoded.description,
+      text: JSON.parse(awg.last_config).config as string,
+      connection,
+    };
+  };
+
+  // Тестирование конфигурации сервера версии 2.0
+  it("keeps special junk packets and reports version 2", async () => {
+    const { awg, description } = await createAwgContainer(
+      AMNEZIA_WG_CONFIG_FIXTURE,
+    );
+
+    expect(awg.protocol_version).toBe("2");
+    expect(awg).toMatchObject({ I1: "<r 2>", I5: "test-5" });
+    expect(awg).not.toHaveProperty("HeaderProtectionKey");
+    expect(awg.last_config).toContain("PersistentKeepalive = 25");
+    expect(description).toBe("charlie via AmneziaWG2");
+  });
+
+  // Тестирование конфигурации сервера версии 3.0
+  it("reports version 3.1 for a server without the toggles", async () => {
+    const { awg, description } = await createAwgContainer(
+      AMNEZIA_AWG3_CONFIG_FIXTURE,
+    );
+
+    expect(awg.protocol_version).toBe("3.1");
+    expect(awg).toMatchObject({
+      HeaderProtectionKey: "header-protection-key",
+      ContentPaddingAddition: "10-100",
+      RekeyAfterTime: "100-120",
+      MaxHandshakeAttempts: "15-20",
+    });
+    expect(awg).not.toHaveProperty("RandomTrailers");
+    expect(awg).not.toHaveProperty("DisableCookies");
+    expect(awg).not.toHaveProperty("I1");
+    expect(awg.last_config).toContain("PersistentKeepalive = 25-35");
+    expect(description).toBe("charlie via AmneziaWG3.1");
+  });
+
+  // Тестирование конфигурации сервера версии 3.1
+  it("passes the 3.1 toggles through", async () => {
+    const { awg } = await createAwgContainer(AMNEZIA_AWG31_CONFIG_FIXTURE);
+
+    expect(awg.protocol_version).toBe("3.1");
+    expect(awg).toMatchObject({ RandomTrailers: "on", DisableCookies: "on" });
+  });
+
+  it("ignores toggles that are switched off", async () => {
+    const wgConfig = AMNEZIA_WG_CONFIG_FIXTURE.replace(
+      "\n\n[Peer]",
+      "\nRandomTrailers = off\nDisableCookies = off\n\n[Peer]",
+    );
+
+    const { awg } = await createAwgContainer(wgConfig);
+
+    expect(awg.protocol_version).toBe("2");
+  });
+
+  // Текстовый конфиг 2.0 не должен измениться
+  it("renders the 2.0 client config exactly as before", async () => {
+    const { text } = await createAwgContainer(AMNEZIA_WG_CONFIG_FIXTURE);
+
+    expect(text).toBe(
+      `[Interface]\n` +
+        `Address = 10.8.1.1/32\n` +
+        `DNS = 1.1.1.1, 1.0.0.1\n` +
+        `PrivateKey = client-private-key\n` +
+        `Jc = 4\nJmin = 40\nJmax = 70\n` +
+        `S1 = 15\nS2 = 20\nS3 = 20\nS4 = 23\n` +
+        `H1 = 1\nH2 = 2\nH3 = 3\nH4 = 4\n\n` +
+        `I1 = <r 2>\nI2 = test-2\nI3 = test-3\nI4 = test-4\nI5 = test-5\n\n` +
+        `[Peer]\n` +
+        `PublicKey = server-public-key\n` +
+        `PresharedKey = preshared-key\n` +
+        `AllowedIPs = 0.0.0.0/0, ::/0\n` +
+        `Endpoint = vpn.example.com:51820\n` +
+        `PersistentKeepalive = 25\n`,
+    );
+  });
+
+  // Правки peerов не должны затрагивать секцию [Interface] с параметрами 3.x
+  it("preserves the 3.x interface parameters when peers change", async () => {
+    const connection = createAmneziaConnectionMock({
+      wgConfig: AMNEZIA_AWG31_CONFIG_FIXTURE,
+      clientsTable: [
+        { clientId: "active-id", userData: { clientName: "alice" } },
+      ],
+    });
+    const service = new AmneziaWg2Service(connection.connection);
+
+    await service.updateClient("active-id", { status: PeerStatus.Disabled });
+    await service.createClient("charlie");
+    await service.deleteClient("active-id");
+
+    const interfaceSection = connection.state.wgConfig.split("[Peer]")[0];
+
+    for (const key of [
+      "HeaderProtectionKey",
+      "ContentPaddingAddition",
+      "RekeyAfterTime",
+      "RekeyTimeout",
+      "RejectAfterTime",
+      "KeepaliveTimeout",
+      "MaxHandshakeAttempts",
+      "RandomTrailers",
+      "DisableCookies",
+    ]) {
+      expect(interfaceSection).toContain(`${key} = `);
+    }
+
+    expect(connection.state.wgConfig).not.toContain("PublicKey = active-id");
+    expect(connection.state.wgConfig).toContain(
+      "PublicKey = generated-client-id",
+    );
   });
 });

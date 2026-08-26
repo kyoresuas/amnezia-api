@@ -25,7 +25,7 @@ export const AppContract = {
     } as const,
   },
 
-  // Константы для AmneziaWG 2.0
+  // Константы для AmneziaWG 2.0 и 3.x
   AmneziaWG2: {
     // Имя Docker-контейнера
     DOCKER_CONTAINER: "amnezia-awg2",
@@ -46,6 +46,32 @@ export const AppContract = {
       MTU: "1376",
       KEEPALIVE: "25",
       TRANSPORT: "udp",
+    } as const,
+
+    // Версии протокола, распознаваемые по содержимому awg0.conf.
+    VERSIONS: {
+      V2: "2",
+      V3: "3.1",
+    } as const,
+
+    // Параметры, появившиеся в AmneziaWG 3.0.
+    // Наличие любого из них означает версию 3.x
+    V3_KEYS: [
+      "HeaderProtectionKey",
+      "ContentPaddingAddition",
+      "RekeyAfterTime",
+      "RekeyTimeout",
+      "RejectAfterTime",
+      "KeepaliveTimeout",
+      "MaxHandshakeAttempts",
+    ] as const,
+
+    V3_TOGGLE_KEYS: ["RandomTrailers", "DisableCookies"] as const,
+
+    TOGGLE_OFF: "off",
+
+    V3_DEFAULTS: {
+      KEEPALIVE: "25-35",
     } as const,
   },
 
