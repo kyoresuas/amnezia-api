@@ -52,8 +52,21 @@ Already have a working Amnezia server? You do **not** need to reinstall its VPN 
 | Protocol | API value | Expected container |
 | --- | --- | --- |
 | AmneziaWG | `amneziawg` | `amnezia-awg` |
-| AmneziaWG 2.0 | `amneziawg2` | `amnezia-awg2` |
+| AmneziaWG 2.0 / 3.x | `amneziawg2` | `amnezia-awg2` |
 | Xray | `xray` | `amnezia-xray` |
+
+AmneziaWG 2.0 and 3.x share a single container and differ only in which parameters
+`awg0.conf` carries, so they share the `amneziawg2` API value. The version is detected
+automatically when a client is created and lands in the `protocol_version` field of the
+`vpn://` config:
+
+| `protocol_version` | Marker in `awg0.conf` | Client config |
+| --- | --- | --- |
+| `2` | no 3.x marker present | `Jc`, `Jmin`, `Jmax`, `S1`–`S4`, `H1`–`H4`, `I1`–`I5`, `PersistentKeepalive = 25` |
+| `3.1` | a non-empty `HeaderProtectionKey`, `ContentPaddingAddition`, `Rekey*`, `RejectAfterTime`, `KeepaliveTimeout` or `MaxHandshakeAttempts`, or an enabled `RandomTrailers` / `DisableCookies` | the same, plus every 3.x parameter the server sets, `PersistentKeepalive = 25-35`; `I1`–`I5` only when the server sets them |
+
+The 3.x parameters are taken from
+`awg0.conf` verbatim; no defaults of our own are substituted.
 
 ## Requirements
 

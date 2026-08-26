@@ -30,6 +30,38 @@ PublicKey = disabled-id
 AllowedIPs = 0.0.0.0/32
 `;
 
+export const AMNEZIA_AWG3_CONFIG_FIXTURE = `[Interface]
+Address = 10.8.1.1/24
+ListenPort = 51820
+Jc = 4
+Jmin = 40
+Jmax = 70
+S1 = 15
+S2 = 20
+S3 = 20
+S4 = 23
+H1 = 1
+H2 = 2
+H3 = 3
+H4 = 4
+HeaderProtectionKey = header-protection-key
+ContentPaddingAddition = 10-100
+RekeyAfterTime = 100-120
+RekeyTimeout = 3-7
+RejectAfterTime = 150-180
+KeepaliveTimeout = 5-15
+MaxHandshakeAttempts = 15-20
+
+[Peer]
+PublicKey = active-id
+AllowedIPs = 10.8.1.2/32
+`;
+
+export const AMNEZIA_AWG31_CONFIG_FIXTURE = AMNEZIA_AWG3_CONFIG_FIXTURE.replace(
+  "\n\n[Peer]",
+  "\nRandomTrailers = on\nDisableCookies = on\n\n[Peer]",
+);
+
 export const AMNEZIA_WG_DUMP_FIXTURE = [
   "active-id\tpsk\t198.51.100.10:51820\t10.8.1.2/32\t0\t100\t200\t25",
   "disabled-id\tpsk\t(none)\t0.0.0.0/32\t0\t0\t0\t25",

@@ -50,8 +50,21 @@
 | Протокол | Значение API | Контейнер |
 | --- | --- | --- |
 | AmneziaWG | `amneziawg` | `amnezia-awg` |
-| AmneziaWG 2.0 | `amneziawg2` | `amnezia-awg2` |
+| AmneziaWG 2.0 / 3.x | `amneziawg2` | `amnezia-awg2` |
 | Xray | `xray` | `amnezia-xray` |
+
+AmneziaWG 2.0 и 3.x работают в одном контейнере и различаются только набором
+параметров в `awg0.conf`, поэтому у них общее значение API — `amneziawg2`. Версия
+определяется автоматически при создании клиента и попадает в поле `protocol_version`
+конфигурации `vpn://`:
+
+| `protocol_version` | Признак в `awg0.conf` | Клиентский конфиг |
+| --- | --- | --- |
+| `2` | нет ни одного признака 3.x | `Jc`, `Jmin`, `Jmax`, `S1`–`S4`, `H1`–`H4`, `I1`–`I5`, `PersistentKeepalive = 25` |
+| `3.1` | непустой `HeaderProtectionKey`, `ContentPaddingAddition`, `Rekey*`, `RejectAfterTime`, `KeepaliveTimeout` или `MaxHandshakeAttempts`, либо включенный `RandomTrailers` / `DisableCookies` | то же + все заданные на сервере параметры 3.x, `PersistentKeepalive = 25-35`; `I1`–`I5` только если заданы на сервере |
+
+Параметры 3.x берутся
+из `awg0.conf` как есть, без подстановки собственных значений по умолчанию.
 
 ## Требования
 
