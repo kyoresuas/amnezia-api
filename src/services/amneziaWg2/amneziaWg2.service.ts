@@ -148,40 +148,98 @@ export class AmneziaWg2Service {
   }
 
   /**
-   * Получить список клиентов из wg dump
+   * Разобрать [Peer] секции из wg0.conf — источник истины для списка peer'ов и AllowedIPs
+   */
+  private parseConfigPeers(
+    config: string,
+  ): { id: string; allowedIps: string[] }[] {
+    if (!config) return [];
+
+    const sections = config.split("[Peer]").slice(1);
+
+    const peers: { id: string; allowedIps: string[] }[] = [];
+
+    for (const section of sections) {
+      const id = section.match(/PublicKey\s*=\s*([^\s]+)/i)?.[1];
+      if (!id) continue;
+
+      const allowedIps = section
+        .match(/AllowedIPs\s*=\s*([^\n]+)/i)?.[1]
+        ?.split(",")
+        .map((s) => s.trim())
+        .filter(Boolean) ?? [];
+
+      peers.push({ id, allowedIps });
+    }
+
+    return peers;
+  }
+
+  /**
+   * Разобрать awg show dump — только runtime статистика (endpoint/lastHandshake/traffic)
+   */
+  private parseDumpStats(
+    dump: string,
+  ): Map<
+    string,
+    { endpoint: string | null; lastHandshake: number; received: number; sent: number }
+  > {
+    const stats = new Map<
+      string,
+      { endpoint: string | null; lastHandshake: number; received: number; sent: number }
+    >();
+
+    if (!dump) return stats;
+
+    for (const rawLine of dump.split("\n")) {
+      const line = rawLine.trim();
+      if (!line) continue;
+
+      const parts = line.split("\t");
+      if (parts.length < 8) continue;
+
+      const id = parts[0];
+      if (!id) continue;
+
+      const endpoint = parts[2] && parts[2] !== "(none)" ? parts[2] : null;
+
+      const rawHandshake = Number(parts[4]);
+      const lastHandshake =
+        rawHandshake > AppContract.WG.HANDSHAKE_NANO_THRESHOLD
+          ? Math.floor(rawHandshake / 1_000_000_000)
+          : rawHandshake;
+
+      stats.set(id, {
+        endpoint,
+        lastHandshake,
+        received: Number(parts[5]) || 0,
+        sent: Number(parts[6]) || 0,
+      });
+    }
+
+    return stats;
+  }
+
+  /**
+   * Получить список клиентов: wg0.conf — источник истины, dump — только runtime статистика
    */
   async getClients(): Promise<ClientRecord[]> {
-    const dump = await this.amneziaWg2.getWgDump();
-
-    if (!dump) return [];
-
     const now = Math.floor(Date.now() / 1000);
 
-    // Разбиваем на строки
-    const peers = dump
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .filter((line) => {
-        const parts = line.split("\t");
-        const endpoint = parts[2] || null;
-        const allowed = parts[3] || null;
-        return (
-          parts.length >= 8 &&
-          (endpoint?.includes(":") || allowed?.includes("/"))
-        );
-      });
+    const [config, dump, clientsTable] = await Promise.all([
+      this.amneziaWg2.readWgConfig(),
+      this.amneziaWg2.getWgDump(),
+      this.amneziaWg2.readClientsTable(),
+    ]);
 
-    // Получаем данные клиентов (username/label/expiresAt) из clientsTable
+    const configPeers = this.parseConfigPeers(config);
+    const dumpStats = this.parseDumpStats(dump);
+
     const userData: Record<
       string,
       { name: string; peerNames: string[]; expiresAt?: number }
     > = {};
 
-    // Считываем clientsTable
-    const clientsTable = await this.amneziaWg2.readClientsTable();
-
-    // Проходим по всем клиентам в clientsTable
     for (const client of clientsTable) {
       const clientKey = client?.clientId;
       const clientName = client?.userData?.clientName;
@@ -189,12 +247,10 @@ export class AmneziaWg2Service {
 
       if (!clientKey || !clientName) continue;
 
-      // Парсим имя клиента и label peer'а
       const nameMatch = clientName.match(/^\s*(.*?)\s*(?:\[(.*)\])?\s*$/);
       const userName = (nameMatch?.[1] || clientName).trim();
       const peerName = (nameMatch?.[2] || "").trim();
 
-      // Инициализируем или обновляем запись пользователя
       if (!userData[clientKey]) {
         userData[clientKey] = {
           name: userName,
@@ -203,55 +259,25 @@ export class AmneziaWg2Service {
         };
       }
 
-      // Добавляем label peer'а, если он указан и еще не добавлен
       if (peerName && !userData[clientKey].peerNames.includes(peerName)) {
         userData[clientKey].peerNames.push(peerName);
       }
 
-      // Обновляем expiresAt, если он есть
       if (expiresAt) {
         userData[clientKey].expiresAt = expiresAt;
       }
     }
 
-    // Преобразуем peers в список peer'ов
-    const peerEntries: (ClientPeer & { username: string })[] = peers.map(
-      (peer) => {
-        const parts = peer.split("\t");
-
-        // id
-        const id = parts[0];
-
-        // endpoint
-        const endpoint = parts[2] && parts[2] !== "(none)" ? parts[2] : null;
-
-        // allowedIps
-        const allowedIps = parts[3].split(",").map((s) => s.trim());
-
-        // lastHandshake
-        const lastHandshake =
-          Number(parts[4]) > AppContract.WG.HANDSHAKE_NANO_THRESHOLD
-            ? Math.floor(Number(parts[4]) / 1_000_000_000)
-            : Number(parts[4]);
-
-        // received
-        const received = Number(parts[5]);
-
-        // sent
-        const sent = Number(parts[6]);
-
-        // lastHandshakeSecondsAgo
+    const peerEntries: (ClientPeer & { username: string })[] = configPeers.map(
+      ({ id, allowedIps }) => {
+        const runtime = dumpStats.get(id);
+        const lastHandshake = runtime?.lastHandshake ?? 0;
         const lastHandshakeSecondsAgo = now - lastHandshake;
-
-        // online
         const online =
           lastHandshakeSecondsAgo < AppContract.WG.ONLINE_THRESHOLD_SECONDS;
 
         const username = userData[id]?.name || id;
-        // label peer'а (если он был закодирован в clientsTable.userData.clientName)
         const name = userData[id]?.peerNames?.[0] ?? null;
-
-        // expiresAt
         const expiresAt = userData[id]?.expiresAt || null;
         const isBlocked =
           allowedIps.length === 1 && allowedIps[0] === "0.0.0.0/32";
@@ -264,10 +290,10 @@ export class AmneziaWg2Service {
           allowedIps,
           lastHandshake,
           traffic: {
-            received,
-            sent,
+            received: runtime?.received ?? 0,
+            sent: runtime?.sent ?? 0,
           },
-          endpoint,
+          endpoint: runtime?.endpoint ?? null,
           online,
           expiresAt,
           status,
@@ -276,19 +302,14 @@ export class AmneziaWg2Service {
       },
     );
 
-    // Группируем по username
     const users = new Map<string, ClientRecord>();
     for (const { username, ...peer } of peerEntries) {
-      // Получаем или создаем пользователя
       const entry = users.get(username) || {
         username,
         peers: [],
       };
 
-      // Добавляем peer
       entry.peers.push(peer);
-
-      // Обновляем пользователя
       users.set(username, entry);
     }
 

@@ -220,3 +220,162 @@ describe.each(protocolFixtures)("$name", (fixture) => {
     expect(connection.spies.syncWgConfig).toHaveBeenCalledOnce();
   });
 });
+
+/**
+ * AmneziaWg2Service: wg0.conf — источник истины для peer'ов и AllowedIPs,
+ * dump используется только для runtime статистики.
+ */
+describe("AmneziaWg2Service — config-driven getClients", () => {
+  const createSubject = (
+    options: Parameters<typeof createAmneziaConnectionMock>[0] = {},
+  ) => {
+    const connection = createAmneziaConnectionMock(options);
+    return {
+      service: new AmneziaWg2Service(connection.connection),
+      connection,
+    };
+  };
+
+  it("reports a config-blocked peer even when the live dump shows no allowed IPs", async () => {
+    const wgConfig = `[Interface]
+Address = 10.8.1.1/24
+ListenPort = 51820
+
+[Peer]
+PublicKey = blocked-config-id
+AllowedIPs = 0.0.0.0/32
+`;
+    const wgDump = [
+      "blocked-config-id\tpsk\t(none)\t(none)\t0\t0\t0\toff",
+      "stale-id\tpsk\t198.51.100.10:51820\t10.8.1.5/32\t0\t100\t200\t25",
+    ].join("\n");
+    const { service } = createSubject({
+      wgConfig,
+      wgDump,
+      clientsTable: [
+        {
+          clientId: "blocked-config-id",
+          userData: { clientName: "blocked-user", allowedIp: "10.8.1.4" },
+        },
+      ],
+    });
+
+    const clients = await service.getClients();
+
+    expect(clients).toHaveLength(1);
+    expect(clients[0]).toMatchObject({
+      username: "blocked-user",
+      peers: [
+        {
+          id: "blocked-config-id",
+          status: PeerStatus.Disabled,
+          allowedIps: ["0.0.0.0/32"],
+          endpoint: null,
+          traffic: { received: 0, sent: 0 },
+          online: false,
+        },
+      ],
+    });
+  });
+
+  it("reports a config-disabled peer that has no entry in the live dump", async () => {
+    const wgConfig = `[Interface]
+Address = 10.8.1.1/24
+
+[Peer]
+PublicKey = disabled-only-config
+AllowedIPs = 0.0.0.0/32
+`;
+    const { service } = createSubject({
+      wgConfig,
+      wgDump: "",
+      clientsTable: [
+        {
+          clientId: "disabled-only-config",
+          userData: { clientName: "ghost" },
+        },
+      ],
+    });
+
+    const clients = await service.getClients();
+
+    expect(clients).toEqual([
+      {
+        username: "ghost",
+        peers: [
+          expect.objectContaining({
+            id: "disabled-only-config",
+            status: PeerStatus.Disabled,
+            allowedIps: ["0.0.0.0/32"],
+            endpoint: null,
+            online: false,
+            traffic: { received: 0, sent: 0 },
+            expiresAt: null,
+            protocol: Protocol.AMNEZIAWG2,
+          }),
+        ],
+      },
+    ]);
+  });
+
+  it("uses config AllowedIPs when the dump shows (none)", async () => {
+    const wgConfig = `[Interface]
+Address = 10.8.1.1/24
+
+[Peer]
+PublicKey = active-with-confused-dump
+AllowedIPs = 10.8.1.7/32
+`;
+    const wgDump =
+      "active-with-confused-dump\tpsk\t198.51.100.10:51820\t(none)\t0\t100\t200\t25";
+    const { service } = createSubject({
+      wgConfig,
+      wgDump,
+      clientsTable: [
+        {
+          clientId: "active-with-confused-dump",
+          userData: { clientName: "alive" },
+        },
+      ],
+    });
+
+    const clients = await service.getClients();
+
+    expect(clients[0]?.peers[0]).toMatchObject({
+      id: "active-with-confused-dump",
+      status: PeerStatus.Active,
+      allowedIps: ["10.8.1.7/32"],
+      traffic: { received: 100, sent: 200 },
+    });
+  });
+
+  it("ignores dump-only peers that are absent from wg0.conf", async () => {
+    const wgConfig = `[Interface]
+Address = 10.8.1.1/24
+
+[Peer]
+PublicKey = in-config
+AllowedIPs = 10.8.1.2/32
+`;
+    const wgDump = [
+      "in-config\tpsk\t198.51.100.10:51820\t10.8.1.2/32\t0\t1\t2\t25",
+      "stale-only-in-dump\tpsk\t198.51.100.10:51820\t10.8.1.9/32\t0\t3\t4\t25",
+    ].join("\n");
+    const { service } = createSubject({
+      wgConfig,
+      wgDump,
+      clientsTable: [
+        {
+          clientId: "in-config",
+          userData: { clientName: "kept" },
+        },
+      ],
+    });
+
+    const clients = await service.getClients();
+
+    expect(clients).toHaveLength(1);
+    expect(clients[0]?.peers).toHaveLength(1);
+    expect(clients[0]?.peers[0]?.id).toBe("in-config");
+  });
+});
