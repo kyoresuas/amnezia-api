@@ -30,7 +30,7 @@ const validEnv: Record<(typeof ENV_KEYS)[number], string | undefined> = {
   SERVER_REGION: "test-region",
   SERVER_WEIGHT: "100",
   SERVER_MAX_PEERS: "200",
-  PROTOCOLS_ENABLED: "amneziawg,amneziawg2,xray",
+  PROTOCOLS_ENABLED: "amneziawg,amneziawg3,xray",
 };
 
 /**

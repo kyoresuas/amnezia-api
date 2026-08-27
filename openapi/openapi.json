@@ -195,7 +195,7 @@
                                   "description": "Протокол подключения",
                                   "enum": [
                                     "amneziawg",
-                                    "amneziawg2",
+                                    "amneziawg3",
                                     "xray"
                                   ],
                                   "example": "amneziawg"
@@ -283,11 +283,11 @@
                     "description": "Протокол подключения",
                     "enum": [
                       "amneziawg",
-                      "amneziawg2",
+                      "amneziawg3",
                       "xray"
                     ],
                     "example": "amneziawg",
-                    "default": "amneziawg2"
+                    "default": "amneziawg3"
                   },
                   "expiresAt": {
                     "type": "integer",
@@ -343,7 +343,7 @@
                           "description": "Протокол подключения",
                           "enum": [
                             "amneziawg",
-                            "amneziawg2",
+                            "amneziawg3",
                             "xray"
                           ],
                           "example": "amneziawg"
@@ -502,7 +502,7 @@
                     "description": "Протокол подключения",
                     "enum": [
                       "amneziawg",
-                      "amneziawg2",
+                      "amneziawg3",
                       "xray"
                     ],
                     "example": "amneziawg",
@@ -664,7 +664,7 @@
                     "description": "Протокол подключения",
                     "enum": [
                       "amneziawg",
-                      "amneziawg2",
+                      "amneziawg3",
                       "xray"
                     ],
                     "example": "amneziawg",
@@ -942,7 +942,7 @@
                         "type": "string",
                         "enum": [
                           "amneziawg",
-                          "amneziawg2",
+                          "amneziawg3",
                           "xray"
                         ]
                       },
@@ -1292,13 +1292,13 @@
                         "type": "string",
                         "enum": [
                           "amneziawg",
-                          "amneziawg2",
+                          "amneziawg3",
                           "xray"
                         ]
                       },
                       "example": [
                         "amneziawg",
-                        "amneziawg2",
+                        "amneziawg3",
                         "xray"
                       ]
                     },
@@ -1374,7 +1374,7 @@
                         ]
                       }
                     },
-                    "amneziaWg2": {
+                    "amneziaWg3": {
                       "type": "object",
                       "required": [
                         "wgConfig",
@@ -1397,7 +1397,7 @@
                         },
                         "clients": {
                           "type": "array",
-                          "description": "Содержимое таблицы клиентов AmneziaWG 2.0",
+                          "description": "Содержимое таблицы клиентов AmneziaWG 3.1",
                           "items": {
                             "type": "object",
                             "additionalProperties": false,
@@ -1555,13 +1555,13 @@
                       "type": "string",
                       "enum": [
                         "amneziawg",
-                        "amneziawg2",
+                        "amneziawg3",
                         "xray"
                       ]
                     },
                     "example": [
                       "amneziawg",
-                      "amneziawg2",
+                      "amneziawg3",
                       "xray"
                     ]
                   },
@@ -1637,7 +1637,7 @@
                       ]
                     }
                   },
-                  "amneziaWg2": {
+                  "amneziaWg3": {
                     "type": "object",
                     "required": [
                       "wgConfig",
@@ -1779,7 +1779,7 @@
                           "type": "array",
                           "contains": {
                             "enum": [
-                              "amneziawg2"
+                              "amneziawg3"
                             ]
                           }
                         }
@@ -1790,7 +1790,7 @@
                     },
                     "then": {
                       "required": [
-                        "amneziaWg2"
+                        "amneziaWg3"
                       ]
                     }
                   },
@@ -1870,7 +1870,7 @@
                         "type": "string",
                         "enum": [
                           "amneziawg",
-                          "amneziawg2",
+                          "amneziawg3",
                           "xray"
                         ]
                       },

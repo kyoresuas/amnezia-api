@@ -23,7 +23,7 @@ export enum CustomFormat {
 
 export enum Protocol {
   AMNEZIAWG = "amneziawg",
-  AMNEZIAWG2 = "amneziawg2",
+  AMNEZIAWG3 = "amneziawg3",
   XRAY = "xray",
 }
 

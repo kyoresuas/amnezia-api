@@ -9,7 +9,7 @@
 
 [English](README.md) · **Русский**
 
-**Self-hosted REST API для автоматизации VPN-серверов Amnezia.** Управляйте клиентами AmneziaWG, AmneziaWG 2.0 и Xray через единый защищённый HTTP-интерфейс с валидацией, Swagger UI, метриками, QR-конфигами, сроками доступа и резервными копиями.
+**Self-hosted REST API для автоматизации VPN-серверов Amnezia.** Управляйте клиентами AmneziaWG, AmneziaWG 3.1 и Xray через единый защищённый HTTP-интерфейс с валидацией, Swagger UI, метриками, QR-конфигами, сроками доступа и резервными копиями.
 
 Подходит для админ-панелей, Telegram-ботов, биллинга и управления несколькими серверами без ручного подключения по SSH.
 
@@ -21,7 +21,7 @@
 
 | Возможность | Что она даёт |
 | --- | --- |
-| Единый API протоколов | Одинаковая работа с AmneziaWG, AmneziaWG 2.0 и Xray |
+| Единый API протоколов | Одинаковая работа с AmneziaWG, AmneziaWG 3.1 и Xray |
 | Жизненный цикл клиента | Создание, список, изменение, пауза, возобновление и удаление |
 | Срок доступа | Автоматическое отключение истёкших клиентов без смены конфига |
 | Готовые конфиги | Строка `vpn://` и серия совместимых с Amnezia QR-кодов |
@@ -40,7 +40,7 @@
                Amnezia API на каждом сервере
                           │
              Существующие контейнеры Amnezia
-             AmneziaWG · AmneziaWG 2.0 · Xray
+             AmneziaWG · AmneziaWG 3.1 · Xray
 ```
 
 Если Amnezia уже работает, переустанавливать VPN-протоколы не нужно. Установщик обнаруживает контейнеры `amnezia-awg`, `amnezia-awg2` и `amnezia-xray` и настраивает API поверх них. При первой настройке поддержка статистики Xray может изменить конфиг Xray и перезапустить контейнер.
@@ -50,8 +50,10 @@
 | Протокол | Значение API | Контейнер |
 | --- | --- | --- |
 | AmneziaWG | `amneziawg` | `amnezia-awg` |
-| AmneziaWG 2.0 | `amneziawg2` | `amnezia-awg2` |
+| AmneziaWG 3.1 | `amneziawg3` | `amnezia-awg2` |
 | Xray | `xray` | `amnezia-xray` |
+
+Протокол `amneziawg3` обслуживает контейнер `amnezia-awg2`. Если контейнер ещё на AmneziaWG 2.0, клиентские конфиги собираются по тем параметрам, которые в нём есть, а набор 3.1 (`HeaderProtectionKey`, `RekeyAfterTime`, `RandomTrailers` и остальные) подхватывается сразу после обновления сервера.
 
 ## Требования
 
@@ -178,7 +180,7 @@ curl -X POST "https://vpn.example.com/clients" \
   -H "Content-Type: application/json" \
   -d '{
     "clientName": "demo-client",
-    "protocol": "amneziawg2",
+    "protocol": "amneziawg3",
     "expiresAt": null
   }'
 ```
@@ -198,7 +200,7 @@ curl -X PATCH "https://vpn.example.com/clients" \
   -H "Content-Type: application/json" \
   -d '{
     "clientId": "<client-id>",
-    "protocol": "amneziawg2",
+    "protocol": "amneziawg3",
     "status": "disabled",
     "expiresAt": null
   }'
@@ -211,7 +213,7 @@ curl -X PATCH "https://vpn.example.com/clients" \
 | `FASTIFY_ROUTES` | Адрес Fastify в формате `host:port` |
 | `FASTIFY_API_KEY` | Секрет для заголовка `x-api-key`, минимум 32 символа |
 | `CORS_ORIGINS` | Browser origin через запятую; пустое значение отключает CORS |
-| `PROTOCOLS_ENABLED` | `amneziawg,amneziawg2,xray` |
+| `PROTOCOLS_ENABLED` | `amneziawg,amneziawg3,xray` |
 | `SERVER_ID` | Постоянный уникальный ID сервера |
 | `SERVER_NAME` | Понятное название сервера |
 | `SERVER_REGION` | Регион, зона или произвольная метка |

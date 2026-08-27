@@ -9,7 +9,7 @@
 
 **English** · [Русский](README_RU.md)
 
-**A self-hosted REST API for automating Amnezia VPN servers.** Manage AmneziaWG, AmneziaWG 2.0, and Xray clients through one authenticated HTTP interface—with typed validation, Swagger UI, metrics, QR configs, expiration, and backups included.
+**A self-hosted REST API for automating Amnezia VPN servers.** Manage AmneziaWG, AmneziaWG 3.1, and Xray clients through one authenticated HTTP interface—with typed validation, Swagger UI, metrics, QR configs, expiration, and backups included.
 
 Build an admin panel, Telegram bot, billing system, or multi-server control plane without manually SSH-ing into every VPN server.
 
@@ -23,7 +23,7 @@ Amnezia is excellent at deploying a private VPN. Amnezia API adds the automation
 
 | Capability | What it gives you |
 | --- | --- |
-| Unified protocol API | The same client workflow for AmneziaWG, AmneziaWG 2.0, and Xray |
+| Unified protocol API | The same client workflow for AmneziaWG, AmneziaWG 3.1, and Xray |
 | Client lifecycle | Create, list, update, disable, resume, and delete clients |
 | Expiration | Automatically disable expired access without invalidating the client config |
 | Ready-to-share configs | Return an Amnezia-compatible `vpn://` config and generate multi-part QR codes |
@@ -42,7 +42,7 @@ Admin panel · Telegram bot · Billing · Automation
              Amnezia API (one per server)
                        │
            Existing Amnezia Docker containers
-          AmneziaWG · AmneziaWG 2.0 · Xray
+          AmneziaWG · AmneziaWG 3.1 · Xray
 ```
 
 Already have a working Amnezia server? You do **not** need to reinstall its VPN protocols. The installer detects the existing `amnezia-awg`, `amnezia-awg2`, and `amnezia-xray` containers and configures the API around them. On first setup, Xray statistics support may update the Xray config and restart its container.
@@ -52,8 +52,10 @@ Already have a working Amnezia server? You do **not** need to reinstall its VPN 
 | Protocol | API value | Expected container |
 | --- | --- | --- |
 | AmneziaWG | `amneziawg` | `amnezia-awg` |
-| AmneziaWG 2.0 | `amneziawg2` | `amnezia-awg2` |
+| AmneziaWG 3.1 | `amneziawg3` | `amnezia-awg2` |
 | Xray | `xray` | `amnezia-xray` |
+
+The `amneziawg3` protocol serves the `amnezia-awg2` container. If that container is still on AmneziaWG 2.0, client configs are built from the 2.0 parameters it actually has — the 3.1 set (`HeaderProtectionKey`, `RekeyAfterTime`, `RandomTrailers` and the rest) is picked up as soon as the server is upgraded.
 
 ## Requirements
 
@@ -184,7 +186,7 @@ curl -X POST "https://vpn.example.com/clients" \
   -H "Content-Type: application/json" \
   -d '{
     "clientName": "demo-client",
-    "protocol": "amneziawg2",
+    "protocol": "amneziawg3",
     "expiresAt": null
   }'
 ```
@@ -195,7 +197,7 @@ curl -X POST "https://vpn.example.com/clients" \
   "client": {
     "id": "<client-id>",
     "config": "vpn://...",
-    "protocol": "amneziawg2"
+    "protocol": "amneziawg3"
   }
 }
 ```
@@ -217,7 +219,7 @@ curl -X PATCH "https://vpn.example.com/clients" \
   -H "Content-Type: application/json" \
   -d '{
     "clientId": "<client-id>",
-    "protocol": "amneziawg2",
+    "protocol": "amneziawg3",
     "status": "disabled",
     "expiresAt": null
   }'
@@ -232,7 +234,7 @@ The installer creates `.env` from `.env.example` and fills the most important va
 | `FASTIFY_ROUTES` | Fastify bind address in `host:port` format |
 | `FASTIFY_API_KEY` | Secret expected in the `x-api-key` header; minimum 32 characters |
 | `CORS_ORIGINS` | Comma-separated browser origins; CORS is disabled when empty |
-| `PROTOCOLS_ENABLED` | Comma-separated list: `amneziawg,amneziawg2,xray` |
+| `PROTOCOLS_ENABLED` | Comma-separated list: `amneziawg,amneziawg3,xray` |
 | `SERVER_ID` | Stable unique server identifier |
 | `SERVER_NAME` | Human-readable server name |
 | `SERVER_REGION` | Region, availability zone, or custom label |

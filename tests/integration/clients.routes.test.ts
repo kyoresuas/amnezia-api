@@ -13,7 +13,7 @@ const AUTH_HEADERS = { "x-api-key": TEST_API_KEY } as const;
  */
 const clients = [
   createClientRecord({ username: "alice", protocol: Protocol.AMNEZIAWG }),
-  createClientRecord({ username: "bob", protocol: Protocol.AMNEZIAWG2 }),
+  createClientRecord({ username: "bob", protocol: Protocol.AMNEZIAWG3 }),
   createClientRecord({ username: "carol", protocol: Protocol.XRAY }),
 ];
 

@@ -18,15 +18,15 @@ const originalAppConfig = {
 const createSubject = () => {
   const xray = createProtocolServiceMock(Protocol.XRAY);
   const amneziaWg = createProtocolServiceMock(Protocol.AMNEZIAWG);
-  const amneziaWg2 = createProtocolServiceMock(Protocol.AMNEZIAWG2);
+  const amneziaWg3 = createProtocolServiceMock(Protocol.AMNEZIAWG3);
 
   return {
     service: new ClientsService(
       xray.service,
       amneziaWg.service,
-      amneziaWg2.service,
+      amneziaWg3.service,
     ),
-    protocols: { xray, amneziaWg, amneziaWg2 },
+    protocols: { xray, amneziaWg, amneziaWg3 },
   };
 };
 
@@ -38,7 +38,7 @@ beforeEach(() => {
   appConfig.PROTOCOLS_ENABLED = [
     Protocol.XRAY,
     Protocol.AMNEZIAWG,
-    Protocol.AMNEZIAWG2,
+    Protocol.AMNEZIAWG3,
   ];
 });
 
@@ -64,16 +64,16 @@ describe("ClientsService", () => {
         protocol: Protocol.AMNEZIAWG,
       }),
     ]);
-    const amneziaWg2 = createProtocolServiceMock(Protocol.AMNEZIAWG2, [
+    const amneziaWg3 = createProtocolServiceMock(Protocol.AMNEZIAWG3, [
       createClientRecord({
         username: "bob",
-        protocol: Protocol.AMNEZIAWG2,
+        protocol: Protocol.AMNEZIAWG3,
       }),
     ]);
     const service = new ClientsService(
       xray.service,
       amneziaWg.service,
-      amneziaWg2.service,
+      amneziaWg3.service,
     );
 
     const clients = await service.getClients();
@@ -86,7 +86,7 @@ describe("ClientsService", () => {
       ]),
     );
     expect(clients.find(({ username }) => username === "bob")?.peers).toEqual([
-      expect.objectContaining({ protocol: Protocol.AMNEZIAWG2 }),
+      expect.objectContaining({ protocol: Protocol.AMNEZIAWG3 }),
     ]);
   });
 
@@ -108,7 +108,7 @@ describe("ClientsService", () => {
       { expiresAt: 4_102_444_800 },
     );
     expect(protocols.xray.spies.createClient).not.toHaveBeenCalled();
-    expect(protocols.amneziaWg2.spies.createClient).not.toHaveBeenCalled();
+    expect(protocols.amneziaWg3.spies.createClient).not.toHaveBeenCalled();
   });
 
   // Тестирование запрета операций для выключенного протокола
@@ -180,7 +180,7 @@ describe("ClientsService", () => {
     protocols.amneziaWg.spies.disableExpiredClients.mockRejectedValue(
       new Error("protocol unavailable"),
     );
-    protocols.amneziaWg2.spies.disableExpiredClients.mockResolvedValue(1);
+    protocols.amneziaWg3.spies.disableExpiredClients.mockResolvedValue(1);
 
     await expect(service.disableExpiredClients()).resolves.toBe(3);
     expect(protocols.xray.spies.disableExpiredClients).toHaveBeenCalledOnce();
@@ -188,7 +188,7 @@ describe("ClientsService", () => {
       protocols.amneziaWg.spies.disableExpiredClients,
     ).toHaveBeenCalledOnce();
     expect(
-      protocols.amneziaWg2.spies.disableExpiredClients,
+      protocols.amneziaWg3.spies.disableExpiredClients,
     ).toHaveBeenCalledOnce();
   });
 
@@ -198,11 +198,11 @@ describe("ClientsService", () => {
       createClientRecord({ username: "existing", protocol: Protocol.XRAY }),
     ]);
     const amneziaWg = createProtocolServiceMock(Protocol.AMNEZIAWG);
-    const amneziaWg2 = createProtocolServiceMock(Protocol.AMNEZIAWG2);
+      const amneziaWg3 = createProtocolServiceMock(Protocol.AMNEZIAWG3);
     const service = new ClientsService(
       xray.service,
       amneziaWg.service,
-      amneziaWg2.service,
+      amneziaWg3.service,
     );
     appConfig.SERVER_MAX_PEERS = TEST_SERVER_MAX_PEERS;
 
@@ -228,7 +228,7 @@ describe("ClientsService", () => {
     const createCalls =
       xray.spies.createClient.mock.calls.length +
       amneziaWg.spies.createClient.mock.calls.length +
-      amneziaWg2.spies.createClient.mock.calls.length;
+      amneziaWg3.spies.createClient.mock.calls.length;
     expect(createCalls).toBe(1);
   });
 });

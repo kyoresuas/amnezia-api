@@ -19,7 +19,7 @@ export const createClientSchema = {
       },
       protocol: {
         ...protocolSchema,
-        default: Protocol.AMNEZIAWG2,
+        default: Protocol.AMNEZIAWG3,
       },
       expiresAt: {
         type: "integer",

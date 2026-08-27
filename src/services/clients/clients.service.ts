@@ -26,12 +26,12 @@ export class ClientsService {
   constructor(
     private xrayService: IProtocolService,
     private amneziaWgService: IProtocolService,
-    private amneziaWg2Service: IProtocolService,
+    private amneziaWg3Service: IProtocolService,
   ) {
     this.servicesByProtocol = {
       [Protocol.XRAY]: this.xrayService,
       [Protocol.AMNEZIAWG]: this.amneziaWgService,
-      [Protocol.AMNEZIAWG2]: this.amneziaWg2Service,
+      [Protocol.AMNEZIAWG3]: this.amneziaWg3Service,
     };
   }
 

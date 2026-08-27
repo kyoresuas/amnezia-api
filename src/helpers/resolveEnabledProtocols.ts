@@ -19,8 +19,8 @@ export async function resolveEnabledProtocols(): Promise<Protocol[]> {
     enabled.push(Protocol.AMNEZIAWG);
   }
 
-  if (await isDockerContainerRunning(AppContract.AmneziaWG2.DOCKER_CONTAINER)) {
-    enabled.push(Protocol.AMNEZIAWG2);
+  if (await isDockerContainerRunning(AppContract.AmneziaWG3.DOCKER_CONTAINER)) {
+    enabled.push(Protocol.AMNEZIAWG3);
   }
 
   if (await isDockerContainerRunning(AppContract.Xray.DOCKER_CONTAINER)) {

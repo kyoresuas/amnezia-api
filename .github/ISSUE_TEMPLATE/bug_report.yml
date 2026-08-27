@@ -52,7 +52,7 @@ body:
     id: protocols
     attributes:
       label: Enabled protocols
-      description: For example, amneziawg, amneziawg2, or xray.
+      description: For example, amneziawg, amneziawg3, or xray.
     validations:
       required: true
 

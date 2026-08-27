@@ -133,10 +133,10 @@ export const importServerBackupSchema = {
           type: "string",
           enum: Object.values(Protocol),
         },
-        example: [Protocol.AMNEZIAWG, Protocol.AMNEZIAWG2, Protocol.XRAY],
+        example: [Protocol.AMNEZIAWG, Protocol.AMNEZIAWG3, Protocol.XRAY],
       },
       amnezia: amneziaPayloadSchema,
-      amneziaWg2: amneziaPayloadSchema,
+      amneziaWg3: amneziaPayloadSchema,
       xray: xrayPayloadSchema,
     },
     allOf: [
@@ -159,13 +159,13 @@ export const importServerBackupSchema = {
           properties: {
             protocols: {
               type: "array",
-              contains: { const: Protocol.AMNEZIAWG2 },
+              contains: { const: Protocol.AMNEZIAWG3 },
             },
           },
           required: ["protocols"],
         },
         then: {
-          required: ["amneziaWg2"],
+          required: ["amneziaWg3"],
         },
       },
       {

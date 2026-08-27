@@ -2,7 +2,7 @@ import type { Protocol } from "@/types/shared";
 import type { IProtocolService } from "@/types/clients";
 import type { AmneziaWgService } from "@/services/amneziaWg";
 import type { AmneziaWgConnection } from "@/helpers/amneziaWgConnection";
-import type { AmneziaWg2Connection } from "@/helpers/amneziaWg2Connection";
+import type { AmneziaWg3Connection } from "@/helpers/amneziaWg3Connection";
 import type { ClientTableEntry, IAmneziaConnection } from "@/types/amnezia";
 
 export type AmneziaConnectionMockOptions = {
@@ -23,7 +23,7 @@ export type ProtocolFixture = {
   createService(connection: IAmneziaConnection): AmneziaServiceSubject;
 };
 
-export type AmneziaConnection = AmneziaWgConnection | AmneziaWg2Connection;
+export type AmneziaConnection = AmneziaWgConnection | AmneziaWg3Connection;
 
 export type AmneziaConnectionFixture = {
   name: string;

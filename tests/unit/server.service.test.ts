@@ -13,7 +13,7 @@ import { ServerService } from "@/services/server";
 import { ClientsService } from "@/services/clients";
 import { ServerBackupPayload } from "@/types/server";
 import { AmneziaWgService } from "@/services/amneziaWg";
-import { AmneziaWg2Service } from "@/services/amneziaWg2";
+import { AmneziaWg3Service } from "@/services/amneziaWg3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const originalAppConfig = {
@@ -29,20 +29,20 @@ const originalAppConfig = {
  */
 const createSubject = () => {
   const amneziaWgConnection = createAmneziaConnectionMock();
-  const amneziaWg2Connection = createAmneziaConnectionMock();
+  const amneziaWg3Connection = createAmneziaConnectionMock();
   const xrayConnection = createXrayConnectionMock(
     createXrayServerConfigFixture(),
   );
 
   const amneziaWgService = new AmneziaWgService(amneziaWgConnection.connection);
-  const amneziaWg2Service = new AmneziaWg2Service(
-    amneziaWg2Connection.connection,
+  const amneziaWg3Service = new AmneziaWg3Service(
+    amneziaWg3Connection.connection,
   );
   const xrayService = new XrayService(xrayConnection.connection);
   const clientsService = new ClientsService(
     xrayService,
     amneziaWgService,
-    amneziaWg2Service,
+    amneziaWg3Service,
   );
 
   return {
@@ -50,11 +50,11 @@ const createSubject = () => {
       xrayService,
       clientsService,
       amneziaWgService,
-      amneziaWg2Service,
+      amneziaWg3Service,
     ),
     connections: {
       amneziaWg: amneziaWgConnection,
-      amneziaWg2: amneziaWg2Connection,
+      amneziaWg3: amneziaWg3Connection,
       xray: xrayConnection,
     },
   };
@@ -70,7 +70,7 @@ beforeEach(() => {
   appConfig.SERVER_MAX_PEERS = 200;
   appConfig.PROTOCOLS_ENABLED = [
     Protocol.AMNEZIAWG,
-    Protocol.AMNEZIAWG2,
+    Protocol.AMNEZIAWG3,
     Protocol.XRAY,
   ];
 });
@@ -96,7 +96,7 @@ describe("ServerService", () => {
       weight: 150,
       maxPeers: 200,
       totalPeers: 6,
-      protocols: [Protocol.AMNEZIAWG, Protocol.AMNEZIAWG2, Protocol.XRAY],
+      protocols: [Protocol.AMNEZIAWG, Protocol.AMNEZIAWG3, Protocol.XRAY],
     });
   });
 
@@ -110,11 +110,11 @@ describe("ServerService", () => {
     expect(backup.serverId).toBe("test-server-id");
     expect(backup.protocols).toEqual([
       Protocol.AMNEZIAWG,
-      Protocol.AMNEZIAWG2,
+      Protocol.AMNEZIAWG3,
       Protocol.XRAY,
     ]);
     expect(backup.amnezia).toEqual(createAmneziaBackupFixture());
-    expect(backup.amneziaWg2).toEqual(createAmneziaBackupFixture());
+    expect(backup.amneziaWg3).toEqual(createAmneziaBackupFixture());
     expect(backup.xray).toMatchObject({
       uuid: "server-uuid",
       publicKey: "xray-public-key",
@@ -132,9 +132,9 @@ describe("ServerService", () => {
     const backup: ServerBackupPayload = {
       generatedAt: "2026-08-04T00:00:00.000Z",
       serverId: "backup-server-id",
-      protocols: [Protocol.AMNEZIAWG, Protocol.AMNEZIAWG2, Protocol.XRAY],
+      protocols: [Protocol.AMNEZIAWG, Protocol.AMNEZIAWG3, Protocol.XRAY],
       amnezia: createAmneziaBackupFixture(),
-      amneziaWg2: createAmneziaBackupFixture(),
+      amneziaWg3: createAmneziaBackupFixture(),
       xray: {
         serverConfig: xrayConfig,
         uuid: "backup-uuid",
@@ -147,10 +147,10 @@ describe("ServerService", () => {
     await service.importBackup(backup);
 
     expect(connections.amneziaWg.spies.writeWgConfig).toHaveBeenCalledOnce();
-    expect(connections.amneziaWg2.spies.writeWgConfig).toHaveBeenCalledOnce();
+    expect(connections.amneziaWg3.spies.writeWgConfig).toHaveBeenCalledOnce();
     expect(connections.xray.state.serverConfig).toBe(xrayConfig);
     expect(connections.amneziaWg.spies.syncWgConfig).toHaveBeenCalledOnce();
-    expect(connections.amneziaWg2.spies.syncWgConfig).toHaveBeenCalledOnce();
+    expect(connections.amneziaWg3.spies.syncWgConfig).toHaveBeenCalledOnce();
     expect(connections.xray.spies.restartContainer).toHaveBeenCalledOnce();
   });
 

@@ -8,5 +8,5 @@ Object.assign(process.env, {
   CORS_ORIGINS: "",
   SERVER_PUBLIC_HOST: "127.0.0.1",
   SERVER_MAX_PEERS: String(TEST_SERVER_MAX_PEERS),
-  PROTOCOLS_ENABLED: "amneziawg,amneziawg2,xray",
+  PROTOCOLS_ENABLED: "amneziawg,amneziawg3,xray",
 });

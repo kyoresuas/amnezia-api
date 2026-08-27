@@ -58,7 +58,7 @@ export type ServerBackupPayload = {
   serverId: string | null;
   protocols: Protocol[];
   amnezia?: AmneziaBackupData;
-  amneziaWg2?: AmneziaBackupData;
+  amneziaWg3?: AmneziaBackupData;
   xray?: XrayBackupData;
 };
 

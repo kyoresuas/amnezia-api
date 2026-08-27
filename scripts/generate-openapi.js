@@ -16,7 +16,7 @@ const setupEnvironment = () => {
     FASTIFY_API_KEY: "openapi-generation-key".padEnd(64, "0"),
     CORS_ORIGINS: "",
     SERVER_PUBLIC_HOST: "vpn.example.com",
-    PROTOCOLS_ENABLED: "amneziawg,amneziawg2,xray",
+    PROTOCOLS_ENABLED: "amneziawg,amneziawg3,xray",
     APP_VERSION: packageJson.version,
   };
 
