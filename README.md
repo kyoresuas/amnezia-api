@@ -286,6 +286,17 @@ When routes or schemas change, regenerate the portable contract with `npm run op
 
 If you build an integration, bot, SDK, or panel using this API, open an issue or pull request to add it here.
 
+## Support the project
+
+If Amnezia API is useful to you, you can support its development:
+
+- **Russian MIR card:** `2200700644781816`
+- **TON:** `kyoresuas.ton`
+- **TON wallet address:** `UQATzyMcVoZudjaA5Rc9w5TV_lIqxh9DPk0gSnjkLVvwEVqz`
+- **USDT on TRON (TRC-20):** `TJSLjDo4yRgHr9JqqEcrkbC51bP9DCiBC7`
+
+Please verify the network before transferring cryptocurrency.
+
 ## Project status and support
 
 Bug reports and feature requests are welcome in [GitHub Issues](https://github.com/kyoresuas/amnezia-api/issues).

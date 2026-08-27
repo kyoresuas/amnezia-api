@@ -264,6 +264,17 @@ npm run openapi:check
 
 Если вы создали интеграцию, бота, SDK или панель, откройте issue или pull request, чтобы добавить проект в этот список.
 
+## Поддержать проект
+
+Если Amnezia API оказался полезен, вы можете поддержать его развитие:
+
+- **Карта «Мир»:** `2200700644781816`
+- **TON:** `kyoresuas.ton`
+- **Адрес кошелька TON:** `UQATzyMcVoZudjaA5Rc9w5TV_lIqxh9DPk0gSnjkLVvwEVqz`
+- **USDT в сети TRON (TRC-20):** `TJSLjDo4yRgHr9JqqEcrkbC51bP9DCiBC7`
+
+Перед переводом криптовалюты убедитесь, что выбрана правильная сеть.
+
 ## Поддержка
 
 - [GitHub Issues](https://github.com/kyoresuas/amnezia-api/issues)
