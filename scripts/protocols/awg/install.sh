@@ -2,24 +2,43 @@
 
 set -euo pipefail
 
-CONTAINER_NAME="amnezia-awg2"
+CONTAINER_NAME="${CONTAINER_NAME:-amnezia-awg2}"
 DOCKER_NETWORK="amnezia-dns-net"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 AWG_SERVER_PORT="${AWG_SERVER_PORT:-55424}"
 AWG_SUBNET_IP="${AWG_SUBNET_IP:-10.8.0.0}"
 WIREGUARD_SUBNET_CIDR="${WIREGUARD_SUBNET_CIDR:-24}"
-JUNK_PACKET_COUNT="${JUNK_PACKET_COUNT:-3}"
-JUNK_PACKET_MIN_SIZE="${JUNK_PACKET_MIN_SIZE:-10}"
-JUNK_PACKET_MAX_SIZE="${JUNK_PACKET_MAX_SIZE:-30}"
-INIT_PACKET_JUNK_SIZE="${INIT_PACKET_JUNK_SIZE:-15}"
-RESPONSE_PACKET_JUNK_SIZE="${RESPONSE_PACKET_JUNK_SIZE:-18}"
-COOKIE_REPLY_PACKET_JUNK_SIZE="${COOKIE_REPLY_PACKET_JUNK_SIZE:-20}"
-TRANSPORT_PACKET_JUNK_SIZE="${TRANSPORT_PACKET_JUNK_SIZE:-23}"
-INIT_PACKET_MAGIC_HEADER="${INIT_PACKET_MAGIC_HEADER:-1020325451}"
-RESPONSE_PACKET_MAGIC_HEADER="${RESPONSE_PACKET_MAGIC_HEADER:-3288052141}"
-UNDERLOAD_PACKET_MAGIC_HEADER="${UNDERLOAD_PACKET_MAGIC_HEADER:-1766607858}"
-TRANSPORT_PACKET_MAGIC_HEADER="${TRANSPORT_PACKET_MAGIC_HEADER:-2528465083}"
+
+# Параметры обфускации, которые можно задать через окружение.
+# Незаданные сгенерирует configure.sh внутри контейнера
+AWG_PARAMS=(
+  JUNK_PACKET_COUNT
+  JUNK_PACKET_MIN_SIZE
+  JUNK_PACKET_MAX_SIZE
+  INIT_PACKET_JUNK_SIZE
+  RESPONSE_PACKET_JUNK_SIZE
+  COOKIE_REPLY_PACKET_JUNK_SIZE
+  TRANSPORT_PACKET_JUNK_SIZE
+  INIT_PACKET_MAGIC_HEADER
+  RESPONSE_PACKET_MAGIC_HEADER
+  UNDERLOAD_PACKET_MAGIC_HEADER
+  TRANSPORT_PACKET_MAGIC_HEADER
+  SPECIAL_JUNK_1
+  SPECIAL_JUNK_2
+  SPECIAL_JUNK_3
+  SPECIAL_JUNK_4
+  SPECIAL_JUNK_5
+  HEADER_PROTECTION_KEY
+  CONTENT_PADDING_ADDITION
+  REKEY_AFTER_TIME
+  REKEY_TIMEOUT
+  REJECT_AFTER_TIME
+  KEEPALIVE_TIMEOUT
+  MAX_HANDSHAKE_ATTEMPTS
+  RANDOM_TRAILERS
+  DISABLE_COOKIES
+)
 FORCE=0
 
 while [[ $# -gt 0 ]]; do
@@ -27,6 +46,7 @@ while [[ $# -gt 0 ]]; do
     --port)    AWG_SERVER_PORT="$2";    shift 2 ;;
     --subnet)  AWG_SUBNET_IP="$2";     shift 2 ;;
     --cidr)    WIREGUARD_SUBNET_CIDR="$2"; shift 2 ;;
+    --name)    CONTAINER_NAME="$2";   shift 2 ;;
     --force)   FORCE=1;                shift   ;;
     *) echo "Неизвестный аргумент: $1"; exit 1  ;;
   esac
@@ -73,7 +93,7 @@ fi
 
 # Сборка образа
 step "Сборка Docker-образа $CONTAINER_NAME"
-$SUDO docker build -t "$CONTAINER_NAME" "$SCRIPT_DIR"
+$SUDO docker build --pull -t "$CONTAINER_NAME" "$SCRIPT_DIR"
 ok "Образ собран"
 
 # Удаление старого контейнера
@@ -105,28 +125,25 @@ $SUDO docker network connect "$DOCKER_NETWORK" "$CONTAINER_NAME" 2>/dev/null || 
 ok "Контейнер запущен"
 
 # Инициализация конфигурации
-step "Инициализация AmneziaWG (ключи, awg0.conf)"
+step "Инициализация AmneziaWG 3.1 (ключи, awg0.conf)"
 
+$SUDO docker exec -i "$CONTAINER_NAME" mkdir -p /opt/amnezia/awg
 $SUDO docker cp "$SCRIPT_DIR/configure.sh" "${CONTAINER_NAME}:/opt/amnezia/awg/configure.sh"
 $SUDO docker exec -i "$CONTAINER_NAME" chmod +x /opt/amnezia/awg/configure.sh
 
-$SUDO docker exec \
-  -e "AWG_SERVER_PORT=${AWG_SERVER_PORT}" \
-  -e "AWG_SUBNET_IP=${AWG_SUBNET_IP}" \
-  -e "WIREGUARD_SUBNET_CIDR=${WIREGUARD_SUBNET_CIDR}" \
-  -e "JUNK_PACKET_COUNT=${JUNK_PACKET_COUNT}" \
-  -e "JUNK_PACKET_MIN_SIZE=${JUNK_PACKET_MIN_SIZE}" \
-  -e "JUNK_PACKET_MAX_SIZE=${JUNK_PACKET_MAX_SIZE}" \
-  -e "INIT_PACKET_JUNK_SIZE=${INIT_PACKET_JUNK_SIZE}" \
-  -e "RESPONSE_PACKET_JUNK_SIZE=${RESPONSE_PACKET_JUNK_SIZE}" \
-  -e "COOKIE_REPLY_PACKET_JUNK_SIZE=${COOKIE_REPLY_PACKET_JUNK_SIZE}" \
-  -e "TRANSPORT_PACKET_JUNK_SIZE=${TRANSPORT_PACKET_JUNK_SIZE}" \
-  -e "INIT_PACKET_MAGIC_HEADER=${INIT_PACKET_MAGIC_HEADER}" \
-  -e "RESPONSE_PACKET_MAGIC_HEADER=${RESPONSE_PACKET_MAGIC_HEADER}" \
-  -e "UNDERLOAD_PACKET_MAGIC_HEADER=${UNDERLOAD_PACKET_MAGIC_HEADER}" \
-  -e "TRANSPORT_PACKET_MAGIC_HEADER=${TRANSPORT_PACKET_MAGIC_HEADER}" \
-  "$CONTAINER_NAME" \
-  bash /opt/amnezia/awg/configure.sh
+ENV_ARGS=(
+  -e "AWG_SERVER_PORT=${AWG_SERVER_PORT}"
+  -e "AWG_SUBNET_IP=${AWG_SUBNET_IP}"
+  -e "WIREGUARD_SUBNET_CIDR=${WIREGUARD_SUBNET_CIDR}"
+)
+
+for param in "${AWG_PARAMS[@]}"; do
+  if [ -n "${!param:-}" ]; then
+    ENV_ARGS+=(-e "$param=${!param}")
+  fi
+done
+
+$SUDO docker exec "${ENV_ARGS[@]}" "$CONTAINER_NAME" bash /opt/amnezia/awg/configure.sh
 
 ok "Конфигурация сгенерирована"
 
@@ -151,6 +168,7 @@ fi
 printf "\n%b\n" "${BOLD}${GREEN}Готово!${R}"
 printf "%b\n" "${DIM}────────────────────────────────────${R}"
 kv "Контейнер"  "$CONTAINER_NAME"
+kv "Протокол"   "AmneziaWG 3.1"
 kv "Порт"       "$AWG_SERVER_PORT/udp"
 kv "Подсеть"    "$AWG_SUBNET_IP/$WIREGUARD_SUBNET_CIDR"
 
