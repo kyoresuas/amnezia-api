@@ -110,7 +110,7 @@ docker compose -f docker-compose.ghcr.yml up -d
 docker compose ps
 ```
 
-Чтобы закрепить конкретный релиз, задайте `AMNEZIA_API_VERSION`, например `1.0.0`. По умолчанию используется `latest`.
+Чтобы закрепить конкретный релиз, задайте `AMNEZIA_API_VERSION`, например `2.0.0`. По умолчанию используется `latest`.
 
 Для локальной сборки образа из исходников используйте:
 
@@ -134,7 +134,7 @@ bash ./scripts/setup.sh
 
 ```bash
 docker pull ghcr.io/kyoresuas/amnezia-api:latest
-docker pull ghcr.io/kyoresuas/amnezia-api:1.0.0
+docker pull ghcr.io/kyoresuas/amnezia-api:2.0.0
 ```
 
 Стабильные релизы получают теги `latest`, major, minor, точную версию и версию с префиксом `v`. Образы содержат OCI-метаданные, SBOM и GitHub provenance attestation. В GitHub Release автоматически добавляются release notes и переносимый OpenAPI-контракт.

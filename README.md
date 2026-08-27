@@ -114,7 +114,7 @@ docker compose -f docker-compose.ghcr.yml up -d
 docker compose ps
 ```
 
-Set `AMNEZIA_API_VERSION` to a release such as `1.0.0` to pin the deployment. It defaults to `latest`.
+Set `AMNEZIA_API_VERSION` to a release such as `2.0.0` to pin the deployment. It defaults to `latest`.
 
 To build the image locally from source instead:
 
@@ -140,7 +140,7 @@ Every `vX.Y.Z` release publishes a multi-platform image for `linux/amd64` and `l
 
 ```bash
 docker pull ghcr.io/kyoresuas/amnezia-api:latest
-docker pull ghcr.io/kyoresuas/amnezia-api:1.0.0
+docker pull ghcr.io/kyoresuas/amnezia-api:2.0.0
 ```
 
 Stable releases receive `latest`, major, minor, exact, and `v`-prefixed tags. Each image includes OCI metadata, an SBOM, and a GitHub provenance attestation. The corresponding GitHub Release includes generated release notes and the portable OpenAPI contract.

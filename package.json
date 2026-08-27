@@ -1,6 +1,6 @@
 {
   "name": "amnezia-api",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Self-hosted REST API for automating Amnezia VPN servers",
   "private": true,
   "license": "MIT",
