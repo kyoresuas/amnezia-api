@@ -7,7 +7,7 @@ import { I18n, I18nArgs, StatusCodes } from "@/types/shared";
 export class APIError extends Error {
   public name = "APIError";
   public statusCode!: StatusCodes;
-  public message!: I18n;
+  public declare message: I18n;
   public args!: I18nArgs;
 
   constructor(

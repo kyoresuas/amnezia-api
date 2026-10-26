@@ -204,14 +204,14 @@ upsert_env_var() {
   ' "$ENV_FILE" > "$ENV_FILE.tmp" && mv "$ENV_FILE.tmp" "$ENV_FILE"
 }
 
-# Получает значение переменной из .env файла
+# Получает значение переменной из .env файла (или из файла во втором аргументе)
 get_env_var() {
-  local key="$1"
+  local key="$1" file="${2:-$ENV_FILE}"
   
-  [ ! -f "$ENV_FILE" ] && return 0
+  [ ! -f "$file" ] && return 0
   
   local line
-  line=$(grep -E "^[[:space:]]*$key[[:space:]]*=" "$ENV_FILE" | grep -Ev "^[[:space:]]*#" | head -n1 || true)
+  line=$(grep -E "^[[:space:]]*$key[[:space:]]*=" "$file" | grep -Ev "^[[:space:]]*#" | head -n1 || true)
   [ -z "$line" ] && return 0
   
   printf "%s" "$line" | sed -E "s/^[[:space:]]*$key[[:space:]]*=\\s*//" | sed -E 's/^"(.*)"$/\1/'
@@ -242,6 +242,53 @@ ensure_api_key() {
   else
     info "FASTIFY_API_KEY уже задан"
   fi
+}
+
+# Генерирует случайный UUID для SERVER_ID
+generate_server_id() {
+  cat /proc/sys/kernel/random/uuid 2>/dev/null || \
+  (uuidgen 2>/dev/null | tr '[:upper:]' '[:lower:]') || \
+  node -e 'process.stdout.write(require("crypto").randomUUID())' 2>/dev/null
+}
+
+# Выдает уникальный SERVER_ID, если в .env остался общий пример из .env.example
+ensure_server_id() {
+  local current_id example_id new_id
+  current_id="$(get_env_var SERVER_ID)"
+  example_id="$(get_env_var SERVER_ID "$ENV_EXAMPLE")"
+
+  if [ -n "$current_id" ] && [ "$current_id" != "$example_id" ]; then
+    return 0
+  fi
+
+  # На обновлении ID не меняем, он мог уже попасть во внешние системы
+  if [ "${IS_UPDATE:-0}" -eq 1 ]; then
+    if [ -n "$current_id" ]; then
+      warn "SERVER_ID совпадает с примером из .env.example. Задайте уникальный UUID в .env и перезапустите API."
+    fi
+    return 0
+  fi
+
+  new_id="$(generate_server_id || true)"
+  if [ -z "$new_id" ]; then
+    warn "Не удалось сгенерировать SERVER_ID. Задайте уникальное значение в .env вручную."
+    return 0
+  fi
+
+  upsert_env_var SERVER_ID "$new_id"
+  ok "Уникальный SERVER_ID сгенерирован автоматически"
+}
+
+# Проверяет значение NGINX_LISTEN (порт или адрес с портом)
+is_valid_nginx_listen() {
+  [[ "$1" =~ ^([0-9]{1,3}(\.[0-9]{1,3}){3}:)?[0-9]{1,5}$ ]]
+}
+
+# Возвращает адрес прослушивания nginx из NGINX_LISTEN, по умолчанию 80
+get_nginx_listen() {
+  local value
+  value="$(get_env_var NGINX_LISTEN)"
+  printf "%s" "${value:-80}"
 }
 
 # Получает внешний IP адрес
@@ -427,6 +474,9 @@ setup_env() {
   
   # API ключ
   ensure_api_key
+
+  # Уникальный ID сервера
+  ensure_server_id
 
   # Протоколы
   local current_protocols auto_protocols
@@ -634,12 +684,25 @@ setup_xray_stats() {
     run_quiet "apt install python3" $SUDO apt-get install -y -qq python3
   fi
 
+  local tmp_json stats_result
   tmp_json="$(mktemp)"
 
   $SUDO docker exec amnezia-xray sh -lc 'cat /opt/amnezia/xray/server.json 2>/dev/null || echo "{}"' > "$tmp_json" 2>>"$LOG_FILE"
 
-  python3 "$ROOT_DIR/scripts/xray/setup_xray_stats.py" "$tmp_json" >>"$LOG_FILE" 2>&1
+  if ! stats_result="$(python3 "$ROOT_DIR/scripts/xray/setup_xray_stats.py" "$tmp_json" 2>>"$LOG_FILE")"; then
+    warn "Не удалось подготовить конфиг Xray Stats API — настройка пропущена"
+    rm -f "$tmp_json"
+    return 0
+  fi
 
+  # Конфиг уже содержит Stats API и правило routing, Xray перезапускать не нужно
+  if [ "$stats_result" = "unchanged" ]; then
+    rm -f "$tmp_json"
+    ok "Xray Stats API уже настроен"
+    return 0
+  fi
+
+  $SUDO docker exec amnezia-xray cp /opt/amnezia/xray/server.json /opt/amnezia/xray/server.json.bak >>"$LOG_FILE" 2>&1 || true
   $SUDO docker cp "$tmp_json" amnezia-xray:/opt/amnezia/xray/server.json >>"$LOG_FILE" 2>&1
   rm -f "$tmp_json"
 
@@ -654,12 +717,32 @@ setup_nginx() {
   local site_avail="/etc/nginx/sites-available/$APP_NAME"
   local site_enabled="/etc/nginx/sites-enabled/$APP_NAME"
 
-  # На обновлении не трогаем nginx, если он уже настроен и активен
+  local nginx_listen explicit_listen listen_port
+  # Значение из окружения важнее значения из .env
+  explicit_listen="${NGINX_LISTEN:-$(get_env_var NGINX_LISTEN)}"
+  nginx_listen="${explicit_listen:-80}"
+  listen_port="${nginx_listen##*:}"
+
+  # Опечатку не заменяем портом 80, иначе API может неожиданно открыться наружу
+  if ! is_valid_nginx_listen "$nginx_listen"; then
+    err "NGINX_LISTEN должен быть портом или адресом с портом, например 8080 или 127.0.0.1:80"
+    return 1
+  fi
+
+  # Значение из окружения сохраняем в .env, чтобы оно пережило обновления
+  if [ -n "${NGINX_LISTEN:-}" ]; then
+    upsert_env_var NGINX_LISTEN "$NGINX_LISTEN"
+  fi
+
+  # На обновлении не трогаем nginx (в нем могут быть TLS и правки оператора), пока NGINX_LISTEN не изменился
   if [ "${IS_UPDATE:-0}" -eq 1 ] && [ -f "$site_avail" ] && [ -e "$site_enabled" ] \
     && command -v nginx >/dev/null 2>&1 \
     && $SUDO systemctl is-active --quiet nginx 2>/dev/null; then
-    info "Nginx уже настроен"
-    return 0
+    if [ -z "$explicit_listen" ] || grep -qE "^[[:space:]]*listen[[:space:]]+${nginx_listen//./\\.}[[:space:]]*;" "$site_avail"; then
+      info "Nginx уже настроен"
+      return 0
+    fi
+    info "NGINX_LISTEN изменился, конфигурация nginx будет обновлена"
   fi
 
   if ! command -v nginx >/dev/null 2>&1; then
@@ -667,9 +750,9 @@ setup_nginx() {
     run_quiet "apt install nginx" $SUDO apt-get install -y -qq nginx
   fi
   
-  $SUDO tee "$site_avail" >/dev/null <<'NGINX'
+  sed "s|__NGINX_LISTEN__|$nginx_listen|" <<'NGINX' | $SUDO tee "$site_avail" >/dev/null
 server {
-    listen 80;
+    listen __NGINX_LISTEN__;
     server_name _;
 
     location / {
@@ -691,9 +774,12 @@ NGINX
   $SUDO systemctl enable nginx >/dev/null 2>&1 || true
   run_quiet "Перезапуск nginx" bash -c "$SUDO systemctl restart nginx || $SUDO systemctl reload nginx"
 
-  command -v ufw >/dev/null 2>&1 && $SUDO ufw allow 80/tcp >>"$LOG_FILE" 2>&1 || true
+  # Порт открываем в ufw, только если nginx слушает не loopback
+  if [[ "$nginx_listen" != 127.* ]]; then
+    command -v ufw >/dev/null 2>&1 && $SUDO ufw allow "${listen_port}/tcp" >>"$LOG_FILE" 2>&1 || true
+  fi
 
-  ok "Nginx настроен"
+  ok "Nginx настроен ($nginx_listen)"
 }
 
 # Показывает финальную информацию
@@ -721,17 +807,26 @@ show_completion() {
   
   section "Информация для доступа"
   
-  local public_ip api_key
+  local public_ip api_key nginx_listen listen_port access_host port_suffix=""
   public_ip="$(get_env_var SERVER_PUBLIC_HOST)"
   [ -z "$public_ip" ] && public_ip=$(get_public_ip)
   api_key="$(get_env_var FASTIFY_API_KEY)"
-  
-  if [ -n "$public_ip" ]; then
-    kv "API URL" "http://$public_ip/"
-    kv "Swagger" "http://$public_ip/docs"
-  else
-    kv "API URL" "http://localhost/"
-    kv "Swagger" "http://localhost/docs"
+  nginx_listen="$(get_nginx_listen)"
+  listen_port="${nginx_listen##*:}"
+  access_host="${public_ip:-localhost}"
+
+  [ "$listen_port" != "80" ] && port_suffix=":$listen_port"
+
+  # Для loopback адрес с внешним IP не работает
+  if [[ "$nginx_listen" == 127.* ]]; then
+    access_host="127.0.0.1"
+  fi
+
+  kv "API URL" "http://$access_host$port_suffix/"
+  kv "Swagger" "http://$access_host$port_suffix/docs"
+
+  if [[ "$nginx_listen" == 127.* ]]; then
+    info "API доступен только с этого сервера. Для доступа извне используйте SSH-туннель или reverse proxy с TLS"
   fi
   
   if [ -n "$api_key" ]; then
@@ -739,6 +834,9 @@ show_completion() {
   else
     warn "API ключ не найден в .env файле"
   fi
+
+  hr
+  info "Проект полезен? Поставьте звезду: https://github.com/kyoresuas/amnezia-api"
 }
 
 # Основная функция
@@ -760,6 +858,7 @@ main() {
     fi
   else
     ensure_api_key
+    ensure_server_id
   fi
 
   if [ "${INSTALL_MODE:-pm2}" = "docker" ]; then
@@ -769,10 +868,7 @@ main() {
     setup_pm2_startup
   fi
 
-  if [ "${IS_UPDATE:-0}" -eq 0 ]; then
-    setup_xray_stats
-  fi
-
+  setup_xray_stats
   setup_nginx
 
   show_completion

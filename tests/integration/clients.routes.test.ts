@@ -97,4 +97,19 @@ describe("clients routes", () => {
     expect(response.statusCode).toBe(401);
     expect(getClients).not.toHaveBeenCalled();
   });
+
+  // Тестирование локализованного сообщения в ответе с ошибкой авторизации
+  it("returns a localized message for an unauthorized request", async () => {
+    const russian = await app.inject({ method: "GET", url: "/clients" });
+    const english = await app.inject({
+      method: "GET",
+      url: "/clients",
+      headers: { "accept-language": "en" },
+    });
+
+    expect(russian.statusCode).toBe(401);
+    expect(russian.json()).toEqual({ message: "Требуется авторизация" });
+    expect(english.statusCode).toBe(401);
+    expect(english.json()).toEqual({ message: "Not Authorized" });
+  });
 });

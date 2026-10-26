@@ -4,7 +4,7 @@ Amnezia API manages VPN credentials, configuration, containers, and host-level o
 
 ## Supported versions
 
-Security fixes are applied to the latest code on the `main` branch. Until versioned releases are published, older commits are not maintained separately.
+Security fixes are applied to the `main` branch and shipped in the latest [release](https://github.com/kyoresuas/amnezia-api/releases/latest) and its container image. Older releases are not maintained separately, so please update to the newest version.
 
 ## Reporting a vulnerability
 

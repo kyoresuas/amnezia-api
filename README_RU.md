@@ -4,7 +4,9 @@
 [![Fastify](https://img.shields.io/badge/Fastify-5.x-000000?logo=fastify&logoColor=white)](https://fastify.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![CI](https://github.com/kyoresuas/amnezia-api/actions/workflows/ci.yml/badge.svg)](https://github.com/kyoresuas/amnezia-api/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/kyoresuas/amnezia-api?logo=github&logoColor=white)](https://github.com/kyoresuas/amnezia-api/releases/latest)
 [![GHCR](https://img.shields.io/badge/GHCR-amnezia--api-2496ED?logo=docker&logoColor=white)](https://github.com/kyoresuas/amnezia-api/pkgs/container/amnezia-api)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-6BA539?logo=openapiinitiative&logoColor=white)](openapi/openapi.json)
 [![License](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
 
 [English](README.md) · **Русский**
@@ -13,7 +15,7 @@
 
 Подходит для админ-панелей, Telegram-ботов, биллинга и управления несколькими серверами без ручного подключения по SSH.
 
-[Быстрый старт](#быстрый-старт) · [Маршруты API](#маршруты-api) · [Безопасность](#безопасность) · [Веб-панель](https://github.com/slowy19/amnezia-panel)
+[Быстрый старт](#быстрый-старт) · [Маршруты API](#маршруты-api) · [Сравнение](#сравнение-с-другими-инструментами) · [Безопасность](#безопасность) · [Веб-панель](https://github.com/slowy19/amnezia-panel)
 
 ![Демонстрация Amnezia API](docs/assets/amnezia-api-demo.gif)
 
@@ -43,7 +45,21 @@
              AmneziaWG · AmneziaWG 3.1 · Xray
 ```
 
-Если Amnezia уже работает, переустанавливать VPN-протоколы не нужно. Установщик обнаруживает контейнеры `amnezia-awg`, `amnezia-awg2` и `amnezia-xray` и настраивает API поверх них. При первой настройке поддержка статистики Xray может изменить конфиг Xray и перезапустить контейнер.
+Если Amnezia уже работает, переустанавливать VPN-протоколы не нужно. Установщик обнаруживает контейнеры `amnezia-awg`, `amnezia-awg2` и `amnezia-xray` и настраивает API поверх них. Для Xray он также включает Stats API вместе с нужным ему правилом routing. Если конфиг Xray приходится менять, прежняя версия сохраняется как `server.json.bak` внутри контейнера, а `amnezia-xray` перезапускается; иначе контейнер не трогается. После перенастройки Xray в приложении Amnezia запустите установщик снова, чтобы вернуть статистику.
+
+## Сравнение с другими инструментами
+
+Amnezia API — не очередная панель для Xray. Он автоматизирует серверы, которые уже развернуло приложение Amnezia, поэтому пользователи остаются на официальных клиентах Amnezia.
+
+| | Amnezia API | Панели на Xray-core (Marzban, Remnawave, 3x-ui) |
+| --- | --- | --- |
+| Отправная точка | Сервер, уже настроенный приложением Amnezia, без переустановки | Сервер, где панель сама ставит Xray и владеет его конфигом |
+| Клиентское приложение | Приложение Amnezia через `vpn://`-конфиги и QR-коды | Xray-совместимые приложения через подписки и ссылки |
+| Протоколы | AmneziaWG, AmneziaWG 3.1, Xray с REALITY | Протоколы Xray-core; 3x-ui дополнительно запускает собственный AmneziaWG |
+| Интерфейс | REST API со Swagger и OpenAPI, интерфейс или бота подключаете вы | Встроенная веб-панель |
+| Подходит для | Ботов, биллинга и панелей, которым нужна экосистема Amnezia | Полноценных панелей со своей клиентской экосистемой |
+
+Они решают соседние задачи и могут работать рядом на разных серверах. Готовый веб-интерфейс поверх этого API — [amnezia-panel](https://github.com/slowy19/amnezia-panel).
 
 ## Поддерживаемые протоколы
 
@@ -75,9 +91,9 @@ bash ./scripts/setup.sh
 Установщик:
 
 1. Определит установленные протоколы Amnezia.
-2. Создаст случайный API-ключ и подготовит `.env`.
+2. Создаст случайный API-ключ и уникальный `SERVER_ID`, подготовит `.env`.
 3. Предложит Docker- или PM2-режим.
-4. Запустит API и настроит Nginx на порту `80`.
+4. Запустит API и настроит Nginx на порту `80`, порт меняется через `NGINX_LISTEN`.
 5. Включит статистику Xray, если найден `amnezia-xray`.
 
 После установки:
@@ -89,7 +105,30 @@ Health:  http://<ip-сервера>/healthz
 ```
 
 > [!IMPORTANT]
-> Установщик настраивает обычный HTTP. Перед публикацией API в интернете добавьте TLS и ограничьте доступ на firewall или reverse proxy.
+> Установщик настраивает обычный HTTP. Перед публикацией API в интернете добавьте TLS и ограничьте доступ на firewall или reverse proxy. См. [HTTPS и закрытый доступ](#https-и-закрытый-доступ) и [Безопасность](#безопасность).
+
+### HTTPS и закрытый доступ
+
+Установщик создаёт сайт nginx на порту `80`. Выберите, как он должен быть доступен.
+
+**Закрыто, через SSH-туннель.** Привяжите nginx только к localhost. Значение сохранится в `.env`, а существующая установка обновится на месте:
+
+```bash
+NGINX_LISTEN=127.0.0.1:80 bash ./scripts/setup.sh
+ssh -L 8080:127.0.0.1:80 user@<ip-сервера>   # теперь API на http://127.0.0.1:8080
+```
+
+`NGINX_LISTEN` принимает порт (`8080`) или адрес с портом (`127.0.0.1:80`). Если изменить значение позже, сайт nginx будет создан заново.
+
+**Открыто, с Let's Encrypt.** Направьте DNS-запись на сервер, укажите этот домен в сайте nginx и дайте certbot добавить TLS и редирект:
+
+```bash
+sudo sed -i 's/server_name _;/server_name vpn.example.com;/' /etc/nginx/sites-available/amnezia-api
+sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d vpn.example.com
+```
+
+Следующие запуски `setup.sh` не трогают существующий сайт nginx, поэтому настройка сертификата переживает обновления.
 
 ### Docker Compose
 
@@ -99,10 +138,11 @@ cd amnezia-api
 cp .env.example .env
 ```
 
-Сгенерируйте случайный `FASTIFY_API_KEY`, запишите его в `.env`, проверьте остальные значения и запустите сервис:
+Сгенерируйте случайный `FASTIFY_API_KEY` и уникальный `SERVER_ID`, запишите их в `.env`, проверьте остальные значения и запустите сервис:
 
 ```bash
-openssl rand -hex 32
+openssl rand -hex 32               # FASTIFY_API_KEY
+cat /proc/sys/kernel/random/uuid   # SERVER_ID
 ```
 
 ```bash
@@ -126,7 +166,7 @@ Docker Compose публикует API только на `127.0.0.1:4001`. Для
 bash ./scripts/setup.sh
 ```
 
-Скрипт обновит репозиторий, определит текущий режим запуска, пересоберёт приложение и сохранит существующий `.env`.
+Скрипт обновит репозиторий, определит текущий режим запуска, пересоберёт приложение и сохранит существующий `.env`. Он также чинит Stats API Xray на серверах, настроенных прежними версиями: те включали его без правила routing, и Xray мог исчерпать файловые дескрипторы. `amnezia-xray` перезапускается, только если конфиг действительно меняется.
 
 ## Релизы и Docker-образы
 
@@ -168,6 +208,9 @@ x-api-key: <FASTIFY_API_KEY>
 | `GET` | `/healthz` | Проверка доступности |
 | `GET` | `/metrics` | Prometheus-метрики |
 
+> [!NOTE]
+> Всегда передавайте `protocol` явно. Если его не указать, `POST /clients` использует `amneziawg3`, а `PATCH /clients` и `DELETE /clients` — `amneziawg`.
+
 Полные схемы запросов и ответов доступны в Swagger UI на `/docs`.
 
 Версионируемый [контракт OpenAPI 3.0](openapi/openapi.json) доступен без запущенного сервера. Его можно импортировать в Postman, Insomnia, API-клиенты и генераторы SDK. Этот же файл прикладывается к каждому GitHub Release.
@@ -206,6 +249,54 @@ curl -X PATCH "https://vpn.example.com/clients" \
   }'
 ```
 
+### Использование из кода
+
+<details>
+<summary>Примеры на Node.js и Python</summary>
+
+`expiresAt` — Unix-время в секундах или `null`, если срока нет.
+
+```js
+// Node.js 20+
+const res = await fetch("https://vpn.example.com/clients", {
+  method: "POST",
+  headers: {
+    "x-api-key": process.env.AMNEZIA_API_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    clientName: "demo-client",
+    protocol: "amneziawg3",
+    expiresAt: Math.floor(Date.now() / 1000) + 30 * 24 * 3600,
+  }),
+});
+
+const { client } = await res.json();
+console.log(client.config); // vpn://...
+```
+
+```python
+# Python 3 с requests
+import os
+import time
+import requests
+
+res = requests.post(
+    "https://vpn.example.com/clients",
+    headers={"x-api-key": os.environ["AMNEZIA_API_KEY"]},
+    json={
+        "clientName": "demo-client",
+        "protocol": "amneziawg3",
+        "expiresAt": int(time.time()) + 30 * 24 * 3600,
+    },
+    timeout=30,
+)
+res.raise_for_status()
+print(res.json()["client"]["config"])  # vpn://...
+```
+
+</details>
+
 ## Конфигурация
 
 | Переменная | Описание |
@@ -214,7 +305,7 @@ curl -X PATCH "https://vpn.example.com/clients" \
 | `FASTIFY_API_KEY` | Секрет для заголовка `x-api-key`, минимум 32 символа |
 | `CORS_ORIGINS` | Browser origin через запятую; пустое значение отключает CORS |
 | `PROTOCOLS_ENABLED` | `amneziawg,amneziawg3,xray` |
-| `SERVER_ID` | Постоянный уникальный ID сервера |
+| `SERVER_ID` | Постоянный уникальный ID сервера; для новых установок его создаёт установщик |
 | `SERVER_NAME` | Понятное название сервера |
 | `SERVER_REGION` | Регион, зона или произвольная метка |
 | `SERVER_WEIGHT` | Вес для маршрутизации; рекомендуется `1..1000` |
@@ -223,6 +314,7 @@ curl -X PATCH "https://vpn.example.com/clients" \
 | `DOCKER_GID` | ID группы Docker socket в Docker-режиме |
 | `DOCKER_API_VERSION` | Версия Docker Engine API |
 | `AMNEZIA_API_VERSION` | Тег GHCR-образа для `docker-compose.ghcr.yml`; по умолчанию `latest` |
+| `NGINX_LISTEN` | Только для установщика: порт или `адрес:порт` для nginx, по умолчанию `80`, см. [HTTPS и закрытый доступ](#https-и-закрытый-доступ) |
 
 ## Безопасность
 
@@ -261,12 +353,15 @@ npm run openapi:check
 ## Экосистема
 
 - [amnezia-panel](https://github.com/slowy19/amnezia-panel) — веб-панель управления на базе Amnezia API.
+- [amnezia-vpn-cli](https://github.com/eaglexer/amnezia-vpn-cli) — терминальный клиент `amz`: создаёт, показывает и отзывает ключи через SSH-туннель к Amnezia API.
+- [amnezia-protocols](https://github.com/kyoresuas/amnezia-protocols) — консольные установщики AmneziaWG 3.1, AmneziaWG 1.5 и Xray REALITY с той же раскладкой контейнеров, что у приложения Amnezia, поэтому Amnezia API работает поверх них.
+- [ru-direct](https://github.com/kyoresuas/ru-direct) — ежедневно обновляемые списки российских подсетей и доменов для раздельного туннелирования в AmneziaVPN, WireGuard, Xray и других клиентах.
 
 Если вы создали интеграцию, бота, SDK или панель, откройте issue или pull request, чтобы добавить проект в этот список.
 
 ## Поддержать проект
 
-Если Amnezia API оказался полезен, вы можете поддержать его развитие:
+Звезда на GitHub помогает другим владельцам серверов Amnezia найти проект. Если Amnezia API оказался полезен, вы также можете поддержать его развитие:
 
 - **Карта «Мир»:** `2200700644781816`
 - **TON:** `kyoresuas.ton`

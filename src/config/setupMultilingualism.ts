@@ -8,9 +8,9 @@ import { LanguageDetector } from "i18next-http-middleware";
  */
 i18next.use(LanguageDetector).init({
   fallbackLng: "ru", // Язык по умолчанию
-  defaultNS: "ru", // Локализация по умолчанию
+  defaultNS: "translation", // Общее пространство имен для всех языков
   resources: {
-    en: { us },
-    ru: { ru },
+    en: { translation: us },
+    ru: { translation: ru },
   },
 });

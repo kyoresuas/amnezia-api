@@ -14,13 +14,17 @@
   "homepage": "https://github.com/kyoresuas/amnezia-api#readme",
   "keywords": [
     "amnezia",
+    "amneziavpn",
     "amneziawg",
     "wireguard",
     "xray",
     "vpn",
+    "vpn-api",
     "vpn-management",
     "self-hosted",
     "rest-api",
+    "openapi",
+    "docker",
     "fastify",
     "typescript"
   ],
