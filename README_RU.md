@@ -363,7 +363,6 @@ npm run openapi:check
 
 Звезда на GitHub помогает другим владельцам серверов Amnezia найти проект. Если Amnezia API оказался полезен, вы также можете поддержать его развитие:
 
-- **Карта «Мир»:** `2200700644781816`
 - **TON:** `kyoresuas.ton`
 - **Адрес кошелька TON:** `UQATzyMcVoZudjaA5Rc9w5TV_lIqxh9DPk0gSnjkLVvwEVqz`
 - **USDT в сети TRON (TRC-20):** `TJSLjDo4yRgHr9JqqEcrkbC51bP9DCiBC7`
